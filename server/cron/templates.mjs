@@ -84,7 +84,7 @@ export const CHAIN_ROUTES = [
 ];
 
 /** Standalone high-volume corridors */
-const SINGLE_CORRIDORS = [
+export const SINGLE_CORRIDORS = [
   ['Paris', 'Lyon'], ['Lyon', 'Marseille'], ['Paris', 'Bruxelles'], ['Anvers', 'Milan'],
   ['Rotterdam', 'Strasbourg'], ['Lille', 'Barcelone'], ['Bordeaux', 'Madrid'],
   ['Toulouse', 'Barcelone'], ['Nantes', 'Paris'], ['Marseille', 'Nice'],
