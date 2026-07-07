@@ -1,244 +1,319 @@
-import { useEffect, useState } from 'react';
-import { Banknote, TrendingUp, TrendingDown, Plus, X, Trash2, Download } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Loader2, Plus } from 'lucide-react';
 import { Layout } from '../components/Layout';
-import { supabase, Transaction } from '../lib/supabase';
+import {
+  DEFAULT_FILTERS,
+  exportTransactionsCsv,
+  exportTransactionsPdf,
+  filterTransactions,
+  PERIOD_OPTIONS,
+} from '../components/bank/bankFilters';
+import {
+  EMPTY_MANUAL_FORM,
+  ManualTransactionModal,
+  type ManualTransactionForm,
+} from '../components/bank/ManualTransactionModal';
+import { BankLoungeHeader } from '../components/bank/lounge/BankLoungeHeader';
+import { BankExpenseBreakdown } from '../components/bank/lounge/BankExpenseBreakdown';
+import { BankQuickActions, type QuickActionId } from '../components/bank/lounge/BankQuickActions';
+import { BankCardsModal } from '../components/bank/lounge/BankCardsModal';
+import { downloadRib, printBankStatement } from '../components/bank/lounge/bankLoungeUtils';
+import { BankAccountEnterprise } from '../components/bank/enterprise/BankAccountEnterprise';
+import { BankPaymentCard3D } from '../components/bank/enterprise/BankPaymentCard3D';
+import { BankKpiLive } from '../components/bank/enterprise/BankKpiLive';
+import { BankNavTabs, type BankTabId } from '../components/bank/enterprise/BankNavTabs';
+import { BankTreasuryPanel } from '../components/bank/enterprise/BankTreasuryPanel';
+import { BankTransactionsEnterprise } from '../components/bank/enterprise/BankTransactionsEnterprise';
+import { BankFleetFinancing } from '../components/bank/enterprise/BankFleetFinancing';
+import { BankTransfersPanel } from '../components/bank/enterprise/BankTransfersPanel';
+import { BankNotificationsPanel } from '../components/bank/enterprise/BankNotificationsPanel';
+import { BankAdvisorEnterprise } from '../components/bank/enterprise/BankAdvisorEnterprise';
+import { BankSettingsPanel } from '../components/bank/enterprise/BankSettingsPanel';
+import { BankAutoSyncPanel } from '../components/bank/enterprise/BankAutoSyncPanel';
+import { FormAlert, FormSuccess } from '../components/erp/FormAlert';
+import { useAuth } from '../contexts/AuthContext';
+import { computeExpenseBreakdownFromTransactions } from '../lib/transactionAnalytics';
+import { monthKey } from '../lib/format';
+import { DEFAULT_BANK_SETTINGS, type BankSettings } from '../lib/bankSettings';
+import {
+  useBankData,
+  useBankSettings,
+  useCreateTransaction,
+  useCreateTransfer,
+  useDeleteTransaction,
+} from '../hooks/useBankData';
+import type { TransactionFilters } from '../services/bankService';
 
-const CATEGORIES = ['Route', 'Carburant', 'Péages', 'Salaires', 'Maintenance', 'Assurance', 'Prime', 'Autres'];
-const EMPTY_FORM = { type: 'income' as 'income' | 'expense', amount: '', description: '', category: '', date: new Date().toISOString().split('T')[0] };
+const EMPTY_SUMMARY = {
+  balance: 0,
+  monthlyIncome: 0,
+  monthlyExpenses: 0,
+  netProfit: 0,
+  netCashflow: 0,
+  pendingPayments: 0,
+  transactionCount: 0,
+};
 
 export function BankPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const [tab, setTab] = useState<BankTabId>('dashboard');
+  const [filters, setFilters] = useState<TransactionFilters>({ ...DEFAULT_FILTERS });
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [saving, setSaving] = useState(false);
-  const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
+  const [showCardsModal, setShowCardsModal] = useState(false);
+  const [form, setForm] = useState<ManualTransactionForm>(EMPTY_MANUAL_FORM);
+  const [settingsDraft, setSettingsDraft] = useState<BankSettings>(DEFAULT_BANK_SETTINGS);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [pageError, setPageError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { data, isLoading, isError, error, isFetching } = useBankData();
+  const { settings, saveSettings, saving: savingSettings } = useBankSettings();
 
   useEffect(() => {
-    loadTransactions();
-    const ch = supabase.channel('bank_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, loadTransactions)
-      .subscribe();
-    return () => { ch.unsubscribe(); };
-  }, []);
+    setSettingsDraft(settings);
+  }, [settings]);
+  const createMutation = useCreateTransaction(user?.id);
+  const transferMutation = useCreateTransfer(user?.id);
+  const deleteMutation = useDeleteTransaction(user?.id);
 
-  async function loadTransactions() {
-    try {
-      const { data } = await supabase.from('transactions').select('*').order('date', { ascending: false });
-      setTransactions((data ?? []) as Transaction[]);
-    } catch (err) { console.error('[Z&D] Bank:', err); }
-    finally { setLoading(false); }
-  }
+  const filteredTransactions = useMemo(
+    () => filterTransactions(data?.transactions ?? [], filters),
+    [data?.transactions, filters],
+  );
 
-  async function handleSave(e: React.FormEvent) {
+  const expenseBreakdown = useMemo(
+    () => computeExpenseBreakdownFromTransactions(data?.transactions ?? [], monthKey()),
+    [data?.transactions],
+  );
+
+  const summary = data?.summary ?? EMPTY_SUMMARY;
+  const loading = isLoading;
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.amount || parseFloat(form.amount) <= 0) return;
-    setSaving(true);
+    setPageError(null);
+    const amount = parseFloat(form.amount);
+    if (!amount || amount <= 0) {
+      setPageError('Indiquez un montant supérieur à 0.');
+      return;
+    }
     try {
-      await supabase.from('transactions').insert({
+      await createMutation.mutateAsync({
         type: form.type,
-        amount: parseFloat(form.amount),
-        description: form.description || null,
-        category: form.category || null,
+        amount,
+        description: form.description,
+        category: form.category,
         date: form.date,
       });
       setShowModal(false);
-      setForm(EMPTY_FORM);
-      loadTransactions();
-    } finally { setSaving(false); }
+      setForm(EMPTY_MANUAL_FORM);
+      setSuccessMessage(form.type === 'income' ? 'Encaissement enregistré.' : 'Décaissement enregistré.');
+    } catch (err) {
+      setPageError(err instanceof Error ? err.message : 'Erreur lors de l\'enregistrement.');
+    }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Supprimer cette transaction ?')) return;
-    await supabase.from('transactions').delete().eq('id', id);
-    loadTransactions();
+    if (!confirm('Supprimer cette transaction manuelle ?')) return;
+    setPageError(null);
+    setDeletingId(id);
+    try {
+      await deleteMutation.mutateAsync(id);
+      setSuccessMessage('Transaction supprimée.');
+    } catch (err) {
+      setPageError(err instanceof Error ? err.message : 'Impossible de supprimer.');
+    } finally {
+      setDeletingId(null);
+    }
   }
 
-  function exportCSV() {
-    const rows = [['Date', 'Type', 'Montant', 'Description', 'Catégorie'],
-      ...transactions.map(t => [t.date, t.type === 'income' ? 'Revenu' : 'Dépense', t.amount, t.description ?? '', t.category ?? ''])];
-    const csv = rows.map(r => r.join(';')).join('\n');
-    const a = document.createElement('a');
-    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-    a.download = 'transactions.csv';
-    a.click();
+  function openTransferModal() {
+    setTab('transfers');
   }
 
-  const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
-  const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
-  const balance = totalIncome - totalExpenses;
-  const filtered = filterType === 'all' ? transactions : transactions.filter(t => t.type === filterType);
+  function handleQuickAction(id: QuickActionId) {
+    switch (id) {
+      case 'transfer':
+        setTab('transfers');
+        break;
+      case 'cards':
+        setShowCardsModal(true);
+        break;
+      case 'debits':
+        setTab('transactions');
+        setFilters({ ...DEFAULT_FILTERS, categoryGroup: 'expense' });
+        break;
+      case 'rib':
+        downloadRib(data?.account ?? null);
+        setSuccessMessage('RIB téléchargé.');
+        break;
+      case 'statement':
+        printBankStatement(data?.account ?? null, filteredTransactions, summary);
+        break;
+    }
+  }
+
+  async function handleTransfer(input: {
+    kind: import('../services/bankTransferService').TransferKind;
+    amount: number;
+    beneficiary: string;
+    reference: string;
+    scheduledDate?: string;
+  }) {
+    setPageError(null);
+    try {
+      await transferMutation.mutateAsync(input);
+      setSuccessMessage('Virement enregistré avec succès.');
+    } catch (err) {
+      setPageError(err instanceof Error ? err.message : 'Échec du virement.');
+    }
+  }
+
+  function handleSaveSettings() {
+    saveSettings(settingsDraft)
+      .then(() => setSuccessMessage('Paramètres enregistrés.'))
+      .catch(() => setPageError('Impossible d\'enregistrer les paramètres.'));
+  }
+
+  const periodLabel = PERIOD_OPTIONS.find(p => p.value === filters.period)?.label ?? 'Tout';
 
   return (
     <Layout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-red-500/15 rounded-xl flex items-center justify-center">
-              <Banknote className="w-5 h-5 text-red-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">Banque RP</h1>
-              <p className="text-white/30 text-sm">Suivi financier Z&D Thermoliner</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={exportCSV}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-white/50 text-sm hover:bg-white/5 transition-colors border"
-              style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-              <Download className="w-4 h-4" />
-              Export
-            </button>
-            <button onClick={() => setShowModal(true)}
-              className="btn-primary flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-semibold text-sm">
-              <Plus className="w-4 h-4" />
-              Transaction
-            </button>
-          </div>
-        </div>
+      <div className="bank-lounge space-y-6 pb-8">
+        <BankLoungeHeader userName={user?.email} />
 
-        {/* Balance card */}
-        <div className="rounded-2xl p-6 relative overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, #1a0505 0%, #0d0d0d 100%)', border: '1px solid rgba(239,68,68,0.2)' }}>
-          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 80% 50%, rgba(239,68,68,0.08) 0%, transparent 60%)' }} />
-          <div className="relative">
-            <p className="text-white/40 text-sm mb-2">Solde net Z&D Thermoliner</p>
-            <p className={`text-4xl font-black ${balance >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-              {balance >= 0 ? '+' : ''}{balance.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €
-            </p>
-            <div className="flex gap-6 mt-4">
-              <div>
-                <p className="text-white/30 text-xs">Revenus</p>
-                <p className="text-emerald-400 font-bold">+{totalIncome.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €</p>
-              </div>
-              <div>
-                <p className="text-white/30 text-xs">Dépenses</p>
-                <p className="text-red-400 font-bold">-{totalExpenses.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €</p>
-              </div>
-              <div>
-                <p className="text-white/30 text-xs">Transactions</p>
-                <p className="text-white font-bold">{transactions.length}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Filter tabs */}
-        <div className="flex gap-2">
-          {(['all', 'income', 'expense'] as const).map(f => (
-            <button key={f} onClick={() => setFilterType(f)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${filterType === f ? 'bg-red-500/15 text-red-400 border border-red-500/25' : 'text-white/30 hover:text-white/60 hover:bg-white/5'}`}>
-              {f === 'all' ? 'Tout' : f === 'income' ? 'Revenus' : 'Dépenses'}
-            </button>
-          ))}
-        </div>
-
-        {/* Transactions */}
-        <div className="card-premium overflow-hidden">
-          {loading ? (
-            <div className="p-12 text-center text-white/20">Chargement...</div>
-          ) : filtered.length === 0 ? (
-            <div className="p-16 text-center">
-              <Banknote className="w-10 h-10 text-white/10 mx-auto mb-3" />
-              <p className="text-white/30">Aucune transaction</p>
-            </div>
-          ) : (
-            <div className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
-              {filtered.map(tx => (
-                <div key={tx.id} className="flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${tx.type === 'income' ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
-                      {tx.type === 'income' ? <TrendingUp className="w-4 h-4 text-emerald-400" /> : <TrendingDown className="w-4 h-4 text-red-400" />}
-                    </div>
-                    <div>
-                      <p className="text-white text-sm font-medium">{tx.description || tx.category || (tx.type === 'income' ? 'Revenu' : 'Dépense')}</p>
-                      <p className="text-white/25 text-xs">
-                        {tx.category && <span className="mr-2 text-white/40">{tx.category}</span>}
-                        {new Date(tx.date || tx.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`text-sm font-bold ${tx.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {tx.type === 'income' ? '+' : '-'}{Number(tx.amount).toLocaleString('fr-FR', { maximumFractionDigits: 2 })} €
-                    </span>
-                    <button onClick={() => handleDelete(tx.id)}
-                      className="w-7 h-7 hover:bg-red-500/10 rounded-lg flex items-center justify-center transition-colors">
-                      <Trash2 className="w-3.5 h-3.5 text-white/15 hover:text-red-400" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <BankNavTabs active={tab} onChange={setTab} />
+          {isFetching && !loading && (
+            <span className="flex items-center gap-2 text-xs text-white/40">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              Actualisation live...
+            </span>
           )}
         </div>
-      </div>
 
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-dark-900 border rounded-2xl w-full max-w-md" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
-            <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-              <h2 className="font-bold text-white">Nouvelle transaction</h2>
-              <button onClick={() => setShowModal(false)} className="w-8 h-8 hover:bg-white/5 rounded-lg flex items-center justify-center">
-                <X className="w-4 h-4 text-white/40" />
+        {pageError && <FormAlert message={pageError} onDismiss={() => setPageError(null)} />}
+        {successMessage && <FormSuccess message={successMessage} onDismiss={() => setSuccessMessage(null)} />}
+        {isError && (
+          <FormAlert message={error instanceof Error ? error.message : 'Erreur de chargement bancaire.'} />
+        )}
+
+        {tab === 'dashboard' && (
+          <div className="space-y-6 bank-fade-in">
+            <BankKpiLive summary={summary} treasury={data?.treasury ?? { chartData: [], availableCash: 0, forecastNextMonth: 0, forecastTrend: 'flat', monthlyBalanceSeries: [] }} loading={loading} />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-5 space-y-5">
+                <BankAccountEnterprise
+                  account={data?.accountView ?? {
+                    companyName: 'Z&D Thermoliner',
+                    availableBalance: 0,
+                    accountingBalance: 0,
+                    liveBalance: 0,
+                    iban: '—',
+                    bic: '—',
+                    accountNumber: '—',
+                    lastSynchronization: null,
+                  }}
+                  loading={loading}
+                  onTransfer={openTransferModal}
+                  onCopyIban={() => setSuccessMessage('IBAN copié.')}
+                />
+                <BankPaymentCard3D loading={loading} />
+              </div>
+              <div className="lg:col-span-7 space-y-5">
+                <BankQuickActions onAction={handleQuickAction} />
+                <BankAutoSyncPanel autoSync={data?.autoSync ?? { revenue: 0, fuel: 0, tolls: 0, repairs: 0, insurance: 0, salary: 0, netProfit: 0, sheetCount: 0 }} loading={loading} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <BankNotificationsPanel notifications={data?.notifications ?? []} compact />
+                  <BankAdvisorEnterprise />
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+              <div className="xl:col-span-4">
+                <BankExpenseBreakdown breakdown={expenseBreakdown} loading={loading} />
+              </div>
+              <div className="xl:col-span-8">
+                <BankTreasuryPanel chartData={data?.chartData ?? []} treasury={data?.treasury ?? { chartData: [], availableCash: 0, forecastNextMonth: 0, forecastTrend: 'flat', monthlyBalanceSeries: [] }} loading={loading} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === 'transactions' && (
+          <div className="bank-fade-in">
+            <BankTransactionsEnterprise
+              transactions={filteredTransactions}
+              filters={filters}
+              onChange={setFilters}
+              loading={loading}
+              deletingId={deletingId}
+              onDelete={handleDelete}
+              onExportCsv={() => exportTransactionsCsv(filteredTransactions)}
+              onExportPdf={() =>
+                exportTransactionsPdf(filteredTransactions, {
+                  companyName: data?.accountView?.companyName ?? 'Z&D Thermoliner',
+                  iban: data?.accountView?.iban ?? '—',
+                  period: periodLabel,
+                })
+              }
+            />
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={() => { setForm(EMPTY_MANUAL_FORM); setShowModal(true); }}
+                className="bank-lounge-btn-primary flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold"
+              >
+                <Plus className="w-4 h-4" />
+                Nouvelle opération
               </button>
             </div>
-            <form onSubmit={handleSave} className="p-5 space-y-4">
-              <div className="grid grid-cols-2 gap-2">
-                {(['income', 'expense'] as const).map(t => (
-                  <button key={t} type="button" onClick={() => setForm(p => ({ ...p, type: t }))}
-                    className={`py-2.5 rounded-xl text-sm font-semibold transition-all ${form.type === t
-                      ? t === 'income' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                      : 'bg-white/5 text-white/30 border border-white/5'}`}>
-                    {t === 'income' ? 'Revenu' : 'Dépense'}
-                  </button>
-                ))}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-white/40 uppercase tracking-wide mb-1.5">Montant (€) *</label>
-                <input type="number" step="0.01" min="0.01" value={form.amount}
-                  onChange={e => setForm(p => ({ ...p, amount: e.target.value }))} required
-                  className="w-full px-3 py-2.5 bg-white/5 border rounded-xl text-white focus:outline-none focus:border-red-500/50 text-sm"
-                  style={{ borderColor: 'rgba(255,255,255,0.08)' }} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-white/40 uppercase tracking-wide mb-1.5">Description</label>
-                <input value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                  placeholder="Description"
-                  className="w-full px-3 py-2.5 bg-white/5 border rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-red-500/50 text-sm"
-                  style={{ borderColor: 'rgba(255,255,255,0.08)' }} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-white/40 uppercase tracking-wide mb-1.5">Catégorie</label>
-                  <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))}
-                    className="w-full px-3 py-2.5 bg-white/5 border rounded-xl text-white focus:outline-none focus:border-red-500/50 text-sm"
-                    style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-                    <option value="">Aucune</option>
-                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-white/40 uppercase tracking-wide mb-1.5">Date</label>
-                  <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
-                    className="w-full px-3 py-2.5 bg-white/5 border rounded-xl text-white focus:outline-none focus:border-red-500/50 text-sm"
-                    style={{ borderColor: 'rgba(255,255,255,0.08)' }} />
-                </div>
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowModal(false)}
-                  className="flex-1 py-2.5 bg-white/5 rounded-xl text-white/50 text-sm">Annuler</button>
-                <button type="submit" disabled={saving}
-                  className="flex-1 btn-primary py-2.5 rounded-xl text-white font-semibold text-sm disabled:opacity-50">
-                  {saving ? 'Enregistrement...' : 'Ajouter'}
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
+        )}
+
+        {tab === 'treasury' && (
+          <div className="space-y-4 bank-fade-in">
+            <BankKpiLive summary={summary} treasury={data?.treasury ?? { chartData: [], availableCash: 0, forecastNextMonth: 0, forecastTrend: 'flat', monthlyBalanceSeries: [] }} loading={loading} />
+            <BankTreasuryPanel chartData={data?.chartData ?? []} treasury={data?.treasury ?? { chartData: [], availableCash: 0, forecastNextMonth: 0, forecastTrend: 'flat', monthlyBalanceSeries: [] }} loading={loading} />
+            <BankExpenseBreakdown breakdown={expenseBreakdown} loading={loading} />
+            <BankAutoSyncPanel autoSync={data?.autoSync ?? { revenue: 0, fuel: 0, tolls: 0, repairs: 0, insurance: 0, salary: 0, netProfit: 0, sheetCount: 0 }} loading={loading} />
+          </div>
+        )}
+
+        {tab === 'financing' && (
+          <div className="bank-fade-in">
+            <BankFleetFinancing financing={data?.financing ?? { loans: [], totalRemaining: 0, totalMonthly: 0, truckCount: 0, trailerCount: 0 }} loading={loading} />
+          </div>
+        )}
+
+        {tab === 'transfers' && (
+          <div className="bank-fade-in">
+            <BankTransfersPanel onSubmit={handleTransfer} saving={transferMutation.isPending} />
+          </div>
+        )}
+
+        {tab === 'settings' && (
+          <div className="bank-fade-in">
+            <BankSettingsPanel
+              settings={settingsDraft}
+              iban={data?.accountView?.iban ?? ''}
+              onChange={setSettingsDraft}
+              onSave={handleSaveSettings}
+              saving={savingSettings}
+            />
+          </div>
+        )}
+      </div>
+
+      <ManualTransactionModal
+        open={showModal}
+        form={form}
+        saving={createMutation.isPending}
+        onClose={() => setShowModal(false)}
+        onChange={setForm}
+        onSubmit={handleSubmit}
+      />
+      <BankCardsModal open={showCardsModal} onClose={() => setShowCardsModal(false)} />
     </Layout>
   );
 }

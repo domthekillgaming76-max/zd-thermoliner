@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Trophy, Medal, TrendingUp, Crown, Award, Star, Calendar, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { Trophy, Medal, TrendingUp, Crown, Award, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { Layout } from '../components/Layout';
-import { supabase, Driver, Medal as MedalType } from '../lib/supabase';
+import { supabase, Medal as MedalType } from '../lib/supabase';
 
 interface DriverRanking {
   id: string;

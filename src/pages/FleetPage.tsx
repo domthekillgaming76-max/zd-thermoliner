@@ -1,245 +1,252 @@
-import { useEffect, useState } from 'react';
-import { Truck as TruckIcon, Plus, Search, Building2, X, Trash2, Edit } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Plus, Search, Truck as TruckIcon, AlertTriangle, Shield } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
-import { supabase, Truck, Garage } from '../lib/supabase';
+import { PageHeader } from '../components/erp/PageHeader';
+import { FleetDashboard } from '../components/fleet/FleetDashboard';
+import { TruckCard } from '../components/fleet/TruckCard';
+import { TruckFormModal } from '../components/fleet/TruckFormModal';
+import { FormAlert, FormSuccess } from '../components/erp/FormAlert';
+import {
+  useCreateFleetTruck,
+  useDeleteFleetTruck,
+  useFleetModule,
+  useUpdateFleetTruck,
+} from '../hooks/useFleet';
+import { useAuth } from '../contexts/AuthContext';
+import { canManageFleet } from '../lib/fleetPermissions';
+import {
+  computeFleetDashboard,
+  getMaintenanceAlerts,
+  type FleetTruck,
+  type TruckStatus,
+} from '../lib/fleetTypes';
+import type { TruckFormInput } from '../services/fleetService';
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  active:      { label: 'Actif',       color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
-  maintenance: { label: 'Maintenance', color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' },
-  retired:     { label: 'Retraité',    color: 'text-white/30 bg-white/5 border-white/10' },
-};
-
-const EMPTY_FORM = { registration: '', brand: '', model: '', status: 'active' as const, mileage: 0, garage_id: '', photo_url: '' };
+type TabId = 'dashboard' | 'trucks';
+type StatusFilter = 'all' | TruckStatus;
 
 export function FleetPage() {
-  const [trucks, setTrucks]   = useState<Truck[]>([]);
-  const [garages, setGarages] = useState<Garage[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch]   = useState('');
+  const { profile, user } = useAuth();
+  const isAdmin = canManageFleet(profile?.role, user?.email);
+  const [tab, setTab] = useState<TabId>('dashboard');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [showModal, setShowModal] = useState(false);
-  const [editing, setEditing] = useState<Truck | null>(null);
-  const [form, setForm]       = useState(EMPTY_FORM);
-  const [saving, setSaving]   = useState(false);
+  const [editing, setEditing] = useState<FleetTruck | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [pageError, setPageError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadData();
-    const ch = supabase.channel('fleet_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trucks' }, loadData)
-      .subscribe();
-    return () => { ch.unsubscribe(); };
-  }, []);
+  const { data, isLoading, isError, error } = useFleetModule();
+  const createMutation = useCreateFleetTruck();
+  const updateMutation = useUpdateFleetTruck();
+  const deleteMutation = useDeleteFleetTruck();
 
-  async function loadData() {
-    try {
-      const [tRes, gRes] = await Promise.all([
-        supabase.from('trucks').select('*').order('created_at', { ascending: false }),
-        supabase.from('garages').select('id, name, city'),
-      ]);
-      setTrucks((tRes.data ?? []) as Truck[]);
-      setGarages((gRes.data ?? []) as Garage[]);
-    } catch (err) { console.error('[Z&D] Fleet:', err); }
-    finally { setLoading(false); }
-  }
+  const stats = useMemo(
+    () => computeFleetDashboard(data?.trucks ?? [], data?.costs ?? []),
+    [data?.trucks, data?.costs],
+  );
 
-  function openAdd() { setEditing(null); setForm(EMPTY_FORM); setShowModal(true); }
-  function openEdit(t: Truck) {
-    setEditing(t);
-    setForm({ registration: t.registration, brand: t.brand ?? '', model: t.model ?? '', status: t.status, mileage: t.mileage, garage_id: t.garage_id ?? '', photo_url: t.photo_url ?? '' });
+  const alerts = useMemo(
+    () => getMaintenanceAlerts(data?.trucks ?? [], data?.maintenance ?? []),
+    [data?.trucks, data?.maintenance],
+  );
+
+  const filtered = useMemo(() => {
+    let list = data?.trucks ?? [];
+    if (statusFilter !== 'all') list = list.filter(t => t.status === statusFilter);
+    const q = search.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter(t =>
+      [t.registration, t.brand, t.model, t.vin, t.driver_name, t.garage_name]
+        .some(v => v?.toLowerCase().includes(q)),
+    );
+  }, [data?.trucks, search, statusFilter]);
+
+  function openAdd() {
+    if (!isAdmin) return;
+    setEditing(null);
     setShowModal(true);
   }
-  function closeModal() { setShowModal(false); setEditing(null); setForm(EMPTY_FORM); }
 
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
+  function openEdit(truck: FleetTruck) {
+    if (!isAdmin) return;
+    setEditing(truck);
+    setShowModal(true);
+  }
+
+  async function handleSave(input: TruckFormInput) {
+    if (!isAdmin) return;
+    setPageError(null);
     try {
-      const payload = {
-        registration: form.registration,
-        brand: form.brand || null,
-        model: form.model || null,
-        status: form.status,
-        mileage: form.mileage,
-        garage_id: form.garage_id || null,
-        photo_url: form.photo_url || null,
-      };
       if (editing) {
-        await supabase.from('trucks').update(payload).eq('id', editing.id);
+        await updateMutation.mutateAsync({ id: editing.id, input });
+        setSuccessMessage('Camion mis à jour.');
       } else {
-        await supabase.from('trucks').insert(payload);
+        await createMutation.mutateAsync(input);
+        setSuccessMessage('Camion ajouté.');
       }
-      closeModal();
-      loadData();
-    } finally { setSaving(false); }
+      setShowModal(false);
+      setEditing(null);
+    } catch (err) {
+      setPageError(err instanceof Error ? err.message : 'Erreur lors de l\'enregistrement.');
+    }
   }
 
   async function handleDelete(id: string) {
+    if (!isAdmin) return;
     if (!confirm('Supprimer ce camion ?')) return;
-    await supabase.from('trucks').delete().eq('id', id);
-    loadData();
+    try {
+      await deleteMutation.mutateAsync(id);
+      setSuccessMessage('Camion supprimé.');
+    } catch (err) {
+      setPageError(err instanceof Error ? err.message : 'Suppression impossible.');
+    }
   }
 
-  const filtered = trucks.filter(t =>
-    [t.registration, t.brand, t.model].some(v => v?.toLowerCase().includes(search.toLowerCase()))
-  );
+  const saving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <Layout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-red-500/15 rounded-xl flex items-center justify-center">
-              <TruckIcon className="w-5 h-5 text-red-400" />
+      <div className="space-y-6 fleet-module">
+        <PageHeader
+          title="Gestion de flotte"
+          subtitle="Pilotage véhicules, maintenance et rentabilité"
+          icon={TruckIcon}
+          actions={
+            <div className="flex gap-2 flex-wrap items-center">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                <input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Immat., marque, chauffeur..."
+                  className="erp-input pl-9 w-52"
+                />
+              </div>
+              {isAdmin && (
+                <button type="button" onClick={openAdd} className="btn-primary flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-semibold text-sm">
+                  <Plus className="w-4 h-4" />
+                  Ajouter
+                </button>
+              )}
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">Flotte</h1>
-              <p className="text-white/30 text-sm">{trucks.length} camion{trucks.length !== 1 ? 's' : ''}</p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-              <input value={search} onChange={e => setSearch(e.target.value)}
-                placeholder="Rechercher..."
-                className="pl-9 pr-4 py-2.5 bg-white/5 border rounded-xl text-white placeholder-white/25 focus:outline-none focus:border-red-500/50 text-sm w-48"
-                style={{ borderColor: 'rgba(255,255,255,0.08)' }} />
-            </div>
-            <button onClick={openAdd}
-              className="btn-primary flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-semibold text-sm">
-              <Plus className="w-4 h-4" />
-              Ajouter
-            </button>
-          </div>
-        </div>
+          }
+        />
 
-        {/* Grid */}
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1,2,3].map(i => <div key={i} className="card-premium h-48 animate-pulse" />)}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="card-premium p-16 text-center">
-            <TruckIcon className="w-12 h-12 text-white/10 mx-auto mb-3" />
-            <p className="text-white/30">Aucun camion</p>
-            <button onClick={openAdd} className="mt-4 text-red-400 text-sm hover:text-red-300">+ Ajouter le premier camion</button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map(truck => {
-              const st = STATUS_LABELS[truck.status] ?? STATUS_LABELS.active;
-              const garage = garages.find(g => g.id === truck.garage_id);
-              return (
-                <div key={truck.id} className="card-premium overflow-hidden group">
-                  {/* Photo */}
-                  <div className="h-40 bg-white/3 relative overflow-hidden">
-                    {truck.photo_url
-                      ? <img src={truck.photo_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      : <div className="w-full h-full flex items-center justify-center">
-                          <TruckIcon className="w-12 h-12 text-white/10" />
-                        </div>
-                    }
-                    <div className="absolute top-3 right-3 flex gap-1.5">
-                      <button onClick={() => openEdit(truck)}
-                        className="w-7 h-7 bg-black/60 rounded-lg flex items-center justify-center hover:bg-blue-500/30 transition-colors">
-                        <Edit className="w-3.5 h-3.5 text-white/60" />
-                      </button>
-                      <button onClick={() => handleDelete(truck.id)}
-                        className="w-7 h-7 bg-black/60 rounded-lg flex items-center justify-center hover:bg-red-500/30 transition-colors">
-                        <Trash2 className="w-3.5 h-3.5 text-white/60" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <p className="text-white font-bold">{[truck.brand, truck.model].filter(Boolean).join(' ') || 'Camion sans nom'}</p>
-                        <p className="text-white/40 text-xs font-mono mt-0.5">{truck.registration}</p>
-                      </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${st.color}`}>{st.label}</span>
-                    </div>
-                    <div className="flex items-center gap-4 text-xs text-white/40 mt-3">
-                      <span>{truck.mileage.toLocaleString()} km</span>
-                      {garage && (
-                        <span className="flex items-center gap-1">
-                          <Building2 className="w-3 h-3" />
-                          {garage.city || garage.name}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+        {!isAdmin && (
+          <div className="fleet-glass rounded-xl p-3 flex items-center gap-2 text-xs text-white/45">
+            <Shield className="w-4 h-4 text-red-400 shrink-0" />
+            Mode consultation — seuls les administrateurs peuvent modifier la flotte.
           </div>
         )}
-      </div>
 
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-dark-900 border rounded-2xl w-full max-w-md" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
-            <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-              <h2 className="font-bold text-white">{editing ? 'Modifier' : 'Ajouter'} un camion</h2>
-              <button onClick={closeModal} className="w-8 h-8 hover:bg-white/5 rounded-lg flex items-center justify-center">
-                <X className="w-4 h-4 text-white/40" />
-              </button>
-            </div>
-            <form onSubmit={handleSave} className="p-5 space-y-4">
-              {[
-                { label: 'Immatriculation *', key: 'registration', required: true, placeholder: 'AA-123-AA' },
-                { label: 'Marque', key: 'brand', placeholder: 'Scania, Volvo...' },
-                { label: 'Modèle', key: 'model', placeholder: 'R500, FH...' },
-                { label: 'Photo (URL)', key: 'photo_url', placeholder: 'https://...' },
-              ].map(f => (
-                <div key={f.key}>
-                  <label className="block text-xs font-semibold text-white/40 uppercase tracking-wide mb-1.5">{f.label}</label>
-                  <input value={(form as Record<string, string | number>)[f.key] as string}
-                    onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
-                    required={f.required} placeholder={f.placeholder}
-                    className="w-full px-3 py-2.5 bg-white/5 border rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-red-500/50 text-sm"
-                    style={{ borderColor: 'rgba(255,255,255,0.08)' }} />
-                </div>
-              ))}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-white/40 uppercase tracking-wide mb-1.5">Km</label>
-                  <input type="number" min={0} value={form.mileage}
-                    onChange={e => setForm(p => ({ ...p, mileage: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-3 py-2.5 bg-white/5 border rounded-xl text-white focus:outline-none focus:border-red-500/50 text-sm"
-                    style={{ borderColor: 'rgba(255,255,255,0.08)' }} />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-white/40 uppercase tracking-wide mb-1.5">Statut</label>
-                  <select value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value as Truck['status'] }))}
-                    className="w-full px-3 py-2.5 bg-white/5 border rounded-xl text-white focus:outline-none focus:border-red-500/50 text-sm"
-                    style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-                    <option value="active">Actif</option>
-                    <option value="maintenance">Maintenance</option>
-                    <option value="retired">Retraité</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-white/40 uppercase tracking-wide mb-1.5">Garage</label>
-                <select value={form.garage_id} onChange={e => setForm(p => ({ ...p, garage_id: e.target.value }))}
-                  className="w-full px-3 py-2.5 bg-white/5 border rounded-xl text-white focus:outline-none focus:border-red-500/50 text-sm"
-                  style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-                  <option value="">Aucun garage</option>
-                  {garages.map(g => <option key={g.id} value={g.id}>{g.name} — {g.city}</option>)}
-                </select>
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={closeModal}
-                  className="flex-1 py-2.5 bg-white/5 rounded-xl text-white/50 text-sm">Annuler</button>
-                <button type="submit" disabled={saving}
-                  className="flex-1 btn-primary py-2.5 rounded-xl text-white font-semibold text-sm disabled:opacity-50">
-                  {saving ? 'Enregistrement...' : 'Enregistrer'}
+        {successMessage && <FormSuccess message={successMessage} onDismiss={() => setSuccessMessage(null)} />}
+        {pageError && <FormAlert message={pageError} onDismiss={() => setPageError(null)} />}
+        {isError && <FormAlert message={error instanceof Error ? error.message : 'Erreur de chargement.'} />}
+
+        <nav className="flex gap-1">
+          {([
+            { id: 'dashboard' as TabId, label: 'Tableau de bord' },
+            { id: 'trucks' as TabId, label: `Camions (${data?.trucks.length ?? 0})` },
+          ]).map(t => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${tab === t.id ? 'bg-red-500/15 text-red-400 border border-red-500/25' : 'text-white/35 hover:bg-white/5'}`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+
+        {tab === 'dashboard' && (
+          <FleetDashboard stats={stats} loading={isLoading} />
+        )}
+
+        {tab === 'trucks' && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {([
+                { id: 'all' as StatusFilter, label: 'Tous' },
+                { id: 'active' as StatusFilter, label: 'En service' },
+                { id: 'maintenance' as StatusFilter, label: 'Maintenance' },
+                { id: 'retired' as StatusFilter, label: 'Retirés' },
+              ]).map(f => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setStatusFilter(f.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${statusFilter === f.id ? 'bg-white/10 text-white' : 'text-white/35 hover:bg-white/5'}`}
+                >
+                  {f.label}
                 </button>
+              ))}
+            </div>
+
+            {alerts.length > 0 && (
+              <div className="fleet-glass rounded-xl p-4 space-y-2 border border-amber-500/15">
+                <p className="text-xs font-bold text-amber-400 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  Alertes maintenance ({alerts.length})
+                </p>
+                <ul className="space-y-1">
+                  {alerts.slice(0, 6).map((a, i) => (
+                    <li key={i} className="text-sm flex items-center justify-between gap-2">
+                      <span className={`${a.urgency === 'high' ? 'text-red-300' : 'text-white/60'}`}>
+                        {a.truckLabel} — {a.message}
+                      </span>
+                      <Link to={`/fleet/${a.truckId}`} className="text-xs text-red-400 shrink-0 hover:text-red-300">
+                        Voir →
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </form>
+            )}
+
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2, 3, 4, 5, 6].map(i => (
+                  <div key={i} className="fleet-glass h-64 shimmer rounded-2xl" />
+                ))}
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="fleet-glass rounded-2xl p-16 text-center">
+                <TruckIcon className="w-12 h-12 text-white/10 mx-auto mb-3" />
+                <p className="text-white/30">Aucun camion trouvé</p>
+                {isAdmin && (
+                  <button type="button" onClick={openAdd} className="mt-4 text-red-400 text-sm hover:text-red-300">
+                    + Ajouter un camion
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filtered.map(truck => (
+                  <TruckCard
+                    key={truck.id}
+                    truck={truck}
+                    onEdit={isAdmin ? openEdit : undefined}
+                    onDelete={isAdmin ? handleDelete : undefined}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
+
+        <TruckFormModal
+          open={showModal}
+          editing={editing}
+          saving={saving}
+          garages={data?.garages ?? []}
+          trailers={data?.trailers ?? []}
+          onClose={() => { setShowModal(false); setEditing(null); }}
+          onSubmit={handleSave}
+        />
+      </div>
     </Layout>
   );
 }

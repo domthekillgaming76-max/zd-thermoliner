@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Wallet, TrendingUp, TrendingDown, Plus, Calendar, PieChart, BarChart3, FileText, Check, Clock } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, BarChart, Bar } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell } from 'recharts';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase, CompanyBudget, CompanyExpense, Driver } from '../lib/supabase';
+import { supabase, CompanyBudget, CompanyExpense } from '../lib/supabase';
 
 const EXPENSE_CATEGORIES = ['Carburant', 'Maintenance', 'Peages', 'Assurances', 'Salaires', 'Achats', 'Administratif', 'Autre'];
 const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280'];
@@ -189,7 +189,7 @@ export function CompanyBudgetPage() {
                 <LineChart data={monthlyData}>
                   <XAxis dataKey="month" stroke="#6b7280" fontSize={12} />
                   <YAxis stroke="#6b7280" fontSize={12} />
-                  <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }} formatter={(v: number) => `${v.toLocaleString()} EUR`} />
+                  <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }} formatter={(v) => `${Number(v ?? 0).toLocaleString()} EUR`} />
                   <Line type="monotone" dataKey="income" stroke="#22c55e" strokeWidth={2} dot={false} name="Revenus" />
                   <Line type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} dot={false} name="Depenses" />
                 </LineChart>
@@ -212,7 +212,7 @@ export function CompanyBudgetPage() {
                     <Pie data={expensesByCategory} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value">
                       {expensesByCategory.map((entry, idx) => <Cell key={idx} fill={entry.color} />)}
                     </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }} formatter={(v: number) => `${v.toLocaleString()} EUR`} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }} formatter={(v) => `${Number(v ?? 0).toLocaleString()} EUR`} />
                   </RechartsPie>
                 </ResponsiveContainer>
               )}

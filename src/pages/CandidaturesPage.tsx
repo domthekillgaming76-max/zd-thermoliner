@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase, RecruitmentApplication, Profile } from '../lib/supabase';
 
 export function CandidaturesPage() {
-  const { profile, user } = useAuth();
+  const { profile } = useAuth();
   const [applications, setApplications] = useState<(RecruitmentApplication & { profiles?: Profile })[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

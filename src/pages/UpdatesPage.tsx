@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Zap, Wrench, AlertTriangle, Megaphone, Plus, Edit3, Trash2,
-  Send, Eye, EyeOff, X, Save, Users, Calendar, CheckCircle,
+  Send, EyeOff, X, Save, Users, Calendar, CheckCircle,
   Clock, ChevronDown, ChevronUp, RefreshCw,
 } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../contexts/AuthContext';
+import { canManageUpdates } from '../lib/updatesPermissions';
 import { supabase } from '../lib/supabase';
 
 type UpdateType = 'nouveaute' | 'correction' | 'maintenance' | 'annonce';
@@ -43,7 +44,7 @@ function formatDateTime(s: string) {
 const EMPTY_FORM = { title: '', description: '', version: 'v1.0.0', update_type: 'nouveaute' as UpdateType };
 
 export function UpdatesPage() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const [updates, setUpdates] = useState<AppUpdate[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -56,7 +57,7 @@ export function UpdatesPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [readCounts, setReadCounts] = useState<Record<string, number>>({});
 
-  const isPDG = profile?.role === 'pdg';
+  const canManage = canManageUpdates(profile?.role, user?.email ?? profile?.email);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -70,7 +71,7 @@ export function UpdatesPage() {
       // Get read status for current user and counts
       const [readsRes, countsRes] = await Promise.all([
         supabase.from('update_reads').select('update_id').eq('user_id', profile?.id || '').in('update_id', ids),
-        isPDG
+        canManage
           ? supabase.from('update_reads').select('update_id').in('update_id', ids)
           : Promise.resolve({ data: [] }),
       ]);
@@ -89,7 +90,7 @@ export function UpdatesPage() {
       })));
     }
     setLoading(false);
-  }, [profile?.id, isPDG]);
+  }, [profile?.id, canManage]);
 
   useEffect(() => {
     load();
@@ -211,7 +212,7 @@ export function UpdatesPage() {
               style={{ border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)' }}>
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
-            {isPDG && (
+            {canManage && (
               <button onClick={() => { setShowForm(true); setEditingId(null); setForm(EMPTY_FORM); setError(null); }}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold btn-primary text-white transition-all">
                 <Plus className="w-4 h-4" />
@@ -237,7 +238,7 @@ export function UpdatesPage() {
         )}
 
         {/* Create / Edit Form */}
-        {showForm && isPDG && (
+        {showForm && canManage && (
           <div className="rounded-2xl overflow-hidden"
             style={{ background: 'linear-gradient(135deg, rgba(22,22,22,0.98), rgba(13,13,13,0.98))', border: '1px solid rgba(229,9,20,0.2)' }}>
             <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
@@ -301,7 +302,7 @@ export function UpdatesPage() {
         )}
 
         {/* PDG Drafts section */}
-        {isPDG && draftUpdates.length > 0 && (
+        {canManage && draftUpdates.length > 0 && (
           <div className="space-y-3">
             <p className="text-xs font-bold uppercase tracking-wider text-white/25 flex items-center gap-2">
               <Clock className="w-3.5 h-3.5" />
@@ -363,7 +364,13 @@ export function UpdatesPage() {
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <Megaphone className="w-16 h-16 mb-4 opacity-10" />
             <p className="text-white/30 text-lg font-semibold">Aucune mise à jour publiée</p>
-            {isPDG && <p className="text-white/20 text-sm mt-1">Créez votre première mise à jour ci-dessus</p>}
+            {canManage ? (
+              <p className="text-white/20 text-sm mt-1">Créez votre première mise à jour ci-dessus</p>
+            ) : (
+              <p className="text-white/20 text-sm mt-1 max-w-sm">
+                Les annonces officielles Z&D Thermoliner apparaîtront ici.
+              </p>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
@@ -419,6 +426,9 @@ export function UpdatesPage() {
                               Non lu
                             </span>
                           )}
+                          {readCounts[u.id] != null && readCounts[u.id] > 0 && (
+                            <span className="text-[10px] text-white/30">{readCounts[u.id]} lecture{readCounts[u.id] > 1 ? 's' : ''}</span>
+                          )}
                           {u.is_read && (
                             <span className="text-[10px] text-emerald-500/60 flex items-center gap-1">
                               <CheckCircle className="w-3 h-3" />Lu
@@ -431,7 +441,7 @@ export function UpdatesPage() {
                             <Calendar className="w-3 h-3" />
                             {u.published_at ? formatDate(u.published_at) : formatDate(u.created_at)}
                           </span>
-                          {isPDG && (
+                          {canManage && (
                             <span className="flex items-center gap-1 text-xs text-white/30">
                               <Users className="w-3 h-3" />
                               Lu par {u.read_count} membre{(u.read_count || 0) > 1 ? 's' : ''}
@@ -441,7 +451,7 @@ export function UpdatesPage() {
                       </div>
 
                       <div className="flex items-center gap-1.5 flex-shrink-0">
-                        {isPDG && (
+                        {canManage && (
                           <>
                             <button onClick={() => startEdit(u)}
                               className="w-8 h-8 flex items-center justify-center rounded-xl transition-all hover:bg-white/10"

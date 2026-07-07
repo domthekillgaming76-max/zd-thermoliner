@@ -1,11 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
-import { MessageSquare, Send, Hash, Users, Plus, X } from 'lucide-react';
+import { MessageSquare, Send, Hash, Plus, X } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase, ChatRoom, ChatMessage } from '../lib/supabase';
 
 export function ChatPage() {
-  const { profile, user } = useAuth();
+  const { user } = useAuth();
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -161,7 +161,9 @@ export function ChatPage() {
 
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.map((msg, i) => {
+                {loading ? (
+                  <p className="text-center text-white/30 text-sm py-8">Chargement des messages...</p>
+                ) : messages.map((msg, i) => {
                   const isOwn = msg.user_id === user?.id;
                   const showAvatar = i === 0 || messages[i - 1]?.user_id !== msg.user_id;
 

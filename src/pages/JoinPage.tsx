@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Truck, Send, CheckCircle, Clock, AlertCircle, User, Mail, Calendar, Gamepad2, Link2, MessageSquare, Truck as TruckIcon, Clock as ClockIcon } from 'lucide-react';
+import { Truck, Send, CheckCircle, Clock, AlertCircle, User, Mail, Calendar, Gamepad2, MessageSquare, Truck as TruckIcon, Clock as ClockIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase, RecruitmentApplication } from '../lib/supabase';
 
 export function JoinPage() {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [existingApplication, setExistingApplication] = useState<RecruitmentApplication | null>(null);

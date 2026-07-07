@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Truck, MapPin, Package, TrendingUp, CheckCircle, Pause,
+  Truck, Package, CheckCircle, Pause,
   Play, RefreshCw, AlertTriangle, Clock, BarChart2, XCircle, Radio,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';

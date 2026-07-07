@@ -1,18 +1,20 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
-  Shield, Users, Crown, Search, Edit, UserX, Ban,
-  UserMinus, RotateCcw, AlertTriangle, X, Clock,
-  CheckCircle, XCircle, History, ChevronDown, ChevronUp,
+  Shield, Crown, Search, Edit, UserX, Ban,
+  UserMinus, RotateCcw, AlertTriangle, X, ChevronDown, ChevronUp, ArrowUpCircle,
 } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase, Profile } from '../lib/supabase';
+import { promoteMemberRole, describePromotion } from '../services/rolePromotionService';
+import { getRoleLabel } from '../lib/rolePromotion';
 
-type UserRole = 'pdg' | 'patron' | 'directeur' | 'dispatcher' | 'chauffeur' | 'tractionnaire' | 'candidat' | 'ancien_membre' | 'banni';
+type UserRole = 'pdg' | 'patron' | 'directeur' | 'dispatcher' | 'chauffeur' | 'tractionnaire' | 'candidat' | 'visitor' | 'ancien_membre' | 'banni';
 
 const ROLE_LABELS: Record<string, string> = {
   pdg: 'PDG', patron: 'Patron', directeur: 'Directeur', dispatcher: 'Dispatcher',
-  chauffeur: 'Chauffeur', tractionnaire: 'Tractionnaire', candidat: 'Candidat',
+  chauffeur: 'Chauffeur', tractionnaire: 'Tractionnaire', candidat: 'Recrue',
+  visitor: 'Visiteur', visiteur: 'Visiteur',
   ancien_membre: 'Ancien membre', banni: 'Banni',
 };
 
@@ -24,6 +26,8 @@ const ROLE_COLORS: Record<string, string> = {
   chauffeur: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
   tractionnaire: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/25',
   candidat: 'bg-white/5 text-white/30 border-white/10',
+  visitor: 'bg-slate-500/10 text-slate-300 border-slate-500/20',
+  visiteur: 'bg-slate-500/10 text-slate-300 border-slate-500/20',
   ancien_membre: 'bg-white/5 text-white/25 border-white/8',
   banni: 'bg-red-500/15 text-red-400 border-red-500/25',
 };
@@ -78,6 +82,7 @@ export function AdminPage() {
   const [modalRoleSelect, setModalRoleSelect] = useState<UserRole>('chauffeur');
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [promoteLoadingId, setPromoteLoadingId] = useState<string | null>(null);
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
 
   const isPDG = profile?.role === 'pdg';
@@ -114,6 +119,20 @@ export function AdminPage() {
     setModalRestoreRole('chauffeur');
     setModalRoleSelect(u.role as UserRole);
     setActionError(null);
+  }
+
+  async function handlePromote(u: Profile) {
+    setPromoteLoadingId(u.id);
+    setActionError(null);
+    try {
+      const newRole = await promoteMemberRole(u.id);
+      console.log('[Z&D] Promoted', u.email, '→', newRole, getRoleLabel(newRole));
+      await load();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Promotion impossible');
+    } finally {
+      setPromoteLoadingId(null);
+    }
   }
 
   async function executeAction() {
@@ -161,8 +180,8 @@ export function AdminPage() {
   }
 
   const activeRoles: UserRole[] = isPDG
-    ? ['pdg','patron','directeur','dispatcher','chauffeur','tractionnaire','candidat']
-    : ['patron','directeur','dispatcher','chauffeur','tractionnaire','candidat'];
+    ? ['pdg','patron','directeur','dispatcher','chauffeur','tractionnaire','candidat','visitor']
+    : ['patron','directeur','dispatcher','chauffeur','tractionnaire','candidat','visitor'];
 
   const filteredMembers = members.filter(u => {
     const name = (u.pseudo || u.full_name || u.email || '').toLowerCase();
@@ -267,6 +286,18 @@ export function AdminPage() {
                     {/* Actions */}
                     {u.id !== user?.id && (isPDG || (profile?.role === 'patron' && u.role !== 'pdg')) && (
                       <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {describePromotion(u.role) && (
+                          <button
+                            onClick={() => handlePromote(u)}
+                            disabled={promoteLoadingId === u.id}
+                            title={`Promouvoir → ${describePromotion(u.role)}`}
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition-all hover:bg-emerald-500/10 disabled:opacity-50"
+                            style={{ color: '#34d399', border: '1px solid rgba(52,211,153,0.25)' }}
+                          >
+                            <ArrowUpCircle className="w-3.5 h-3.5" />
+                            {promoteLoadingId === u.id ? '…' : describePromotion(u.role)}
+                          </button>
+                        )}
                         <button onClick={() => openModal('role', u)}
                           title="Changer le rôle"
                           className="w-8 h-8 flex items-center justify-center rounded-xl transition-all hover:bg-white/10"

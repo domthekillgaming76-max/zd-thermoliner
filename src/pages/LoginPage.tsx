@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User, Truck } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff, Mail, Lock, User, Truck, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Logo } from '../components/Logo';
+import { getPostLoginPath } from '../lib/accessControl';
+import { supabase } from '../lib/supabase';
 
 export function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -25,7 +27,8 @@ export function LoginPage() {
         if (error) {
           setError('Email ou mot de passe incorrect');
         } else {
-          navigate('/dashboard');
+          const { data: prof } = await supabase.from('profiles').select('role').eq('id', (await supabase.auth.getUser()).data.user!.id).maybeSingle();
+          navigate(getPostLoginPath(prof?.role as string | undefined));
         }
       } else {
         const { error } = await signUp(email, password, fullName);
@@ -51,6 +54,9 @@ export function LoginPage() {
       <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(239,68,68,0.08) 0%, transparent 60%)' }} />
 
       <div className="relative z-10 w-full max-w-md">
+        <Link to="/" className="inline-flex items-center gap-2 text-white/40 hover:text-white text-sm mb-6">
+          <ArrowLeft className="w-4 h-4" /> Accueil
+        </Link>
         <div className="text-center mb-8">
           <div className="inline-flex mb-6">
             <Logo size="lg" />
@@ -102,11 +108,16 @@ export function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-5 text-center">
+          <div className="mt-5 text-center space-y-2">
             <button onClick={() => { setIsLogin(!isLogin); setError(null); }}
-              className="text-white/30 hover:text-white/60 text-sm transition-colors">
+              className="text-white/30 hover:text-white/60 text-sm transition-colors block w-full">
               {isLogin ? <>Pas de compte ? <span className="text-red-400 font-semibold">S'inscrire</span></> : <>Déjà un compte ? <span className="text-red-400 font-semibold">Se connecter</span></>}
             </button>
+            {isLogin && (
+              <Link to="/register" className="text-teal-400/80 hover:text-teal-400 text-sm font-medium">
+                Créer un compte — Chauffeur ou Visiteur
+              </Link>
+            )}
           </div>
         </div>
 
