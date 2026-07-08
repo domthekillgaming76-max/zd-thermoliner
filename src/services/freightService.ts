@@ -19,6 +19,7 @@ import type {
 } from '../lib/freightTypes';
 import { computeChainTotals } from '../lib/freightTypes';
 import { assignMission, createMission } from './dispatchService';
+import { topUpFreightMarketIfNeeded } from './freightTopUpService';
 
 function isFreightSchemaError(error: { code?: string; message?: string } | null): boolean {
   if (!error) return false;
@@ -387,6 +388,10 @@ export async function acceptFreightOffer(
     throw new Error('Cette offre n\'est plus disponible.');
   }
 
+  if (!input.driverId) {
+    throw new Error('Sélectionnez un chauffeur pour accepter la mission et créer la feuille de route.');
+  }
+
   const mission = await createMission({
     client_id: o.client_id ?? undefined,
     client_name: o.client_name ?? undefined,
@@ -707,6 +712,10 @@ export async function completeChainLeg(
       }
     }
   }
+
+  void topUpFreightMarketIfNeeded().catch(err => {
+    console.warn('[Z&D] freight top-up after chain leg:', err);
+  });
 }
 
 export async function cancelFreightChain(chainId: string): Promise<void> {

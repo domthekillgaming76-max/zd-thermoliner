@@ -1,11 +1,26 @@
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { queryKeys } from '../lib/queryKeys';
+import { supabase } from '../lib/supabase';
 import { fetchStatisticsBundle } from '../services/statisticsService';
 
 export function useStatistics() {
-  return useQuery({
+  const query = useQuery({
     queryKey: queryKeys.statistics.bundle(),
     queryFn: fetchStatisticsBundle,
-    staleTime: 60_000,
+    staleTime: 30_000,
+    refetchInterval: 30_000,
   });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('statistics_rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'road_sheets' }, () => query.refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => query.refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'drivers' }, () => query.refetch())
+      .subscribe();
+    return () => { channel.unsubscribe(); };
+  }, [query.refetch]);
+
+  return query;
 }

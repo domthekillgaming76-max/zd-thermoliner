@@ -7,14 +7,14 @@ import {
 } from '../../lib/roadSheetCalculations';
 import type { Driver, Truck } from '../../lib/supabase';
 import type { RoadSheetFormData } from '../../services/roadSheetService';
+import { FormAlert, validateRoadSheetForm } from '../erp/FormAlert';
+import { RoadSheetEconomicsPreview } from './RoadSheetEconomicsPreview';
+import { CityAutocomplete } from './CityAutocomplete';
 import {
-  CITIES,
   DRIVER_SALARY_MODES,
   TRAILER_TYPES,
   type DriverSalaryMode,
 } from './constants';
-import { FormAlert, validateRoadSheetForm } from '../erp/FormAlert';
-import { RoadSheetEconomicsPreview } from './RoadSheetEconomicsPreview';
 
 const inputClass = 'erp-input';
 const selectClass = 'erp-select';
@@ -269,28 +269,20 @@ export function RoadSheetForm({
           Itinéraire
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FormField label="Ville de départ *">
-            <select
-              required
-              value={form.departure}
-              onChange={e => update('departure', e.target.value)}
-              className={selectClass}
-            >
-              <option value="">Sélectionner</option>
-              {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </FormField>
-          <FormField label="Ville d'arrivée *">
-            <select
-              required
-              value={form.arrival}
-              onChange={e => update('arrival', e.target.value)}
-              className={selectClass}
-            >
-              <option value="">Sélectionner</option>
-              {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </FormField>
+          <CityAutocomplete
+            label="Ville de départ *"
+            value={form.departure}
+            onChange={v => update('departure', v)}
+            required
+            inputClassName={inputClass}
+          />
+          <CityAutocomplete
+            label="Ville d'arrivée *"
+            value={form.arrival}
+            onChange={v => update('arrival', v)}
+            required
+            inputClassName={inputClass}
+          />
           <FormField label="Cargaison" className="sm:col-span-2">
             <input
               value={form.cargo}

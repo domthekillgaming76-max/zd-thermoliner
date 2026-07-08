@@ -60,13 +60,13 @@ export function FreightAcceptModal({
           </div>
 
           <p className="text-xs text-white/40">
-            Une mission transport sera créée automatiquement. Assignez un chauffeur pour notifier et générer la feuille de route.
+            Une mission et une feuille de route seront créées automatiquement pour le chauffeur sélectionné.
           </p>
 
           <div>
-            <label className="block text-xs font-semibold text-white/40 uppercase mb-1">Chauffeur</label>
-            <select className="erp-select w-full" value={driverId} onChange={e => setDriverId(e.target.value)}>
-              <option value="">— Sans chauffeur (mission planifiée) —</option>
+            <label className="block text-xs font-semibold text-white/40 uppercase mb-1">Chauffeur *</label>
+            <select className="erp-select w-full" value={driverId} onChange={e => setDriverId(e.target.value)} required>
+              <option value="">— Sélectionner un chauffeur —</option>
               {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
           </div>
@@ -91,16 +91,16 @@ export function FreightAcceptModal({
             <button type="button" onClick={onClose} className="flex-1 erp-btn-secondary">Annuler</button>
             <button
               type="button"
-              disabled={saving}
+              disabled={saving || !driverId}
               onClick={() => onAccept({
-                driverId: driverId || undefined,
+                driverId,
                 truckId: truckId || undefined,
                 trailerId: trailerId || undefined,
               })}
-              className="flex-1 erp-btn-primary flex items-center justify-center gap-2"
+              className="flex-1 erp-btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <Check className="w-4 h-4" />
-              {saving ? 'Création…' : 'Accepter & créer mission'}
+              {saving ? 'Création…' : 'Accepter mission & feuille de route'}
             </button>
           </div>
         </div>

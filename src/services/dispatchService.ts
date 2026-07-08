@@ -13,6 +13,7 @@ import type {
   TransportMission,
 } from '../lib/dispatchTypes';
 import { computeDispatchAlerts } from '../lib/dispatchTypes';
+import { topUpFreightMarketIfNeeded } from './freightTopUpService';
 
 export type { MissionFormInput };
 
@@ -224,6 +225,18 @@ export async function assignMission(
 
   const mission = normalizeMission(data as Record<string, unknown>);
   await syncPlanningEventForMission(mission);
+
+  if (assignment.driverId && !mission.road_sheet_id) {
+    const roadSheetId = await createRoadSheetFromMission(mission);
+    if (roadSheetId) {
+      await supabase.from('transport_missions').update({
+        road_sheet_id: roadSheetId,
+        updated_at: new Date().toISOString(),
+      }).eq('id', missionId);
+      mission.road_sheet_id = roadSheetId;
+    }
+  }
+
   const [enriched] = await enrichMissions([mission]);
   return enriched;
 }
@@ -310,6 +323,11 @@ export async function deliverMission(missionId: string): Promise<TransportMissio
 
   if (error) throw error;
   const [enriched] = await enrichMissions([normalizeMission(data as Record<string, unknown>)]);
+
+  void topUpFreightMarketIfNeeded().catch(err => {
+    console.warn('[Z&D] freight top-up after delivery:', err);
+  });
+
   return enriched;
 }
 

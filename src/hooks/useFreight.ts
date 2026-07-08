@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { queryKeys } from '../lib/queryKeys';
+import { supabase } from '../lib/supabase';
 import type { AcceptFreightChainInput, AcceptFreightInput, FreightChainInput, FreightOfferInput } from '../lib/freightTypes';
 import {
   acceptFreightChain,
@@ -27,9 +29,20 @@ export function useFreight(
     queryKey: queryKeys.freight.module(userId),
     queryFn: () => fetchFreightBundle(userId!, role, email),
     enabled: !!userId,
-    staleTime: 15_000,
-    refetchInterval: 30_000,
+    staleTime: 10_000,
+    refetchInterval: 15_000,
   });
+
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`freight_rt_${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'freight_offers' }, () => query.refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'freight_chains' }, () => query.refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transport_missions' }, () => query.refetch())
+      .subscribe();
+    return () => { channel.unsubscribe(); };
+  }, [userId, query.refetch]);
 
   const invalidate = () => qc.invalidateQueries({ queryKey: queryKeys.freight.all });
 

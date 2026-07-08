@@ -6,6 +6,7 @@ import { RoleSyncGuard } from './RoleSyncGuard';
 import { OnlineMembersPanel } from './OnlineMembersPanel';
 import { SidebarProvider, useSidebar } from '../contexts/SidebarContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useErpAutoBackup } from '../hooks/useErpAutoBackup';
 
 interface LayoutProps {
   children: ReactNode;
@@ -14,6 +15,7 @@ interface LayoutProps {
 function LayoutShell({ children }: LayoutProps) {
   const { collapsed } = useSidebar();
   const { user } = useAuth();
+  useErpAutoBackup();
 
   return (
     <RoleSyncGuard>

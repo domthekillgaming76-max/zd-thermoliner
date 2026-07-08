@@ -232,9 +232,17 @@ export interface RpResetResult {
   deleted?: Record<string, number>;
 }
 
-export async function resetRpEconomy(confirmation: string): Promise<RpResetResult> {
+export interface RpResetOptions {
+  confirmation: string;
+  deleteWallPosts?: boolean;
+  deleteNotifications?: boolean;
+}
+
+export async function resetRpEconomy(options: RpResetOptions): Promise<RpResetResult> {
   const { data, error } = await supabase.rpc('admin_reset_rp_economy', {
-    p_confirmation: confirmation,
+    p_confirmation: options.confirmation,
+    p_delete_wall_posts: options.deleteWallPosts ?? false,
+    p_delete_notifications: options.deleteNotifications ?? true,
   });
   if (error) throw error;
   const payload = (data ?? {}) as RpResetResult;

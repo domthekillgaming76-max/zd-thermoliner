@@ -13,6 +13,7 @@ import {
   resetUserTheme,
   suspendUser,
   upsertUserPermission,
+  type RpResetOptions,
 } from '../services/adminService';
 import type { PermissionKey } from '../lib/adminTypes';
 
@@ -101,7 +102,7 @@ export function useResetUserTheme() {
 export function useResetRpEconomy() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (confirmation: string) => resetRpEconomy(confirmation),
+    mutationFn: (options: RpResetOptions) => resetRpEconomy(options),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.admin.all });
       void qc.invalidateQueries({ queryKey: queryKeys.drivers.all });

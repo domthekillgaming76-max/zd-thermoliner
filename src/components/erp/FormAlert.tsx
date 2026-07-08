@@ -1,4 +1,5 @@
 import { AlertTriangle, CheckCircle, X } from 'lucide-react';
+import { isValidCityInput } from '../../lib/citySuggestions';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -68,8 +69,8 @@ export function validateRoadSheetForm(form: {
   if (!form.driver_id || !UUID_RE.test(form.driver_id)) {
     return 'Sélectionnez un chauffeur dans la liste.';
   }
-  if (!form.departure) return 'Sélectionnez la ville de départ.';
-  if (!form.arrival) return 'Sélectionnez la ville d\'arrivée.';
+  if (!isValidCityInput(form.departure)) return 'Indiquez la ville de départ (minimum 2 caractères).';
+  if (!isValidCityInput(form.arrival)) return 'Indiquez la ville d\'arrivée (minimum 2 caractères).';
   if (!form.date) return 'Indiquez la date.';
   if (!form.km || form.km <= 0) return 'Indiquez une distance en kilomètres supérieure à 0.';
   return null;

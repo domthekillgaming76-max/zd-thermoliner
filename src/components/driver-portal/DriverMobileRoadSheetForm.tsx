@@ -8,7 +8,7 @@ import type { DriverPortalHome } from '../../lib/driverPortalTypes';
 import { formatDriverCurrency } from '../../lib/driverPortalTypes';
 import type { RoadSheetFormData } from '../../services/roadSheetService';
 import { EMPTY_ROAD_SHEET_FORM } from '../road-sheets/RoadSheetForm';
-import { CITIES } from '../road-sheets/constants';
+import { CityAutocomplete } from '../road-sheets/CityAutocomplete';
 
 interface DriverMobileRoadSheetFormProps {
   home: DriverPortalHome;
@@ -74,35 +74,21 @@ export function DriverMobileRoadSheetForm({ home, saving, onSubmit }: DriverMobi
       </div>
 
       <div className="driver-portal-glass rounded-2xl p-4 space-y-4">
-        <div>
-          <label className={labelClass}>Départ</label>
-          <input
-            list="driver-cities"
-            className="erp-input w-full text-base"
-            value={form.departure}
-            onChange={e => update('departure', e.target.value)}
-            placeholder="Ville de départ"
-            required
-          />
-        </div>
+        <CityAutocomplete
+          label="Ville de départ *"
+          value={form.departure}
+          onChange={v => update('departure', v)}
+          required
+          inputClassName="erp-input w-full text-base"
+        />
 
-        <div>
-          <label className={labelClass}>Arrivée</label>
-          <input
-            list="driver-cities"
-            className="erp-input w-full text-base"
-            value={form.arrival}
-            onChange={e => update('arrival', e.target.value)}
-            placeholder="Ville d'arrivée"
-            required
-          />
-        </div>
-
-        <datalist id="driver-cities">
-          {CITIES.map(c => (
-            <option key={c} value={c} />
-          ))}
-        </datalist>
+        <CityAutocomplete
+          label="Ville d'arrivée *"
+          value={form.arrival}
+          onChange={v => update('arrival', v)}
+          required
+          inputClassName="erp-input w-full text-base"
+        />
 
         <div>
           <label className={labelClass}>Marchandise</label>

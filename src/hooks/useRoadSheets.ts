@@ -32,6 +32,8 @@ import {
 } from '../services/roadSheetService';
 
 import { syncRoadSheetToBank } from '../services/bankSyncService';
+import { syncOperationalStatsFromValidatedRoadSheet } from '../services/roadSheetCascadeService';
+import { invalidateErpFinancials } from '../lib/invalidateErp';
 import { notifyRoadSheetValidated } from '../services/notificationService';
 
 import type { RoadSheet } from '../lib/supabase';
@@ -279,6 +281,12 @@ export function useValidateRoadSheet(userId: string | undefined) {
       }
 
       try {
+        await syncOperationalStatsFromValidatedRoadSheet(sheet);
+      } catch (statsError) {
+        console.warn('[Z&D] operational stats sync after validation:', statsError);
+      }
+
+      try {
         await autoInvoiceFromValidatedRoadSheet(sheetId, userId);
       } catch (invoiceError) {
         console.warn('[Z&D] auto invoice after validation:', invoiceError);
@@ -293,7 +301,8 @@ export function useValidateRoadSheet(userId: string | undefined) {
     },
 
     onSuccess: () => {
-      qc.invalidateQueries();
+      invalidateErpFinancials(qc, userId);
+      void qc.invalidateQueries({ queryKey: queryKeys.liveOps.fleetMap(userId) });
     },
 
     onError: (error: Error) => {

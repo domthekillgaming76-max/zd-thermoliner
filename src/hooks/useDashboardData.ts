@@ -1,7 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { fetchDashboardData } from '../services/dashboardService';
 import { queryKeys } from '../lib/queryKeys';
+import { supabase } from '../lib/supabase';
 import type { DashboardData } from '../types/dashboard';
+
+const DASHBOARD_POLL_MS = 15_000;
 
 const EMPTY: DashboardData = {
   stats: {
@@ -47,9 +51,29 @@ export function useDashboardData(userId: string | undefined) {
   const query = useQuery({
     queryKey: queryKeys.dashboard(userId),
     queryFn: () => fetchDashboardData(userId),
-    staleTime: 30_000,
+    staleTime: 10_000,
+    refetchInterval: DASHBOARD_POLL_MS,
     refetchOnWindowFocus: true,
+    enabled: !!userId,
   });
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel(`dashboard_rt_${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => query.refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'road_sheets' }, () => query.refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'company_bank_account' }, () => query.refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transport_missions' }, () => query.refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'drivers' }, () => query.refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'trucks' }, () => query.refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'freight_offers' }, () => query.refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'online_presence' }, () => query.refetch())
+      .subscribe();
+
+    return () => { channel.unsubscribe(); };
+  }, [userId, query.refetch]);
 
   const data = query.data ?? EMPTY;
 

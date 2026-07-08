@@ -12,6 +12,7 @@ export function RpResetPanel() {
   const resetMutation = useResetRpEconomy();
   const [confirmation, setConfirmation] = useState('');
   const [acknowledged, setAcknowledged] = useState(false);
+  const [deleteWallPosts, setDeleteWallPosts] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -27,10 +28,15 @@ export function RpResetPanel() {
       return;
     }
     try {
-      const result = await resetMutation.mutateAsync(confirmation.trim());
+      const result = await resetMutation.mutateAsync({
+        confirmation: confirmation.trim(),
+        deleteWallPosts,
+        deleteNotifications: true,
+      });
       setSuccess(result.message);
       setConfirmation('');
       setAcknowledged(false);
+      setDeleteWallPosts(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Échec de la réinitialisation RP.');
     }
@@ -47,11 +53,11 @@ export function RpResetPanel() {
         </div>
         <div>
           <h3 className="text-base font-bold text-white flex items-center gap-2">
-            Réinitialiser RP
+            Réinitialiser les statistiques RP
             <Shield className="w-4 h-4 text-amber-400" />
           </h3>
           <p className="text-xs text-white/45 mt-1">
-            Lance officiellement la saison RP — remet à zéro l&apos;économie et les statistiques.
+            Remet à zéro toute l&apos;économie et les compteurs pour le lancement officiel RP.
           </p>
         </div>
       </div>
@@ -62,13 +68,14 @@ export function RpResetPanel() {
           <div className="text-xs text-amber-100/80 space-y-2">
             <p className="font-bold text-amber-200">Action irréversible</p>
             <ul className="list-disc pl-4 space-y-1 text-amber-100/70">
-              <li>Revenus, dépenses, bénéfices et solde banque → 0 €</li>
-              <li>Feuilles de route, livraisons, transactions et factures supprimées</li>
-              <li>Km, livraisons et stats chauffeurs remis à zéro</li>
-              <li>Classements mensuels et historique finance effacés</li>
+              <li>Entreprise : CA, bénéfices, dépenses, solde banque, trésorerie → 0 €</li>
+              <li>Chauffeurs : km, heures, livraisons, revenus, primes, stats → 0</li>
+              <li>Flotte : kilométrage, historique maintenance et affectations effacés</li>
+              <li>Feuilles de route, missions, marché du fret et notifications de test supprimés</li>
+              <li>Dashboard : 0 €, 0 km, 0 livraisons, 0 missions après reset</li>
             </ul>
             <p className="text-amber-200/90 font-semibold pt-1">
-              Conservé : comptes, profils, rôles, modules, flotte, garages, candidatures, DOM76 admin.
+              Conservé : comptes, profils, rôles, permissions, salons, candidatures, photos, DOM76 admin/chauffeur.
             </p>
           </div>
         </div>
@@ -81,7 +88,20 @@ export function RpResetPanel() {
             className="mt-0.5 accent-red-500"
           />
           <span className="text-xs text-white/55">
-            Je comprends que toutes les données économiques et statistiques de test seront définitivement effacées.
+            Je comprends que toutes les statistiques et données économiques de test seront définitivement effacées.
+          </span>
+        </label>
+
+        <label className="flex items-start gap-2.5 cursor-pointer rounded-xl border border-white/8 px-3 py-2.5">
+          <input
+            type="checkbox"
+            checked={deleteWallPosts}
+            onChange={e => setDeleteWallPosts(e.target.checked)}
+            className="mt-0.5 accent-red-500"
+          />
+          <span className="text-xs text-white/55">
+            <span className="text-white/75 font-semibold">Supprimer aussi le mur société</span>
+            {' '}— par défaut les publications sont conservées. Cochez uniquement si vous voulez repartir avec un mur vide.
           </span>
         </label>
 
@@ -120,7 +140,7 @@ export function RpResetPanel() {
           onClick={handleReset}
           className="w-full py-3 rounded-xl font-bold text-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-900/30"
         >
-          {resetMutation.isPending ? 'Réinitialisation en cours…' : 'Réinitialiser RP — Lancement officiel'}
+          {resetMutation.isPending ? 'Réinitialisation en cours…' : 'Réinitialiser les statistiques RP'}
         </button>
       </div>
     </div>
