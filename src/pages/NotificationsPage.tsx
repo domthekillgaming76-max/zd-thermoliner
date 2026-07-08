@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Bell, CheckCircle, AlertTriangle, Info, XCircle, Container, FileText, Wallet, Megaphone } from 'lucide-react';
+import { Bell, CheckCircle, AlertTriangle, Info, XCircle, Container, FileText, Wallet, Megaphone, Building2, MessageSquare } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { PageHeader } from '../components/erp/PageHeader';
@@ -17,7 +17,9 @@ function getNotifIcon(type: string) {
   if (type === 'freight') return <Container className="w-4 h-4 text-purple-400" />;
   if (type === 'road_sheet') return <FileText className="w-4 h-4 text-orange-400" />;
   if (type === 'salary') return <Wallet className="w-4 h-4 text-emerald-400" />;
-  if (type === 'announcement') return <Megaphone className="w-4 h-4 text-blue-400" />;
+  if (type === 'wall_post' || type === 'wall_announcement' || type === 'wall_convoy') return <Building2 className="w-4 h-4 text-red-400" />;
+  if (type === 'wall_comment') return <MessageSquare className="w-4 h-4 text-blue-400" />;
+  if (type === 'wall_reaction') return <Megaphone className="w-4 h-4 text-amber-400" />;
   if (type === 'success') return <CheckCircle className="w-4 h-4 text-emerald-400" />;
   if (type === 'warning') return <AlertTriangle className="w-4 h-4 text-yellow-400" />;
   if (type === 'error') return <XCircle className="w-4 h-4 text-red-400" />;

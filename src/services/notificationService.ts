@@ -10,7 +10,12 @@ export type NotificationType =
   | 'road_sheet'
   | 'salary'
   | 'announcement'
-  | 'app_update';
+  | 'app_update'
+  | 'wall_post'
+  | 'wall_comment'
+  | 'wall_reaction'
+  | 'wall_announcement'
+  | 'wall_convoy';
 
 export async function fetchUserNotifications(userId: string, limit = 50): Promise<LiveNotification[]> {
   const { data, error } = await supabase

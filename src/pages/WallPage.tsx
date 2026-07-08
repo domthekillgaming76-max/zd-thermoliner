@@ -6,9 +6,10 @@ import { PageHeader } from '../components/erp/PageHeader';
 import { FormAlert, FormSuccess } from '../components/erp/FormAlert';
 import { WallCompose } from '../components/wall/WallCompose';
 import { WallFeed } from '../components/wall/WallFeed';
+import { WallLiveBadge, WallNewPostBanner } from '../components/wall/WallLiveBadge';
 import { useAuth } from '../contexts/AuthContext';
 import { useWall } from '../hooks/useWall';
-import { canModerateWall, canPinWallPosts } from '../lib/wallPermissions';
+import { canModerateWall, canPinWallPosts, canPublishOnWall } from '../lib/wallPermissions';
 import type { CreateWallPostInput } from '../lib/wallTypes';
 
 export function WallPage() {
@@ -23,6 +24,9 @@ export function WallPage() {
     isLoading,
     isError,
     error,
+    isLive,
+    newPostReceived,
+    markSeen,
     createPost,
     removePost,
     pinPost,
@@ -36,6 +40,7 @@ export function WallPage() {
 
   const canModerate = canModerateWall(profile?.role, user?.email);
   const canPin = canPinWallPosts(profile?.role, user?.email);
+  const canPublish = canPublishOnWall(profile?.role, user?.email);
   const posts = data?.posts ?? [];
 
   const stats = {
@@ -50,6 +55,7 @@ export function WallPage() {
     try {
       await createPost.mutateAsync(input);
       setSuccessMessage('Publication envoyée.');
+      markSeen();
       setTimeout(() => setSuccessMessage(null), 2500);
     } catch (err) {
       setPageError((err as Error).message);
@@ -65,14 +71,22 @@ export function WallPage() {
     }
   }
 
+  function handleNewPostBanner() {
+    markSeen();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   return (
     <Layout>
       <div className="max-w-2xl mx-auto space-y-6 wall-module">
-        <PageHeader
-          title="Mur de la société"
-          subtitle="Réseau social interne Z&D Thermoliner"
-          icon={Building2}
-        />
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <PageHeader
+            title="Mur de la société"
+            subtitle="Réseau social interne Z&D Thermoliner — temps réel"
+            icon={Building2}
+          />
+          <WallLiveBadge isLive={isLive} />
+        </div>
 
         {accessDenied && (
           <div className="wall-glass rounded-xl px-4 py-3 text-sm text-amber-400 border border-amber-500/20 flex gap-2">
@@ -80,6 +94,8 @@ export function WallPage() {
             {accessDenied}
           </div>
         )}
+
+        <WallNewPostBanner visible={newPostReceived} onDismiss={handleNewPostBanner} />
 
         {pageError && <FormAlert message={pageError} onDismiss={() => setPageError(null)} />}
         {successMessage && <FormSuccess message={successMessage} onDismiss={() => setSuccessMessage(null)} />}
@@ -91,7 +107,7 @@ export function WallPage() {
             <div>
               <p className="text-sm font-bold text-amber-200">Mur social non installé</p>
               <p className="text-xs text-white/45 mt-1">
-                Exécutez <code className="text-amber-300">npx supabase db push</code> (migration 033)
+                Exécutez <code className="text-amber-300">npx supabase db push</code> (migrations 033 + 050)
               </p>
             </div>
           </div>
@@ -112,19 +128,21 @@ export function WallPage() {
           ))}
         </div>
 
-        <WallCompose
-          author={profile ? {
-            id: profile.id,
-            full_name: profile.full_name,
-            pseudo: profile.pseudo,
-            avatar_url: profile.avatar_url,
-            role: profile.role,
-          } : null}
-          role={profile?.role}
-          email={user?.email}
-          posting={createPost.isPending}
-          onSubmit={handleCreate}
-        />
+        {canPublish && (
+          <WallCompose
+            author={profile ? {
+              id: profile.id,
+              full_name: profile.full_name,
+              pseudo: profile.pseudo,
+              avatar_url: profile.avatar_url,
+              role: profile.role,
+            } : null}
+            role={profile?.role}
+            email={user?.email}
+            posting={createPost.isPending}
+            onSubmit={handleCreate}
+          />
+        )}
 
         <WallFeed
           posts={posts}

@@ -14,6 +14,7 @@ import {
   isDispatcherOnlyRole,
   canDispatcherAccessPage,
 } from './phase5Permissions';
+import { canAccessWall } from './wallPermissions';
 
 export const VISITOR_RESTRICTED_MESSAGE =
   'Accès réservé aux membres Z&D Thermoliner.';
@@ -54,6 +55,7 @@ export const DRIVER_ALLOWED_PAGES = new Set([
   'salaries',
   'notifications',
   'dashboard',
+  'wall',
 ]);
 
 export const SUSPENDED_ALLOWED_PAGES = new Set(['profile', 'settings']);
@@ -185,6 +187,13 @@ export function canAccessPage(
 
   if (page === 'notifications') {
     return canAccessNotificationsPage(role, options?.email);
+  }
+
+  if (page === 'wall') {
+    return canAccessWall(role, {
+      isActive: options?.isActive,
+      isSuspended: options?.isSuspended,
+    });
   }
 
   if (isDispatcherOnlyRole(role) && !canDispatcherAccessPage(page)) {

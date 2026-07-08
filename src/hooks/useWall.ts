@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { queryKeys } from '../lib/queryKeys';
@@ -16,14 +16,46 @@ import {
   votePoll,
 } from '../services/wallService';
 
+const REFETCH_MS = 10_000;
+
 export function useWall(userId?: string) {
   const qc = useQueryClient();
+  const [isLive, setIsLive] = useState(false);
+  const [newPostReceived, setNewPostReceived] = useState(false);
+  const topPostIdRef = useRef<string | null>(null);
+  const ownMutationRef = useRef(false);
 
   const query = useQuery({
     queryKey: queryKeys.wall.module(userId),
     queryFn: () => fetchWallFeed(userId),
-    staleTime: 15_000,
+    staleTime: 5_000,
+    refetchInterval: REFETCH_MS,
+    refetchIntervalInBackground: true,
   });
+
+  const markSeen = useCallback(() => {
+    const posts = query.data?.posts ?? [];
+    if (posts[0]) topPostIdRef.current = posts[0].id;
+    setNewPostReceived(false);
+  }, [query.data?.posts]);
+
+  useEffect(() => {
+    const posts = query.data?.posts ?? [];
+    if (!posts.length) return;
+
+    const top = posts[0];
+    if (ownMutationRef.current) {
+      topPostIdRef.current = top.id;
+      ownMutationRef.current = false;
+      return;
+    }
+
+    if (topPostIdRef.current && top.id !== topPostIdRef.current && top.author_id !== userId) {
+      setNewPostReceived(true);
+    } else if (!topPostIdRef.current) {
+      topPostIdRef.current = top.id;
+    }
+  }, [query.data?.posts, userId]);
 
   useEffect(() => {
     const channel = supabase
@@ -40,14 +72,20 @@ export function useWall(userId?: string) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'wall_poll_votes' }, () => {
         qc.invalidateQueries({ queryKey: queryKeys.wall.all });
       })
-      .subscribe();
+      .subscribe(status => {
+        setIsLive(status === 'SUBSCRIBED');
+      });
+
     return () => { supabase.removeChannel(channel); };
   }, [qc]);
 
   const invalidate = () => qc.invalidateQueries({ queryKey: queryKeys.wall.all });
 
   const createPost = useMutation({
-    mutationFn: (input: CreateWallPostInput) => createWallPost(input, userId!),
+    mutationFn: (input: CreateWallPostInput) => {
+      ownMutationRef.current = true;
+      return createWallPost(input, userId!);
+    },
     onSuccess: invalidate,
   });
 
@@ -96,6 +134,9 @@ export function useWall(userId?: string) {
 
   return {
     ...query,
+    isLive,
+    newPostReceived,
+    markSeen,
     createPost,
     removePost,
     pinPost,

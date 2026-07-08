@@ -1,8 +1,32 @@
 import { isAdministratorEmail } from './admin';
-import { isVisitorRole } from './accessControl';
-import type { WallPostType, WallVisibility } from './wallTypes';
+import { isVisitorRole, isRecruitRole, isSuspendedAccount } from './accessControl';
 
 const MANAGER_ROLES = new Set(['pdg', 'patron', 'admin', 'directeur', 'dispatcher']);
+
+/** Tous les utilisateurs connectés actifs peuvent interagir sur le mur. */
+export function canAccessWall(
+  role: string | null | undefined,
+  options?: { isActive?: boolean | null; isSuspended?: boolean | null },
+): boolean {
+  if (!role) return false;
+  if (isSuspendedAccount(role, options?.isActive, options?.isSuspended)) return false;
+  if (role === 'banni' || role === 'ancien_membre') return false;
+  return true;
+}
+
+export function canPublishOnWall(role: string | null | undefined, email?: string | null): boolean {
+  if (isAdministratorEmail(email)) return true;
+  if (!role || role === 'banni') return false;
+  return true;
+}
+
+export function canCommentOnWall(role: string | null | undefined): boolean {
+  return canPublishOnWall(role);
+}
+
+export function canReactOnWall(role: string | null | undefined): boolean {
+  return canPublishOnWall(role);
+}
 
 export function canModerateWall(role: string | null | undefined, email?: string | null): boolean {
   return isAdministratorEmail(email) || MANAGER_ROLES.has(role ?? '');
@@ -19,12 +43,12 @@ export function canCreateOfficialPost(role: string | null | undefined, email?: s
 export function getAllowedVisibilities(
   role: string | null | undefined,
   email?: string | null,
-): WallVisibility[] {
+): import('./wallTypes').WallVisibility[] {
   if (isAdministratorEmail(email)) {
     return ['public', 'visitors', 'members', 'drivers', 'admin'];
   }
-  if (isVisitorRole(role)) {
-    return ['public'];
+  if (isVisitorRole(role) || isRecruitRole(role)) {
+    return ['public', 'visitors'];
   }
   if (role === 'chauffeur' || role === 'tractionnaire') {
     return ['public', 'visitors', 'members', 'drivers'];
@@ -38,12 +62,15 @@ export function getAllowedVisibilities(
 export function getAllowedPostTypes(
   role: string | null | undefined,
   email?: string | null,
-): WallPostType[] {
-  const base: WallPostType[] = ['text', 'photo', 'video'];
+): import('./wallTypes').WallPostType[] {
+  const base: import('./wallTypes').WallPostType[] = ['text', 'photo', 'video'];
   if (isVisitorRole(role) && !isAdministratorEmail(email)) {
     return base;
   }
-  const extended: WallPostType[] = [...base, 'convoy', 'poll', 'event'];
+  if (isRecruitRole(role)) {
+    return [...base, 'poll', 'event'];
+  }
+  const extended: import('./wallTypes').WallPostType[] = [...base, 'convoy', 'poll', 'event'];
   if (canCreateOfficialPost(role, email)) {
     extended.push('announcement', 'recruitment');
   }
@@ -52,10 +79,10 @@ export function getAllowedPostTypes(
 
 export function getDefaultVisibility(
   role: string | null | undefined,
-  postType: WallPostType,
-): WallVisibility {
+  postType: import('./wallTypes').WallPostType,
+): import('./wallTypes').WallVisibility {
   if (postType === 'recruitment') return 'visitors';
   if (postType === 'event' || postType === 'announcement') return 'members';
-  if (isVisitorRole(role)) return 'public';
+  if (isVisitorRole(role) || isRecruitRole(role)) return 'public';
   return 'members';
 }
