@@ -2,8 +2,9 @@ import { supabase } from '../lib/supabase';
 import { isAdministratorEmail } from '../lib/admin';
 import { normalizeRole, type AppRole } from '../lib/roleEngine';
 import { resolveDisplayStatus } from './onlinePresenceService';
+import { ensureDriverHrDossier } from './driverHrService';
+import type { DriverProfile } from '../lib/driverTypes';
 import type { NormalizedProfile } from './profileService';
-
 /** Raw DB roles that map to normalized driver */
 export const DRIVER_PROFILE_ROLES = ['chauffeur', 'driver', 'member', 'tractionnaire'] as const;
 
@@ -57,23 +58,47 @@ export async function ensureDriverProfile(profile: DriverProfileInput): Promise<
 
   if (!error && data) {
     console.log('[Z&D DriverSync] driver ensured via RPC for', profile.email);
-    return (data as string) ?? null;
+    const driverId = (data as string) ?? null;
+    if (driverId) void provisionHrDossierForDriverId(driverId, profile);
+    return driverId;
   }
 
   if (error) {
-    const missingFn = error.code === 'PGRST202' || error.code === '42883'
-      || (error.message ?? '').toLowerCase().includes('ensure_driver_profile');
-    if (!missingFn) {
-      console.warn('[Z&D DriverSync] ensure_driver_profile RPC failed:', error.message);
-    }
-    const legacy = await supabase.rpc('ensure_driver_from_profile', { p_user_id: profile.id });
-    if (!legacy.error && legacy.data) {
-      console.log('[Z&D DriverSync] driver ensured via legacy RPC for', profile.email);
-      return (legacy.data as string) ?? null;
-    }
+    console.warn('[Z&D DriverSync] ensure_driver_profile RPC failed:', error.message);
+  }
+  const legacy = await supabase.rpc('ensure_driver_from_profile', { p_user_id: profile.id });
+  if (!legacy.error && legacy.data) {
+    console.log('[Z&D DriverSync] driver ensured via legacy RPC for', profile.email);
+    const driverId = (legacy.data as string) ?? null;
+    if (driverId) void provisionHrDossierForDriverId(driverId, profile);
+    return driverId;
   }
 
-  return directEnsureDriver(profile);
+  const directId = await directEnsureDriver(profile);
+  if (directId) void provisionHrDossierForDriverId(directId, profile);
+  return directId;
+}
+
+async function provisionHrDossierForDriverId(
+  driverId: string,
+  profile: DriverProfileInput,
+): Promise<void> {
+  try {
+    const { data } = await supabase.from('drivers').select('*').eq('id', driverId).maybeSingle();
+    if (data) {
+      await ensureDriverHrDossier({
+        ...data,
+        user_id: profile.id,
+        name: data.name as string,
+        email: (data.email as string) ?? profile.email,
+        pseudo: (data.pseudo as string) ?? profile.pseudo,
+        joined_at: data.joined_at as string,
+        hiring_date: (data.hiring_date as string) ?? null,
+      } as DriverProfile);
+    }
+  } catch (e) {
+    console.warn('[Z&D DriverSync] HR dossier provision skipped:', e);
+  }
 }
 
 /** @deprecated Use ensureDriverProfile */

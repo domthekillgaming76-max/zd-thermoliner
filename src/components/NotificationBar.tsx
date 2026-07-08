@@ -77,6 +77,7 @@ export function NotificationBar() {
     if (type === 'freight') return <Container className="w-4 h-4 text-purple-400" />;
     if (type === 'road_sheet') return <FileText className="w-4 h-4 text-orange-400" />;
     if (type === 'salary') return <Wallet className="w-4 h-4 text-emerald-400" />;
+    if (type === 'hr') return <FileText className="w-4 h-4 text-red-400" />;
     if (type === 'wall_post' || type === 'wall_announcement') return <Building2 className="w-4 h-4 text-red-400" />;
     if (type === 'wall_comment') return <MessageSquare className="w-4 h-4 text-blue-400" />;
     if (type === 'wall_reaction' || type === 'wall_convoy') return <Bell className="w-4 h-4 text-amber-400" />;

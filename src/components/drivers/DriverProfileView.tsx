@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   LayoutDashboard, BarChart3, FileText, AlertTriangle, Euro, Link2,
   Circle, Star, MapPin, Phone, Mail, MessageCircle, Hash, Calendar,
-  Briefcase, Gauge, Shield, ArrowUpCircle, Ban,
+  Briefcase, Gauge, Shield, ArrowUpCircle, Ban, FolderOpen,
 } from 'lucide-react';
 import {
   computeDriverStatistics,
@@ -23,17 +23,20 @@ import type { RoadSheet, Truck } from '../../lib/supabase';
 import { fmtEuro } from '../../lib/format';
 import { DEFAULT_TRUCK_BANNER_URL } from '../../lib/profileDefaults';
 import { DriverAssignmentPanel, DriverDocumentsPanel } from './DriverProfilePanels';
-import { useUploadDriverDocument, useCreateIncident, useCreateSalaryRecord, useApproveDriverDocument, useSuspendDriver, usePromoteDriver } from '../../hooks/useDrivers';
+import { DriverHrDossierPanel } from './DriverHrDossierPanel';
+import { useUploadDriverDocument, useCreateIncident, useCreateSalaryRecord, useApproveDriverDocument, useSuspendDriver, usePromoteDriver, useRegenerateHrContract, useRegenerateHrCard } from '../../hooks/useDrivers';
 import { describeDriverPromotion } from '../../services/driverService';
 import { useAuth } from '../../contexts/AuthContext';
-import { canManageDrivers } from '../../lib/driverPermissions';
+import { canManageDrivers, canManageDriverHr, canViewDriverHrDossier } from '../../lib/driverPermissions';
+import type { DriverHrDossier } from '../../lib/driverHrTypes';
 
-type ProfileTab = 'overview' | 'statistics' | 'documents' | 'incidents' | 'salary' | 'assignments';
+type ProfileTab = 'overview' | 'statistics' | 'documents' | 'incidents' | 'salary' | 'assignments' | 'hr_dossier';
 
-const TABS: { id: ProfileTab; label: string; icon: typeof LayoutDashboard }[] = [
+const ALL_TABS: { id: ProfileTab; label: string; icon: typeof LayoutDashboard; hrOnly?: boolean }[] = [
   { id: 'overview', label: 'Vue d\'ensemble', icon: LayoutDashboard },
   { id: 'statistics', label: 'Statistiques', icon: BarChart3 },
   { id: 'documents', label: 'Documents', icon: FileText },
+  { id: 'hr_dossier', label: 'Dossier chauffeur', icon: FolderOpen, hrOnly: true },
   { id: 'incidents', label: 'Incidents', icon: AlertTriangle },
   { id: 'salary', label: 'Salaire', icon: Euro },
   { id: 'assignments', label: 'Affectations', icon: Link2 },
@@ -49,13 +52,17 @@ interface DriverProfileViewProps {
   trucks: Truck[];
   trailers: Trailer[];
   garages?: { id: string; name: string; city: string | null }[];
+  hrDossier?: DriverHrDossier;
 }
 
 export function DriverProfileView(props: DriverProfileViewProps) {
-  const { driver, roadSheets, documents, salaryHistory, incidents, assignments, trucks, trailers, garages = [] } = props;
+  const { driver, roadSheets, documents, salaryHistory, incidents, assignments, trucks, trailers, garages = [], hrDossier } = props;
   const [tab, setTab] = useState<ProfileTab>('overview');
   const { profile, user } = useAuth();
   const isAdmin = canManageDrivers(profile?.role, user?.email);
+  const canViewHr = canViewDriverHrDossier(profile?.role, user?.email, user?.id, driver.user_id);
+  const canManageHr = canManageDriverHr(profile?.role, user?.email);
+  const tabs = ALL_TABS.filter(t => !t.hrOnly || canViewHr);
   const stats = computeDriverStatistics(driver, roadSheets, salaryHistory);
   const driving = DRIVING_STATUS_LABELS[driver.driving_status] ?? DRIVING_STATUS_LABELS.resting;
   const presence = PRESENCE_STATUS_LABELS[driver.presence_status] ?? PRESENCE_STATUS_LABELS.offline;
@@ -66,6 +73,8 @@ export function DriverProfileView(props: DriverProfileViewProps) {
   const createSalary = useCreateSalaryRecord(driver.id);
   const suspendMutation = useSuspendDriver(driver.id);
   const promoteMutation = usePromoteDriver(driver.id);
+  const regenerateContract = useRegenerateHrContract(driver.id);
+  const regenerateCard = useRegenerateHrCard(driver.id);
 
   const banner = driver.banner_url || DEFAULT_TRUCK_BANNER_URL;
   const photo = driver.photo_url || driver.avatar_url;
@@ -169,7 +178,7 @@ export function DriverProfileView(props: DriverProfileViewProps) {
 
       {/* Tabs */}
       <nav className="flex gap-1 overflow-x-auto pb-1">
-        {TABS.map(t => (
+        {tabs.map(t => (
           <button
             key={t.id}
             type="button"
@@ -259,6 +268,17 @@ export function DriverProfileView(props: DriverProfileViewProps) {
           isAdmin={isAdmin}
           onUpload={(file, docType, expiresAt) => uploadDoc.mutate({ file, docType, expiresAt })}
           onApprove={documentId => user && approveDoc.mutate({ documentId, approverId: user.id })}
+        />
+      )}
+
+      {tab === 'hr_dossier' && canViewHr && hrDossier && (
+        <DriverHrDossierPanel
+          driver={driver}
+          dossier={hrDossier}
+          canManage={canManageHr}
+          onRegenerateContract={() => regenerateContract.mutate(driver)}
+          onRegenerateCard={() => regenerateCard.mutate(driver)}
+          regenerating={regenerateContract.isPending || regenerateCard.isPending}
         />
       )}
 

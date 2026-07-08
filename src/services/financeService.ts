@@ -11,7 +11,7 @@ import type {
   FinanceSettings,
 } from '../lib/financeTypes';
 import { resolveFinanceInvoiceStatus } from '../lib/financeTypes';
-import { notifySalaryPaid } from './notificationService';
+import { generatePayslipFromSalaryPayment } from './driverHrService';
 
 async function adjustCompanyBalance(delta: number): Promise<void> {
   const { data: account } = await supabase.from('company_bank_account').select('*').limit(1).maybeSingle();
@@ -231,12 +231,17 @@ export async function payDriverSalary(
 
   if (updErr) throw updErr;
 
-  const { data: driver } = await supabase.from('drivers').select('user_id').eq('id', salary.driver_id as string).maybeSingle();
+  const mapped = mapSalary(updated as Record<string, unknown>);
+
   try {
-    await notifySalaryPaid(driver?.user_id as string | null, `${amount.toLocaleString('fr-FR')} €`);
+    await generatePayslipFromSalaryPayment(
+      updated as Record<string, unknown>,
+      latestTx?.id ?? null,
+      reference,
+    );
   } catch { /* non-blocking */ }
 
-  return mapSalary(updated as Record<string, unknown>);
+  return mapped;
 }
 
 export async function fetchAccountingExport(): Promise<AccountingExportRow[]> {

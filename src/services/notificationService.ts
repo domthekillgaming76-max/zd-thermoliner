@@ -21,7 +21,8 @@ export type NotificationType =
   | 'wall_comment'
   | 'wall_reaction'
   | 'wall_announcement'
-  | 'wall_convoy';
+  | 'wall_convoy'
+  | 'hr';
 
 export const NOTIFICATION_POLL_MS = 10_000;
 
@@ -141,7 +142,34 @@ export async function notifyRoadSheetRejected(driverUserId: string | null, route
 
 export async function notifySalaryPaid(driverUserId: string | null, amount: string): Promise<void> {
   if (driverUserId) {
-    await createUserNotification(driverUserId, 'Salaire payé', `Votre salaire de ${amount} a été versé.`, 'salary');
+    await createUserNotification(
+      driverUserId,
+      'Salaire payé',
+      `Votre salaire de ${amount} a été versé par la banque Z&D Thermoliner.`,
+      'salary',
+    );
+  }
+}
+
+export async function notifyPayslipAvailable(driverUserId: string | null): Promise<void> {
+  if (driverUserId) {
+    await createUserNotification(
+      driverUserId,
+      'Fiche de paie disponible',
+      'Votre fiche de paie est disponible dans votre dossier chauffeur.',
+      'hr',
+    );
+  }
+}
+
+export async function notifySalaryPaidByBank(driverUserId: string | null): Promise<void> {
+  if (driverUserId) {
+    await createUserNotification(
+      driverUserId,
+      'Salaire versé',
+      'Votre salaire a été versé par la banque Z&D Thermoliner.',
+      'salary',
+    );
   }
 }
 

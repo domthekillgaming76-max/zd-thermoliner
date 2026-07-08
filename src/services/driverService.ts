@@ -12,6 +12,7 @@ import type {
   Trailer,
 } from '../lib/driverTypes';
 import { fetchDriverProfilesFromRoles, ensureDriverProfile, isVirtualDriverId } from './driverSyncService';
+import { ensureDriverHrDossier, fetchDriverHrDossier } from './driverHrService';
 
 export interface DriverFormInput {
   name: string;
@@ -669,6 +670,9 @@ export async function fetchDriverDetailBundle(driverId: string) {
 
   if (!driver) throw new Error('Chauffeur introuvable.');
 
+  await ensureDriverHrDossier(driver);
+  const hrDossier = await fetchDriverHrDossier(driverId, driver.user_id);
+
   const garage = garages.find(g => g.id === driver.garage_id);
 
   return {
@@ -681,5 +685,8 @@ export async function fetchDriverDetailBundle(driverId: string) {
     trucks,
     trailers,
     garages,
+    hrDossier,
   };
 }
+
+export type DriverDetailBundle = Awaited<ReturnType<typeof fetchDriverDetailBundle>>;

@@ -20,6 +20,8 @@ import {
   uploadDriverDocument,
   type DriverFormInput,
 } from '../services/driverService';
+import { regenerateCompanyCard, regenerateDriverContract } from '../services/driverHrService';
+import type { DriverProfile } from '../lib/driverTypes';
 import type { DriverDocType, IncidentType } from '../lib/driverTypes';
 
 const DRIVERS_POLL_MS = 3_000;
@@ -236,6 +238,26 @@ export function usePromoteDriver(driverId: string) {
     mutationFn: () => promoteDriverMemberRole(driverId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.drivers.all });
+      qc.invalidateQueries({ queryKey: queryKeys.drivers.detail(driverId) });
+    },
+  });
+}
+
+export function useRegenerateHrContract(driverId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (driver: DriverProfile) => regenerateDriverContract(driver),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.drivers.detail(driverId) });
+    },
+  });
+}
+
+export function useRegenerateHrCard(driverId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (driver: DriverProfile) => regenerateCompanyCard(driver),
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.drivers.detail(driverId) });
     },
   });
