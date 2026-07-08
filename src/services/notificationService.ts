@@ -1,4 +1,10 @@
 import { supabase } from '../lib/supabase';
+import {
+  APP_UPDATE_NOTIFICATION_MESSAGE,
+  APP_UPDATE_NOTIFICATION_TITLE,
+  APP_VERSION,
+  isUpdateNotificationVisible,
+} from '../lib/appVersion';
 import type { LiveNotification } from '../lib/liveOpsTypes';
 
 export type NotificationType =
@@ -17,6 +23,8 @@ export type NotificationType =
   | 'wall_announcement'
   | 'wall_convoy';
 
+export const NOTIFICATION_POLL_MS = 10_000;
+
 export async function fetchUserNotifications(userId: string, limit = 50): Promise<LiveNotification[]> {
   const { data, error } = await supabase
     .from('notifications')
@@ -26,6 +34,16 @@ export async function fetchUserNotifications(userId: string, limit = 50): Promis
     .limit(limit);
   if (error) return [];
   return (data ?? []) as LiveNotification[];
+}
+
+export async function fetchUnreadNotificationCount(userId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('read', false);
+  if (error) return 0;
+  return count ?? 0;
 }
 
 export async function markNotificationRead(id: string): Promise<void> {
@@ -76,6 +94,29 @@ export async function notifyUsersByRoles(
   return Number(data ?? 0);
 }
 
+/** Ensure the current user has an in-app notification for the new APP_VERSION. */
+export async function ensureAppUpdateNotification(userId: string): Promise<void> {
+  if (!isUpdateNotificationVisible()) return;
+
+  const { data } = await supabase
+    .from('notifications')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('type', 'app_update')
+    .eq('title', APP_UPDATE_NOTIFICATION_TITLE)
+    .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+    .limit(1);
+
+  if (data?.length) return;
+
+  await createUserNotification(
+    userId,
+    APP_UPDATE_NOTIFICATION_TITLE,
+    `${APP_UPDATE_NOTIFICATION_MESSAGE} (v${APP_VERSION})`,
+    'app_update',
+  );
+}
+
 export async function notifyFreightOffer(title: string, message: string): Promise<void> {
   await notifyUsersByRoles(
     ['pdg', 'patron', 'admin', 'directeur', 'dispatcher', 'chauffeur', 'tractionnaire'],
@@ -106,7 +147,7 @@ export async function notifySalaryPaid(driverUserId: string | null, amount: stri
 
 export async function notifyCompanyAnnouncement(title: string, message: string): Promise<void> {
   await notifyUsersByRoles(
-    ['pdg', 'patron', 'admin', 'directeur', 'dispatcher', 'chauffeur', 'tractionnaire', 'manager'],
+    ['pdg', 'patron', 'admin', 'directeur', 'dispatcher', 'chauffeur', 'tractionnaire', 'manager', 'visitor', 'visiteur', 'candidat'],
     title,
     message,
     'announcement',

@@ -81,19 +81,9 @@ export const ALL_MODULES: ModuleKey[] = [
 ];
 
 const ROLE_MODULES: Record<AppRole, readonly ModuleKey[]> = {
-  visitor: [
-    ...COMMUNITY_MODULES,
-    'profile', 'recruitment', 'recruitment_applications', 'settings', 'training_center',
-  ],
-  recruit: [
-    ...COMMUNITY_MODULES,
-    'profile', 'recruitment', 'recruitment_applications', 'settings', 'training_center', 'join',
-  ],
-  driver: [
-    'dashboard', ...COMMUNITY_MODULES, 'profile', 'road_sheets', 'freight_market',
-    'driver_portal', 'documents', 'dispatch', 'gps_tracking', 'salaries', 'notifications',
-    'training_center', 'recruitment_applications', 'settings',
-  ],
+  visitor: ['wall', 'profile', 'recruitment', 'recruitment_applications'],
+  recruit: ['wall', 'profile', 'recruitment', 'recruitment_applications', 'join'],
+  driver: ['dashboard', 'wall', 'profile', 'road_sheets', 'freight_market'],
   dispatcher: [
     'dashboard', ...COMMUNITY_MODULES, 'profile', 'dispatch', 'freight_market', 'road_sheets',
     'gps_tracking', 'fleet_map', 'statistics', 'notifications', 'training_center', 'settings',
@@ -252,9 +242,7 @@ export function shouldShowRoleOnWall(role: string | null | undefined): boolean {
 
 export function getAllowedModules(role: string | null | undefined): ModuleKey[] {
   const appRole = normalizeRole(role);
-  const modules = Array.from(new Set<ModuleKey>(ROLE_MODULES[appRole]));
-  console.log('[Z&D Sidebar] modules updated', appRole, modules);
-  return modules;
+  return Array.from(new Set<ModuleKey>(ROLE_MODULES[appRole]));
 }
 
 export function canAccessModule(role: string | null | undefined, moduleKey: ModuleKey): boolean {
@@ -289,9 +277,7 @@ export function pathnameToModule(pathname: string): ModuleKey | null {
 export function canAccessRoute(role: string | null | undefined, pathname: string): boolean {
   const moduleKey = pathnameToModule(pathname);
   if (!moduleKey) return true;
-  const allowed = canAccessModule(role, moduleKey);
-  console.log('[Z&D RouteGuard] path allowed', pathname, moduleKey, allowed);
-  return allowed;
+  return canAccessModule(role, moduleKey);
 }
 
 export function getRoleRedirect(role: string | null | undefined): string {

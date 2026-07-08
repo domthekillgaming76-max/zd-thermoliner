@@ -41,10 +41,11 @@ export function canAccessLiveOps(role: string | null | undefined, email?: string
   return canAccessFleetMap(role, email);
 }
 
+/** Page notifications — tous les membres internes ; visiteurs via la cloche uniquement. */
 export function canAccessNotificationsPage(role: string | null | undefined, email?: string | null): boolean {
   if (isAdministratorEmail(email)) return true;
   if (isCanonicalVisitor(role)) return false;
-  if (role === 'candidat' || role === 'banni' || role === 'ancien_membre') return false;
+  if (role === 'banni' || role === 'ancien_membre') return false;
   return true;
 }
 

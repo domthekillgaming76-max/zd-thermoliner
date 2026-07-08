@@ -3,8 +3,8 @@ import {
   APP_VERSION,
   APP_VERSION_LABEL,
   isUpdateNotificationVisible,
-  saveSeenAppVersion,
 } from '../lib/appVersion';
+import { ensureAppUpdateNotification } from './notificationService';
 
 export interface PublishedAppUpdate {
   id: string;
@@ -19,11 +19,6 @@ export interface AppUpdateStatus {
   latestUpdate: PublishedAppUpdate | null;
   clientVersion: string;
   clientVersionLabel: string;
-}
-
-function isUpdateNotificationRow(row: { title?: string; type?: string }): boolean {
-  const title = (row.title ?? '').toLowerCase();
-  return row.type === 'app_update' || title.includes('mise à jour');
 }
 
 export async function fetchLatestPublishedUpdate(): Promise<PublishedAppUpdate | null> {
@@ -47,14 +42,10 @@ export async function markUpdateNotificationsRead(userId: string): Promise<void>
     .eq('read', false)
     .limit(50);
 
-  const ids = (data ?? []).filter(isUpdateNotificationRow).map(n => n.id);
+  const ids = (data ?? []).filter(n => n.type === 'app_update').map(n => n.id);
   if (ids.length === 0) return;
 
   await supabase.from('notifications').update({ read: true }).in('id', ids);
-}
-
-export function acknowledgeSeenVersion(): void {
-  saveSeenAppVersion();
 }
 
 export async function acknowledgeUpdateExtras(
@@ -72,12 +63,17 @@ export async function acknowledgeUpdateExtras(
   }
 }
 
-export async function fetchAppUpdateStatus(): Promise<AppUpdateStatus> {
+export async function fetchAppUpdateStatus(userId?: string): Promise<AppUpdateStatus> {
   const latestUpdate = await fetchLatestPublishedUpdate();
   const serverVersion = latestUpdate?.version ?? null;
+  const visible = isUpdateNotificationVisible();
+
+  if (visible && userId) {
+    void ensureAppUpdateNotification(userId);
+  }
 
   return {
-    visible: isUpdateNotificationVisible(),
+    visible,
     serverVersion,
     latestUpdate,
     clientVersion: APP_VERSION,

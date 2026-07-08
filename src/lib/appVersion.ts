@@ -1,12 +1,16 @@
 /** Bump this constant on each production release. */
-export const APP_VERSION = '2.7.0';
+export const APP_VERSION = '1.0.1';
 
 export const APP_VERSION_LABEL = `v${APP_VERSION}`;
 
 export const SEEN_APP_VERSION_KEY = 'zd_seen_app_version';
 
-export const UPDATE_REFRESH_MESSAGE =
-  'Une mise à jour est disponible. Rafraîchissez votre page pour profiter de la dernière version.';
+export const APP_UPDATE_NOTIFICATION_TITLE = 'Nouvelle mise à jour disponible';
+
+export const APP_UPDATE_NOTIFICATION_MESSAGE =
+  'Une nouvelle version de Z&D Thermoliner ERP est disponible. Cliquez sur le bouton ci-dessous pour recharger l\'application.';
+
+export const APP_UPDATE_BUTTON_LABEL = 'Télécharger la mise à jour';
 
 export function getSeenAppVersion(): string | null {
   try {
@@ -24,7 +28,7 @@ export function saveSeenAppVersion(): void {
   }
 }
 
-/** Show notification only when the user has not seen the current APP_VERSION. */
+/** Show notification when the user has not acknowledged the current APP_VERSION. */
 export function isUpdateNotificationVisible(): boolean {
   return getSeenAppVersion() !== APP_VERSION;
 }
@@ -43,4 +47,9 @@ export function compareVersions(a: string | null | undefined, b: string | null |
     if (diff !== 0) return diff;
   }
   return 0;
+}
+
+/** SW cache bucket — keep in sync with APP_VERSION. */
+export function getSwCacheName(): string {
+  return `zd-thermoliner-${APP_VERSION.replace(/\./g, '-')}`;
 }

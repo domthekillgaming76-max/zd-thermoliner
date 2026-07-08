@@ -1,8 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { X, Bell } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import type { LiveNotification } from '../lib/liveOpsTypes';
+import { NOTIFICATION_POLL_MS } from '../services/notificationService';
 
 interface LiveNotificationContextValue {
   unreadCount: number;
@@ -26,6 +27,8 @@ export function LiveNotificationProvider({ children }: { children: ReactNode }) 
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const knownIdsRef = useRef<Set<string>>(new Set());
 
   const refresh = useCallback(async () => {
     if (!user?.id) return;
@@ -37,17 +40,47 @@ export function LiveNotificationProvider({ children }: { children: ReactNode }) 
     setUnreadCount((data ?? []).length);
   }, [user?.id]);
 
-  useEffect(() => {
+  const checkNewToasts = useCallback(async () => {
     if (!user?.id) return;
-    refresh();
+    const { data } = await supabase
+      .from('notifications')
+      .select('id, title, message, read, type, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    for (const row of data ?? []) {
+      const n = row as LiveNotification;
+      if (knownIdsRef.current.has(n.id)) continue;
+      knownIdsRef.current.add(n.id);
+      if (n.read) continue;
+
+      const toastId = `${n.id}-${Date.now()}`;
+      setToasts(prev => [...prev.slice(-2), { ...n, toastId }]);
+      setTimeout(() => {
+        setToasts(prev => prev.filter(t => t.toastId !== toastId));
+      }, 6000);
+    }
+
+    await refresh();
+  }, [user?.id, refresh]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      knownIdsRef.current.clear();
+      return;
+    }
+
+    void checkNewToasts();
 
     const ch = supabase
-      .channel('live_toast_rt')
+      .channel(`live_toast_rt_${user.id}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
         payload => {
           const n = payload.new as LiveNotification;
+          knownIdsRef.current.add(n.id);
           const toastId = `${n.id}-${Date.now()}`;
           setToasts(prev => [...prev.slice(-2), { ...n, toastId }]);
           setUnreadCount(c => c + 1);
@@ -58,8 +91,16 @@ export function LiveNotificationProvider({ children }: { children: ReactNode }) 
       )
       .subscribe();
 
-    return () => { ch.unsubscribe(); };
-  }, [user?.id, refresh]);
+    pollRef.current = setInterval(() => { void checkNewToasts(); }, NOTIFICATION_POLL_MS);
+
+    return () => {
+      ch.unsubscribe();
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+  }, [user?.id, checkNewToasts]);
 
   function dismissToast(id: string) {
     setToasts(prev => prev.filter(t => t.toastId !== id));

@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useEffect } from 'react';
 import { LogOut, ChevronLeft } from 'lucide-react';
 import { RoleBadge } from './erp/RoleBadge';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,6 +14,10 @@ export function Sidebar() {
 
   const liveRole = role ?? normalizedRole;
   const sections = buildSidebarSections(liveRole, user?.email ?? profile?.email);
+
+  useEffect(() => {
+    console.log('[Z&D Sidebar] rerender role', liveRole);
+  }, [liveRole]);
 
   return (
     <aside

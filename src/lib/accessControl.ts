@@ -25,13 +25,9 @@ export const SUSPENDED_MESSAGE =
 
 export const VISITOR_ALLOWED_PAGES = new Set([
   'wall',
-  'updates',
-  'events',
   'recruitment',
   'recruitment_applications',
   'profile',
-  'settings',
-  'training_center',
 ]);
 
 /** Pages ERP explicitement interdites aux visiteurs */
@@ -58,8 +54,11 @@ export const VISITOR_DENIED_PAGES = new Set([
   'freight_market',
   'fleet_map',
   'statistics',
-  'notifications',
   'driver_portal',
+  'updates',
+  'events',
+  'settings',
+  'training_center',
 ]);
 
 export const RECRUIT_ALLOWED_PAGES = new Set([
@@ -67,24 +66,11 @@ export const RECRUIT_ALLOWED_PAGES = new Set([
 ]);
 
 export const DRIVER_ALLOWED_PAGES = new Set([
-  'wall',
-  'updates',
-  'events',
-  'profile',
-  'settings',
-  'road_sheets',
-  'dispatch',
-  'recruitment_applications',
-  'assistant',
-  'driver_portal',
-  'documents',
-  'tracking',
-  'freight_market',
-  'training_center',
-  'salaries',
-  'notifications',
   'dashboard',
   'wall',
+  'profile',
+  'road_sheets',
+  'freight_market',
 ]);
 
 export const SUSPENDED_ALLOWED_PAGES = new Set(['profile', 'settings']);

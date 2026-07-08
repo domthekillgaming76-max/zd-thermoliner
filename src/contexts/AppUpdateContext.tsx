@@ -4,11 +4,19 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
 import { useAuth } from './AuthContext';
-import { isUpdateNotificationVisible, saveSeenAppVersion, UPDATE_REFRESH_MESSAGE } from '../lib/appVersion';
+import {
+  APP_UPDATE_BUTTON_LABEL,
+  APP_UPDATE_NOTIFICATION_MESSAGE,
+  APP_UPDATE_NOTIFICATION_TITLE,
+  APP_VERSION_LABEL,
+  isUpdateNotificationVisible,
+} from '../lib/appVersion';
+import { applyAppUpdateAndReload } from '../lib/pwaUpdate';
 import {
   acknowledgeUpdateExtras,
   fetchAppUpdateStatus,
@@ -16,10 +24,13 @@ import {
 } from '../services/appUpdateService';
 import { supabase } from '../lib/supabase';
 
+const UPDATE_POLL_MS = 30_000;
+
 interface AppUpdateContextValue extends AppUpdateStatus {
   loading: boolean;
+  title: string;
   message: string;
-  dismiss: () => void;
+  buttonLabel: string;
   refreshNow: () => void;
   refresh: () => Promise<void>;
 }
@@ -32,7 +43,7 @@ function initialStatus(): AppUpdateStatus {
     serverVersion: null,
     latestUpdate: null,
     clientVersion: '',
-    clientVersionLabel: '',
+    clientVersionLabel: APP_VERSION_LABEL,
   };
 }
 
@@ -40,6 +51,7 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
   const { user, profile, loading: authLoading } = useAuth();
   const [status, setStatus] = useState<AppUpdateStatus>(initialStatus);
   const [loading, setLoading] = useState(true);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const refresh = useCallback(async () => {
     if (!user) {
@@ -50,7 +62,7 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
 
     setLoading(true);
     try {
-      const next = await fetchAppUpdateStatus();
+      const next = await fetchAppUpdateStatus(user.id);
       setStatus(next);
     } finally {
       setLoading(false);
@@ -63,35 +75,49 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
   }, [authLoading, refresh]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+      return;
+    }
+
+    if (pollRef.current) clearInterval(pollRef.current);
+    pollRef.current = setInterval(() => {
+      if (isUpdateNotificationVisible()) {
+        void refresh();
+      }
+    }, UPDATE_POLL_MS);
 
     const channel = supabase
       .channel(`app_update_notify_${user.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'app_updates' }, () => refresh())
       .subscribe();
 
-    return () => { channel.unsubscribe(); };
-  }, [user, refresh]);
-
-  const dismiss = useCallback(() => {
-    saveSeenAppVersion();
-    setStatus(prev => ({ ...prev, visible: false }));
-    void acknowledgeUpdateExtras(profile?.id ?? user?.id, status.latestUpdate);
-  }, [profile?.id, user?.id, status.latestUpdate]);
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+      void supabase.removeChannel(channel);
+    };
+  }, [user?.id, refresh]);
 
   const refreshNow = useCallback(() => {
-    saveSeenAppVersion();
-    window.location.reload();
-  }, []);
+    void acknowledgeUpdateExtras(profile?.id ?? user?.id, status.latestUpdate);
+    void applyAppUpdateAndReload();
+  }, [profile?.id, user?.id, status.latestUpdate]);
 
   const value = useMemo<AppUpdateContextValue>(() => ({
     ...status,
     loading,
-    message: UPDATE_REFRESH_MESSAGE,
-    dismiss,
+    title: APP_UPDATE_NOTIFICATION_TITLE,
+    message: APP_UPDATE_NOTIFICATION_MESSAGE,
+    buttonLabel: APP_UPDATE_BUTTON_LABEL,
     refreshNow,
     refresh,
-  }), [status, loading, dismiss, refreshNow, refresh]);
+  }), [status, loading, refreshNow, refresh]);
 
   return (
     <AppUpdateContext.Provider value={value}>

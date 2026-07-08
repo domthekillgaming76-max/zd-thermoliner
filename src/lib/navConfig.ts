@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Users, Building2, Truck, Banknote, Route, BarChart3, Settings, Wrench,
-  FileBarChart, MessageSquare, Newspaper, Calendar, Briefcase, FileText, Shield, Radio,
-  Receipt, Bot, Smartphone, Archive, Map, Container, GraduationCap, Calculator,
+  FileBarChart, MessageSquare, Briefcase, FileText, Shield, Radio,
+  Receipt, Bot, Smartphone, Archive, Map, Container, GraduationCap, Calculator, User,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ModuleKey } from './roleEngine';
@@ -42,25 +42,25 @@ export const MODULE_NAV: NavItem[] = [
   { to: '/driver', icon: Smartphone, label: 'Portail mobile', module: 'driver_portal' },
 ];
 
-export const COMMUNITY_NAV: NavItem[] = [
-  { to: '/wall', icon: MessageSquare, label: 'Mur de la société', module: 'wall' },
-  { to: '/updates', icon: Newspaper, label: 'Actualités', module: 'updates' },
-  { to: '/events', icon: Calendar, label: 'Événements', module: 'events' },
-];
+export const PROFILE_NAV: NavItem = {
+  to: '/profile', icon: User, label: 'Profil', module: 'profile',
+};
+
+export const WALL_NAV: NavItem = {
+  to: '/wall', icon: MessageSquare, label: 'Mur de la société', module: 'wall',
+};
 
 export const RECRUITMENT_NAV: NavItem[] = [
-  { to: '/recruitment', icon: Briefcase, label: 'Bureau du PDG', module: 'recruitment' },
-  { to: '/training', icon: GraduationCap, label: 'Formation & Règles', module: 'training_center' },
+  { to: '/recruitment', icon: Briefcase, label: 'Recrutement', module: 'recruitment' },
   { to: '/recruitment/applications', icon: FileText, label: 'Mes candidatures', module: 'recruitment_applications' },
 ];
 
-export const ACCOUNT_NAV: NavItem[] = [
-  { to: '/settings', icon: Settings, label: 'Paramètres', module: 'settings' },
-];
-
-const DRIVER_PRIORITY: ModuleKey[] = [
-  'dashboard', 'driver_portal', 'freight_market', 'training_center', 'gps_tracking',
-  'documents', 'dispatch', 'road_sheets', 'salaries',
+const DRIVER_NAV: NavItem[] = [
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Tableau de bord', module: 'dashboard' },
+  { to: '/wall', icon: MessageSquare, label: 'Mur de la société', module: 'wall' },
+  PROFILE_NAV,
+  { to: '/road-sheets', icon: Route, label: 'Feuilles de route', module: 'road_sheets' },
+  { to: '/freight', icon: Container, label: 'Marché Fret', module: 'freight_market' },
 ];
 
 export interface NavSection {
@@ -82,7 +82,29 @@ export function buildSidebarSections(
   const isAdmin = isAdministratorEmail(email);
   const canAdmin = isAdmin || canAccessAdministration(role, email);
 
-  const recruitment = filterByModules([...RECRUITMENT_NAV], role);
+  if (appRole === 'visitor') {
+    return [
+      { title: 'Communauté', items: filterByModules([WALL_NAV], role) },
+      { title: 'Recrutement', items: filterByModules(RECRUITMENT_NAV, role) },
+      { title: 'Compte', items: filterByModules([PROFILE_NAV], role) },
+    ];
+  }
+
+  if (appRole === 'driver') {
+    return [
+      { title: 'Chauffeur', items: filterByModules(DRIVER_NAV, role) },
+    ];
+  }
+
+  if (appRole === 'recruit') {
+    return [
+      { title: 'Communauté', items: filterByModules([WALL_NAV], role) },
+      { title: 'Recrutement', items: filterByModules(RECRUITMENT_NAV, role) },
+      { title: 'Compte', items: filterByModules([PROFILE_NAV], role) },
+    ];
+  }
+
+  const recruitment = filterByModules(RECRUITMENT_NAV, role);
   if (isAdmin) {
     recruitment.push({
       to: '/recruitment/admin',
@@ -90,29 +112,6 @@ export function buildSidebarSections(
       label: 'Toutes les candidatures',
       module: 'recruitment',
     });
-  }
-
-  const community = filterByModules(COMMUNITY_NAV, role);
-  const account = filterByModules(ACCOUNT_NAV, role);
-
-  if (appRole === 'driver') {
-    const driverItems = DRIVER_PRIORITY
-      .map(mod => MODULE_NAV.find(n => n.module === mod))
-      .filter((n): n is NavItem => !!n && canAccessModule(role, n.module));
-    return [
-      { title: 'Chauffeur', items: driverItems },
-      { title: 'Communauté', items: community },
-      { title: 'Recrutement', items: recruitment },
-      { title: 'Compte', items: account },
-    ];
-  }
-
-  if (appRole === 'visitor' || appRole === 'recruit') {
-    return [
-      { title: 'Communauté', items: community },
-      { title: 'Recrutement', items: recruitment },
-      { title: 'Compte', items: account },
-    ];
   }
 
   const erpNav = filterByModules(MODULE_NAV, role);
@@ -124,6 +123,9 @@ export function buildSidebarSections(
       module: 'administration',
     });
   }
+
+  const community = filterByModules([WALL_NAV], role);
+  const account = filterByModules([PROFILE_NAV, { to: '/settings', icon: Settings, label: 'Paramètres', module: 'settings' }], role);
 
   return [
     { title: 'ERP', items: erpNav },
@@ -142,20 +144,18 @@ export function buildMobileNavItems(
   if (appRole === 'visitor' || appRole === 'recruit') {
     return filterByModules([
       { to: '/wall', icon: MessageSquare, label: 'Mur', module: 'wall' },
-      { to: '/updates', icon: Newspaper, label: 'Actus', module: 'updates' },
-      { to: '/events', icon: Calendar, label: 'Événements', module: 'events' },
       { to: '/recruitment', icon: Briefcase, label: 'Recrutement', module: 'recruitment' },
-      { to: '/settings', icon: Settings, label: 'Compte', module: 'settings' },
+      { to: '/profile', icon: User, label: 'Profil', module: 'profile' },
     ], role);
   }
 
   if (appRole === 'driver') {
     return filterByModules([
       { to: '/dashboard', icon: LayoutDashboard, label: 'Accueil', module: 'dashboard' },
-      { to: '/driver', icon: Smartphone, label: 'Portail', module: 'driver_portal' },
-      { to: '/tracking', icon: Map, label: 'GPS', module: 'gps_tracking' },
-      { to: '/dispatch', icon: Route, label: 'Missions', module: 'dispatch' },
       { to: '/wall', icon: MessageSquare, label: 'Mur', module: 'wall' },
+      { to: '/profile', icon: User, label: 'Profil', module: 'profile' },
+      { to: '/road-sheets', icon: Route, label: 'Routes', module: 'road_sheets' },
+      { to: '/freight', icon: Container, label: 'Fret', module: 'freight_market' },
     ], role);
   }
 
