@@ -5,6 +5,7 @@ import { queryKeys } from '../lib/queryKeys';
 import { APP_MODULES_SYNC_EVENT } from '../contexts/AppModulesContext';
 import {
   createAppModule,
+  batchUpdateModuleLayout,
   fetchAppModules,
   swapModuleOrder,
   updateAppModule,
@@ -51,6 +52,18 @@ export function useUpdateAppModule() {
   return useMutation({
     mutationFn: ({ id, patch }: { id: string; patch: Partial<AppModuleInput> }) =>
       updateAppModule(id, patch),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.appModules.all });
+      window.dispatchEvent(new CustomEvent(APP_MODULES_SYNC_EVENT));
+    },
+  });
+}
+
+export function useBatchUpdateModuleLayout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (updates: Array<{ id: string; category: string; sort_order: number }>) =>
+      batchUpdateModuleLayout(updates),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.appModules.all });
       window.dispatchEvent(new CustomEvent(APP_MODULES_SYNC_EVENT));

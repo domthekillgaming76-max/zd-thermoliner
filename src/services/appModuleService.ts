@@ -77,6 +77,22 @@ export async function updateAppModule(id: string, patch: Partial<AppModuleInput>
   return rowToModule(data as Record<string, unknown>);
 }
 
+export async function batchUpdateModuleLayout(
+  updates: Array<{ id: string; category: string; sort_order: number }>,
+): Promise<void> {
+  const now = new Date().toISOString();
+  const results = await Promise.all(
+    updates.map(u =>
+      supabase
+        .from('app_modules')
+        .update({ category: u.category, sort_order: u.sort_order, updated_at: now })
+        .eq('id', u.id),
+    ),
+  );
+  const failed = results.find(r => r.error);
+  if (failed?.error) throw failed.error;
+}
+
 export async function swapModuleOrder(idA: string, orderA: number, idB: string, orderB: number): Promise<void> {
   const now = new Date().toISOString();
   const [resA, resB] = await Promise.all([
