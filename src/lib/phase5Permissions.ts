@@ -1,4 +1,5 @@
 import { isAdministratorEmail } from './admin';
+import { isCanonicalVisitor } from './roles';
 
 const OPS_MANAGER_ROLES = new Set(['pdg', 'patron', 'admin', 'directeur', 'dispatcher', 'manager', 'fleet_manager']);
 
@@ -42,7 +43,7 @@ export function canAccessLiveOps(role: string | null | undefined, email?: string
 
 export function canAccessNotificationsPage(role: string | null | undefined, email?: string | null): boolean {
   if (isAdministratorEmail(email)) return true;
-  if (isVisitorRole(role)) return false;
+  if (isCanonicalVisitor(role)) return false;
   if (role === 'candidat' || role === 'banni' || role === 'ancien_membre') return false;
   return true;
 }
@@ -53,10 +54,6 @@ export function isDispatcherOnlyRole(role: string | null | undefined): boolean {
 
 export function canDispatcherAccessPage(page: string): boolean {
   return DISPATCHER_ALLOWED_PAGES.has(page);
-}
-
-function isVisitorRole(role: string | null | undefined): boolean {
-  return role === 'visitor' || role === 'visiteur';
 }
 
 export function canViewAllOps(role: string | null | undefined, email?: string | null): boolean {

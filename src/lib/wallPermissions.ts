@@ -3,7 +3,7 @@ import { isVisitorRole, isRecruitRole, isSuspendedAccount } from './accessContro
 
 const MANAGER_ROLES = new Set(['pdg', 'patron', 'admin', 'directeur', 'dispatcher']);
 
-/** Tous les utilisateurs connectés actifs peuvent interagir sur le mur. */
+/** Visiteurs : accès lecture + commentaires + réactions (pas de publication). */
 export function canAccessWall(
   role: string | null | undefined,
   options?: { isActive?: boolean | null; isSuspended?: boolean | null },
@@ -11,6 +11,7 @@ export function canAccessWall(
   if (!role) return false;
   if (isSuspendedAccount(role, options?.isActive, options?.isSuspended)) return false;
   if (role === 'banni' || role === 'ancien_membre') return false;
+  if (isVisitorRole(role)) return true;
   return true;
 }
 

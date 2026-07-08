@@ -209,7 +209,8 @@ export function getPromotionButtonLabel(currentRole: string | null | undefined):
 }
 
 export function isCanonicalVisitor(role: string | null | undefined): boolean {
-  return normalizeRole(role) === 'visitor' && role !== 'ancien_membre' && role !== 'banni';
+  if (!role) return false;
+  return role === 'visitor' || role === 'visiteur';
 }
 
 export function isCanonicalRecruit(role: string | null | undefined): boolean {

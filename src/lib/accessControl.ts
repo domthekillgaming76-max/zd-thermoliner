@@ -34,6 +34,34 @@ export const VISITOR_ALLOWED_PAGES = new Set([
   'training_center',
 ]);
 
+/** Pages ERP explicitement interdites aux visiteurs */
+export const VISITOR_DENIED_PAGES = new Set([
+  'dashboard',
+  'bank',
+  'finance',
+  'invoices',
+  'accounting',
+  'economy',
+  'salaries',
+  'road_sheets',
+  'administration',
+  'dispatch',
+  'drivers',
+  'fleet',
+  'garages',
+  'clients',
+  'maintenance',
+  'reports',
+  'assistant',
+  'documents',
+  'tracking',
+  'freight_market',
+  'fleet_map',
+  'statistics',
+  'notifications',
+  'driver_portal',
+]);
+
 export const RECRUIT_ALLOWED_PAGES = new Set([
   ...VISITOR_ALLOWED_PAGES,
 ]);
@@ -197,12 +225,13 @@ export function canAccessPage(
     });
   }
 
-  if (isDispatcherOnlyRole(role) && !canDispatcherAccessPage(page)) {
-    return false;
+  if (isVisitorRole(role)) {
+    if (VISITOR_DENIED_PAGES.has(page)) return false;
+    return VISITOR_ALLOWED_PAGES.has(page);
   }
 
-  if (isVisitorRole(role)) {
-    return VISITOR_ALLOWED_PAGES.has(page);
+  if (isDispatcherOnlyRole(role) && !canDispatcherAccessPage(page)) {
+    return false;
   }
 
   if (isRecruitRole(role)) {

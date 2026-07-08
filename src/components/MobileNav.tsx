@@ -60,7 +60,7 @@ export function MobileNav() {
           <NavLink
             key={item.to}
             to={item.to}
-            end={item.to === '/dashboard' || item.to === '/driver' || item.to === '/documents' || item.to === '/tracking'}
+            end={item.to === '/dashboard' || item.to === '/driver' || item.to === '/documents' || item.to === '/tracking' || item.to === '/wall'}
             className={({ isActive }) =>
               `flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl transition-all min-w-[56px] ${
                 isActive ? 'text-red-400 bg-red-500/10' : 'text-white/30'

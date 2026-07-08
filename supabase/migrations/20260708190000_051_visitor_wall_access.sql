@@ -104,3 +104,5 @@ CREATE POLICY "wall_reactions_delete" ON public.wall_reactions
 
 COMMENT ON FUNCTION public.can_view_wall_post IS
   'RLS helper: visitors/candidats read public+visitors+members wall posts; drivers/admin visibilities restricted';
+
+GRANT EXECUTE ON FUNCTION public.can_view_wall_post(text, text, uuid) TO authenticated;
