@@ -1,42 +1,53 @@
 import {
-  LayoutDashboard, Users, Building2, Truck, Banknote, Route, BarChart3, Settings, Wrench,
-  FileBarChart, MessageSquare, Briefcase, FileText, Shield, Radio,
-  Receipt, Bot, Smartphone, Archive, Map, Container, GraduationCap, Calculator, User,
-  Bell, Calendar, HelpCircle,
+  LayoutDashboard, Users, Truck, Route, BarChart3, Settings, Wrench,
+  MessageSquare, Briefcase, FileText, Shield, Receipt, Bot, Smartphone,
+  GraduationCap, Calculator, User, Bell, Calendar, HelpCircle, Package,
+  ClipboardList, MapPin, Map, Warehouse, TrendingUp, Landmark, Wallet, PieChart,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   LayoutDashboard,
   Users,
-  Building2,
   Truck,
-  Banknote,
   Route,
   BarChart3,
   Settings,
   Wrench,
-  FileBarChart,
   MessageSquare,
   Briefcase,
   FileText,
   Shield,
-  Radio,
   Receipt,
   Bot,
   Smartphone,
-  Archive,
-  Map,
-  Container,
   GraduationCap,
   Calculator,
   User,
   Bell,
   Calendar,
   HelpCircle,
+  Package,
+  ClipboardList,
+  MapPin,
+  Map,
+  Warehouse,
+  TrendingUp,
+  Landmark,
+  Wallet,
+  PieChart,
+  // Legacy aliases
+  Building2: Warehouse,
+  Banknote: Landmark,
+  Container: Package,
+  Radio: Route,
+  Archive: Shield,
+  FileBarChart: BarChart3,
 };
 
-export const MODULE_ICON_OPTIONS = Object.keys(ICON_MAP);
+export const MODULE_ICON_OPTIONS = Object.keys(ICON_MAP).filter(
+  k => !['Building2', 'Banknote', 'Container', 'Radio', 'Archive', 'FileBarChart'].includes(k),
+);
 
 export function resolveModuleIcon(name: string | null | undefined): LucideIcon {
   if (!name) return HelpCircle;

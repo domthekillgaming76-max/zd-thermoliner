@@ -1,13 +1,13 @@
 import {
-  LayoutDashboard, Users, Building2, Truck, Banknote, Route, BarChart3, Settings, Wrench,
-  FileBarChart, MessageSquare, Briefcase, FileText, Shield, Radio,
+  LayoutDashboard, Users, Building2, Truck, Banknote, Route, BarChart3, Wrench,
+  FileBarChart, MessageSquare, Briefcase, FileText, Radio,
   Receipt, Bot, Smartphone, Archive, Map, Container, GraduationCap, Calculator, User,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ModuleKey } from './roleEngine';
-import { canAccessModule, getAllowedModules, normalizeRole } from './roleEngine';
-import { isAdministratorEmail } from './admin';
-import { canAccessAdministration } from './adminPermissions';
+import { DEFAULT_APP_MODULES } from './defaultAppModules';
+import { buildDynamicSidebarSections, buildDynamicMobileNavItems } from './dynamicNavBuilder';
+import type { AppModuleRecord } from '../services/appModuleService';
 
 export interface NavItem {
   to: string;
@@ -55,119 +55,34 @@ export const RECRUITMENT_NAV: NavItem[] = [
   { to: '/recruitment/applications', icon: FileText, label: 'Mes candidatures', module: 'recruitment_applications' },
 ];
 
-const DRIVER_NAV: NavItem[] = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Tableau de bord', module: 'dashboard' },
-  { to: '/wall', icon: MessageSquare, label: 'Mur de la société', module: 'wall' },
-  PROFILE_NAV,
-  { to: '/road-sheets', icon: Route, label: 'Feuilles de route', module: 'road_sheets' },
-  { to: '/freight', icon: Container, label: 'Marché Fret', module: 'freight_market' },
-  { to: '/driver', icon: Smartphone, label: 'Portail chauffeur', module: 'driver_portal' },
-];
-
 export interface NavSection {
   title: string;
   items: NavItem[];
 }
 
-function filterByModules(items: NavItem[], role: string | null | undefined): NavItem[] {
-  return items.filter(item => canAccessModule(role, item.module));
+function fallbackModuleRecords(): AppModuleRecord[] {
+  const now = new Date().toISOString();
+  return DEFAULT_APP_MODULES.map(m => ({
+    ...m,
+    id: `default-${m.key}`,
+    created_at: now,
+    updated_at: now,
+  }));
 }
 
 export function buildSidebarSections(
   role: string | null | undefined,
   email: string | null | undefined,
-): NavSection[] {
-  const appRole = normalizeRole(role);
-  getAllowedModules(role);
-
-  const isAdmin = isAdministratorEmail(email);
-  const canAdmin = isAdmin || canAccessAdministration(role, email);
-
-  if (appRole === 'visitor') {
-    return [
-      { title: 'Communauté', items: filterByModules([WALL_NAV], role) },
-      { title: 'Recrutement', items: filterByModules(RECRUITMENT_NAV, role) },
-      { title: 'Compte', items: filterByModules([PROFILE_NAV], role) },
-    ];
-  }
-
-  if (appRole === 'driver') {
-    return [
-      { title: 'Chauffeur', items: filterByModules(DRIVER_NAV, role) },
-    ];
-  }
-
-  if (appRole === 'recruit') {
-    return [
-      { title: 'Communauté', items: filterByModules([WALL_NAV], role) },
-      { title: 'Recrutement', items: filterByModules(RECRUITMENT_NAV, role) },
-      { title: 'Compte', items: filterByModules([PROFILE_NAV], role) },
-    ];
-  }
-
-  const recruitment = filterByModules(RECRUITMENT_NAV, role);
-  if (isAdmin) {
-    recruitment.push({
-      to: '/recruitment/admin',
-      icon: Shield,
-      label: 'Toutes les candidatures',
-      module: 'recruitment',
-    });
-  }
-
-  const erpNav = filterByModules(MODULE_NAV, role);
-  if (canAdmin && canAccessModule(role, 'administration')) {
-    erpNav.push({
-      to: '/administration',
-      icon: Shield,
-      label: 'Administration',
-      module: 'administration',
-    });
-  }
-
-  const community = filterByModules([WALL_NAV], role);
-  const account = filterByModules([PROFILE_NAV, { to: '/settings', icon: Settings, label: 'Paramètres', module: 'settings' }], role);
-
-  return [
-    { title: 'ERP', items: erpNav },
-    { title: 'Communauté', items: community },
-    { title: 'Recrutement', items: recruitment },
-    { title: 'Compte', items: account },
-  ];
+) {
+  return buildDynamicSidebarSections(role, email, fallbackModuleRecords());
 }
 
 export function buildMobileNavItems(
   role: string | null | undefined,
-  _email?: string | null | undefined,
+  email?: string | null | undefined,
 ): NavItem[] {
-  const appRole = normalizeRole(role);
-
-  if (appRole === 'visitor' || appRole === 'recruit') {
-    return filterByModules([
-      { to: '/wall', icon: MessageSquare, label: 'Mur', module: 'wall' },
-      { to: '/recruitment', icon: Briefcase, label: 'Recrutement', module: 'recruitment' },
-      { to: '/profile', icon: User, label: 'Profil', module: 'profile' },
-    ], role);
-  }
-
-  if (appRole === 'driver') {
-    return filterByModules([
-      { to: '/dashboard', icon: LayoutDashboard, label: 'Accueil', module: 'dashboard' },
-      { to: '/wall', icon: MessageSquare, label: 'Mur', module: 'wall' },
-      { to: '/profile', icon: User, label: 'Profil', module: 'profile' },
-      { to: '/road-sheets', icon: Route, label: 'Routes', module: 'road_sheets' },
-      { to: '/freight', icon: Container, label: 'Fret', module: 'freight_market' },
-      { to: '/driver', icon: Smartphone, label: 'Portail', module: 'driver_portal' },
-    ], role);
-  }
-
-  const defaults: NavItem[] = [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Accueil', module: 'dashboard' },
-    { to: '/fleet', icon: Truck, label: 'Flotte', module: 'fleet' },
-    { to: '/road-sheets', icon: Route, label: 'Routes', module: 'road_sheets' },
-    { to: '/finance', icon: BarChart3, label: 'Finance', module: 'finance' },
-    { to: '/bank', icon: Banknote, label: 'Banque', module: 'bank' },
-  ];
-
-  return filterByModules(defaults, role);
+  return buildDynamicMobileNavItems(role, email, fallbackModuleRecords()).map(item => ({
+    ...item,
+    module: item.module as ModuleKey,
+  }));
 }
