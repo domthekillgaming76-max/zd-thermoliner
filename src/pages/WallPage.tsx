@@ -9,7 +9,13 @@ import { WallFeed } from '../components/wall/WallFeed';
 import { WallLiveBadge, WallNewPostBanner } from '../components/wall/WallLiveBadge';
 import { useAuth } from '../contexts/AuthContext';
 import { useWall } from '../hooks/useWall';
-import { canModerateWall, canPinWallPosts, canPublishOnWall } from '../lib/wallPermissions';
+import {
+  canModerateWall,
+  canPinWallPosts,
+  canPublishOnWall,
+  canCommentOnWall,
+  canReactOnWall,
+} from '../lib/wallPermissions';
 import type { CreateWallPostInput } from '../lib/wallTypes';
 
 export function WallPage() {
@@ -38,9 +44,15 @@ export function WallPage() {
     share,
   } = useWall(user?.id);
 
+  const wallOptions = {
+    isActive: profile?.is_active,
+    isSuspended: profile?.is_suspended,
+  };
   const canModerate = canModerateWall(profile?.role, user?.email);
   const canPin = canPinWallPosts(profile?.role, user?.email);
   const canPublish = canPublishOnWall(profile?.role, user?.email);
+  const canComment = canCommentOnWall(profile?.role, wallOptions);
+  const canReact = canReactOnWall(profile?.role, wallOptions);
   const posts = data?.posts ?? [];
 
   const stats = {
@@ -107,7 +119,7 @@ export function WallPage() {
             <div>
               <p className="text-sm font-bold text-amber-200">Mur social non installé</p>
               <p className="text-xs text-white/45 mt-1">
-                Exécutez <code className="text-amber-300">npx supabase db push</code> (migrations 033 + 050)
+                Exécutez <code className="text-amber-300">npx supabase db push</code> (migrations 033 + 051)
               </p>
             </div>
           </div>
@@ -150,6 +162,8 @@ export function WallPage() {
           currentUserId={user?.id}
           canModerate={canModerate}
           canPin={canPin}
+          canComment={canComment}
+          canReact={canReact}
           onReact={(postId, type) => react.mutate({ postId, type })}
           onComment={(postId, content) => comment.mutate({ postId, content })}
           onShare={postId => share.mutate(postId)}

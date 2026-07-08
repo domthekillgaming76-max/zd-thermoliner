@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { canAccessPage, getAccessDeniedRedirect } from '../lib/accessControl';
+import { canAccessPage, getAccessDeniedRedirect, getPostLoginPath } from '../lib/accessControl';
 
 interface RoleBasedRouteProps {
   children: React.ReactNode;
@@ -48,7 +48,7 @@ export function RoleBasedRoute({ children, requiredRole, page }: RoleBasedRouteP
   }
 
   if (!['candidat', 'banni', 'ancien_membre'].includes(profile.role) && page === 'join') {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={getPostLoginPath(profile.role)} replace />;
   }
 
   if (requiredRole && profile.role !== requiredRole) {

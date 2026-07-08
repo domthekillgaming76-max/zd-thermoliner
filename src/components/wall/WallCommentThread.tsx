@@ -8,6 +8,7 @@ import { getAuthorDisplayName } from '../../lib/wallTypes';
 interface WallCommentThreadProps {
   comments: WallComment[];
   canModerate?: boolean;
+  canComment?: boolean;
   onAdd: (content: string) => void;
   onHide?: (commentId: string) => void;
   onDelete?: (commentId: string) => void;
@@ -17,6 +18,7 @@ interface WallCommentThreadProps {
 export function WallCommentThread({
   comments,
   canModerate,
+  canComment = true,
   onAdd,
   onHide,
   onDelete,
@@ -54,6 +56,7 @@ export function WallCommentThread({
           </div>
         </div>
       ))}
+      {canComment && (
       <div className="flex gap-2 pt-1">
         <input
           value={text}
@@ -67,6 +70,7 @@ export function WallCommentThread({
           <Send className="w-4 h-4 text-red-400" />
         </button>
       </div>
+      )}
     </div>
   );
 }

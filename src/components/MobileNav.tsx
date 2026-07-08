@@ -1,5 +1,8 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Truck, Route, Banknote, BarChart3, Smartphone, Map } from 'lucide-react';
+import {
+  LayoutDashboard, Truck, Route, Banknote, BarChart3, Smartphone, Map,
+  MessageSquare, Newspaper, Calendar, Briefcase, Settings,
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { isDriverRole, isVisitorRole } from '../lib/accessControl';
 import { canAccessBank } from '../lib/bankPermissions';
@@ -17,11 +20,19 @@ const DRIVER_MOBILE_NAV = [
   { to: '/driver', icon: Smartphone, label: 'Portail' },
   { to: '/tracking', icon: Map, label: 'GPS' },
   { to: '/dispatch', icon: Route, label: 'Missions' },
-  { to: '/wall', icon: BarChart3, label: 'Mur' },
+  { to: '/wall', icon: MessageSquare, label: 'Mur' },
+];
+
+const VISITOR_MOBILE_NAV = [
+  { to: '/wall', icon: MessageSquare, label: 'Mur' },
+  { to: '/updates', icon: Newspaper, label: 'Actus' },
+  { to: '/events', icon: Calendar, label: 'Événements' },
+  { to: '/recruitment', icon: Briefcase, label: 'Recrutement' },
+  { to: '/settings', icon: Settings, label: 'Compte' },
 ];
 
 function getMobileNavItems(role: string | undefined, email: string | undefined) {
-  if (isVisitorRole(role)) return [];
+  if (isVisitorRole(role)) return VISITOR_MOBILE_NAV;
 
   if (isDriverRole(role)) {
     return DRIVER_MOBILE_NAV;

@@ -7,9 +7,10 @@ const REACTION_TYPES: WallReactionType[] = ['like', 'love', 'fire', 'truck', 'ce
 interface WallReactionBarProps {
   post: WallPost;
   onReact: (type: WallReactionType | null) => void;
+  disabled?: boolean;
 }
 
-export function WallReactionBar({ post, onReact }: WallReactionBarProps) {
+export function WallReactionBar({ post, onReact, disabled }: WallReactionBarProps) {
   const [showPicker, setShowPicker] = useState(false);
   const counts = REACTION_TYPES.reduce<Record<string, number>>((acc, type) => {
     acc[type] = post.reactions?.filter(r => r.reaction_type === type && r.post_id).length ?? 0;
@@ -21,9 +22,10 @@ export function WallReactionBar({ post, onReact }: WallReactionBarProps) {
     <div className="relative flex items-center gap-2">
       <button
         type="button"
-        onClick={() => onReact(post.user_reaction ? null : 'like')}
-        onMouseEnter={() => setShowPicker(true)}
-        className={`flex items-center gap-1.5 text-sm transition-colors px-2 py-1 rounded-lg ${
+        disabled={disabled}
+        onClick={() => !disabled && onReact(post.user_reaction ? null : 'like')}
+        onMouseEnter={() => !disabled && setShowPicker(true)}
+        className={`flex items-center gap-1.5 text-sm transition-colors px-2 py-1 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed ${
           post.user_reaction ? 'text-red-400 bg-red-500/10' : 'text-white/30 hover:text-white/60 hover:bg-white/5'
         }`}
       >
@@ -31,7 +33,7 @@ export function WallReactionBar({ post, onReact }: WallReactionBarProps) {
         <span>{total}</span>
       </button>
 
-      {showPicker && (
+      {showPicker && !disabled && (
         <div
           className="absolute bottom-full left-0 mb-1 flex gap-1 wall-glass rounded-xl p-1.5 border border-white/10 z-10"
           onMouseLeave={() => setShowPicker(false)}

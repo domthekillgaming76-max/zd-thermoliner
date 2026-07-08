@@ -8,6 +8,8 @@ interface WallFeedProps {
   currentUserId?: string;
   canModerate?: boolean;
   canPin?: boolean;
+  canComment?: boolean;
+  canReact?: boolean;
   onReact: (postId: string, type: WallReactionType | null) => void;
   onComment: (postId: string, content: string) => void;
   onShare: (postId: string) => void;
@@ -26,6 +28,8 @@ export function WallFeed({
   currentUserId,
   canModerate,
   canPin,
+  canComment = true,
+  canReact = true,
   onReact,
   onComment,
   onShare,
@@ -65,6 +69,8 @@ export function WallFeed({
             currentUserId={currentUserId}
             canModerate={canModerate}
             canPin={canPin}
+            canComment={canComment}
+            canReact={canReact}
             onReact={type => onReact(post.id, type)}
             onComment={content => onComment(post.id, content)}
             onShare={() => onShare(post.id)}

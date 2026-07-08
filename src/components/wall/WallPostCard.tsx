@@ -23,6 +23,8 @@ interface WallPostCardProps {
   currentUserId?: string;
   canModerate?: boolean;
   canPin?: boolean;
+  canComment?: boolean;
+  canReact?: boolean;
   onReact: (type: WallReactionType | null) => void;
   onComment: (content: string) => void;
   onShare: () => void;
@@ -40,6 +42,8 @@ export function WallPostCard({
   currentUserId,
   canModerate,
   canPin,
+  canComment = true,
+  canReact = true,
   onReact,
   onComment,
   onShare,
@@ -144,7 +148,7 @@ export function WallPostCard({
       </div>
 
       <div className="px-4 pb-3 flex items-center gap-4 flex-wrap">
-        <WallReactionBar post={post} onReact={onReact} />
+        <WallReactionBar post={post} onReact={onReact} disabled={!canReact} />
         <button type="button" onClick={() => setCommentsOpen(!commentsOpen)}
           className="flex items-center gap-1.5 text-sm text-white/30 hover:text-white/60 transition-colors">
           <MessageSquare className="w-4 h-4" />
@@ -163,6 +167,7 @@ export function WallPostCard({
         <WallCommentThread
           comments={post.comments ?? []}
           canModerate={canModerate}
+          canComment={canComment}
           onAdd={onComment}
           onHide={onHideComment}
           onDelete={onDeleteComment}

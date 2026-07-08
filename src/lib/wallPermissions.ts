@@ -17,15 +17,22 @@ export function canAccessWall(
 export function canPublishOnWall(role: string | null | undefined, email?: string | null): boolean {
   if (isAdministratorEmail(email)) return true;
   if (!role || role === 'banni') return false;
+  if (isVisitorRole(role)) return false;
   return true;
 }
 
-export function canCommentOnWall(role: string | null | undefined): boolean {
-  return canPublishOnWall(role);
+export function canCommentOnWall(
+  role: string | null | undefined,
+  options?: { isActive?: boolean | null; isSuspended?: boolean | null },
+): boolean {
+  return canAccessWall(role, options);
 }
 
-export function canReactOnWall(role: string | null | undefined): boolean {
-  return canPublishOnWall(role);
+export function canReactOnWall(
+  role: string | null | undefined,
+  options?: { isActive?: boolean | null; isSuspended?: boolean | null },
+): boolean {
+  return canCommentOnWall(role, options);
 }
 
 export function canModerateWall(role: string | null | undefined, email?: string | null): boolean {
