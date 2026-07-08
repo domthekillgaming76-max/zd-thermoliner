@@ -1,5 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { assertCanAssignRole, assertCanModifyUser } from '../lib/dom76Protection';
+import { ensureDriverProfile, isDriverProfileRole } from './driverSyncService';
+import { createUserNotification } from './notificationService';
 import type {
   AdminAction,
   AdminUser,
@@ -141,8 +143,6 @@ export async function fetchAdminModuleBundle() {
   };
 }
 
-import { createUserNotification } from './notificationService';
-
 export async function notifyRoleChanged(targetUserId: string): Promise<void> {
   await createUserNotification(
     targetUserId,
@@ -152,7 +152,16 @@ export async function notifyRoleChanged(targetUserId: string): Promise<void> {
   );
 }
 
-export async function changeUserRole(targetUserId: string, newRole: string, targetEmail: string): Promise<void> {
+export interface RoleChangeResult {
+  driverEnsured: boolean;
+  driverId: string | null;
+}
+
+export async function changeUserRole(
+  targetUserId: string,
+  newRole: string,
+  targetEmail: string,
+): Promise<RoleChangeResult> {
   assertCanAssignRole(targetEmail, newRole);
   const { error } = await supabase.rpc('admin_change_user_role', {
     p_target_user_id: targetUserId,
@@ -169,11 +178,27 @@ export async function changeUserRole(targetUserId: string, newRole: string, targ
         .eq('id', targetUserId);
       if (directError) throw directError;
       await notifyRoleChanged(targetUserId);
-      return;
+    } else {
+      throw error;
     }
-    throw error;
+  } else {
+    await notifyRoleChanged(targetUserId);
   }
-  await notifyRoleChanged(targetUserId);
+
+  let driverId: string | null = null;
+  if (isDriverProfileRole(newRole)) {
+    const { data: profileRow } = await supabase
+      .from('profiles')
+      .select('id, email, full_name, pseudo, avatar_url, truck_photo_url, role')
+      .eq('id', targetUserId)
+      .maybeSingle();
+
+    if (profileRow) {
+      driverId = await ensureDriverProfile(profileRow);
+    }
+  }
+
+  return { driverEnsured: isDriverProfileRole(newRole), driverId };
 }
 
 export async function suspendUser(targetUserId: string, targetEmail: string, reason?: string): Promise<void> {

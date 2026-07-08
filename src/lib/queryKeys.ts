@@ -95,4 +95,8 @@ export const queryKeys = {
     all: ['notifications'] as const,
     list: (userId?: string) => ['notifications', 'list', userId ?? 'anonymous'] as const,
   },
+  onlinePresence: {
+    all: ['onlinePresence'] as const,
+    list: () => ['onlinePresence', 'list'] as const,
+  },
 };

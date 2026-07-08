@@ -3,10 +3,10 @@ import { useAppUpdateNotification } from '../contexts/AppUpdateContext';
 
 export function AppUpdateProfileCard() {
   const {
-    visible, loading, title, message, buttonLabel, clientVersionLabel, refreshNow,
+    visible, title, message, buttonLabel, clientVersionLabel, refreshNow,
   } = useAppUpdateNotification();
 
-  if (loading || !visible) return null;
+  if (!visible) return null;
 
   return (
     <div

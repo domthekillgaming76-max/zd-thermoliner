@@ -71,6 +71,7 @@ export const DRIVER_ALLOWED_PAGES = new Set([
   'profile',
   'road_sheets',
   'freight_market',
+  'driver_portal',
 ]);
 
 export const SUSPENDED_ALLOWED_PAGES = new Set(['profile', 'settings']);

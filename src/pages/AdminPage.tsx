@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase, Profile } from '../lib/supabase';
 import { promoteMemberRole, describePromotion } from '../services/rolePromotionService';
 import { changeUserRole } from '../services/adminService';
+import { isDriverProfileRole } from '../services/driverSyncService';
 import { getRoleLabel } from '../lib/roles';
 import { assertCanAssignRole, filterAssignableRoles, isDom76Protected } from '../lib/dom76Protection';
 import { queryKeys } from '../lib/queryKeys';
@@ -138,8 +139,12 @@ export function AdminPage() {
     if (modalType === 'role') {
       try {
         assertCanAssignRole(targetUser.email, modalRoleSelect);
-        await changeUserRole(targetUser.id, modalRoleSelect, targetUser.email);
+        const result = await changeUserRole(targetUser.id, modalRoleSelect, targetUser.email);
         setMembers(prev => prev.map(m => m.id === targetUser.id ? { ...m, role: modalRoleSelect } : m));
+        void queryClient.invalidateQueries({ queryKey: queryKeys.drivers.all });
+        if (result.driverEnsured) {
+          setSuccessMessage('Chauffeur ajouté à la société');
+        }
       } catch (err) {
         setActionError(err instanceof Error ? err.message : 'Changement de rôle impossible');
         setActionLoading(false);
@@ -158,8 +163,11 @@ export function AdminPage() {
 
     if (error) { setActionError(error.message); setActionLoading(false); return; }
     if (modalType === 'role') {
-      setSuccessMessage(`Rôle mis à jour → ${getRoleLabel(modalRoleSelect)}`);
+      if (!isDriverProfileRole(modalRoleSelect)) {
+        setSuccessMessage(`Rôle mis à jour → ${getRoleLabel(modalRoleSelect)}`);
+      }
       void queryClient.invalidateQueries({ queryKey: queryKeys.admin.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.drivers.all });
       if (targetUser.id === user?.id) {
         void refreshProfile();
       }

@@ -1,7 +1,6 @@
 import { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { LogOut, Settings, Truck } from 'lucide-react';
-import { AppUpdateBanner } from '../AppUpdateBanner';
 import { AppUpdateBadge } from '../AppUpdateBadge';
 import { useAuth } from '../../contexts/AuthContext';
 import { DriverMobileNav } from './DriverMobileNav';
@@ -55,7 +54,6 @@ export function DriverPortalLayout({
       </header>
 
       <main className="flex-1 px-4 pt-2 pb-28 max-w-lg mx-auto w-full driver-portal-main">
-        <AppUpdateBanner />
         {children}
       </main>
 

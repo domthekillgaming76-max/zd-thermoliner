@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { queryKeys } from '../lib/queryKeys';
+import { ROLE_SYNC_EVENT } from '../lib/roleEngine';
 import {
   approveDriverDocument,
   assignGarageToDriver,
@@ -21,14 +22,16 @@ import {
 } from '../services/driverService';
 import type { DriverDocType, IncidentType } from '../lib/driverTypes';
 
+const DRIVERS_POLL_MS = 3_000;
+
 export function useDriversModule() {
   const qc = useQueryClient();
 
   const query = useQuery({
     queryKey: queryKeys.drivers.module(),
     queryFn: fetchDriverModuleBundle,
-    staleTime: 15_000,
-    refetchInterval: 30_000,
+    staleTime: 2_000,
+    refetchInterval: DRIVERS_POLL_MS,
   });
 
   useEffect(() => {
@@ -46,10 +49,19 @@ export function useDriversModule() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'trucks' }, () => {
         qc.invalidateQueries({ queryKey: queryKeys.drivers.all });
       })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, () => {
+        qc.invalidateQueries({ queryKey: queryKeys.drivers.all });
+      })
       .subscribe();
+
+    const onRoleUpdated = () => {
+      qc.invalidateQueries({ queryKey: queryKeys.drivers.all });
+    };
+    window.addEventListener(ROLE_SYNC_EVENT, onRoleUpdated);
 
     return () => {
       channel.unsubscribe();
+      window.removeEventListener(ROLE_SYNC_EVENT, onRoleUpdated);
     };
   }, [qc]);
 

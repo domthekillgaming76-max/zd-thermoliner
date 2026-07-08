@@ -4,7 +4,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -13,111 +12,66 @@ import {
   APP_UPDATE_BUTTON_LABEL,
   APP_UPDATE_NOTIFICATION_MESSAGE,
   APP_UPDATE_NOTIFICATION_TITLE,
+  APP_VERSION,
   APP_VERSION_LABEL,
   isUpdateNotificationVisible,
+  saveSeenAppVersion,
 } from '../lib/appVersion';
 import { applyAppUpdateAndReload } from '../lib/pwaUpdate';
-import {
-  acknowledgeUpdateExtras,
-  fetchAppUpdateStatus,
-  type AppUpdateStatus,
-} from '../services/appUpdateService';
-import { supabase } from '../lib/supabase';
 
-const UPDATE_POLL_MS = 30_000;
-
-interface AppUpdateContextValue extends AppUpdateStatus {
-  loading: boolean;
+interface AppUpdateContextValue {
+  visible: boolean;
   title: string;
   message: string;
   buttonLabel: string;
+  clientVersion: string;
+  clientVersionLabel: string;
   refreshNow: () => void;
-  refresh: () => Promise<void>;
+  recheck: () => void;
 }
 
 const AppUpdateContext = createContext<AppUpdateContextValue | null>(null);
 
-function initialStatus(): AppUpdateStatus {
-  return {
-    visible: isUpdateNotificationVisible(),
-    serverVersion: null,
-    latestUpdate: null,
-    clientVersion: '',
-    clientVersionLabel: APP_VERSION_LABEL,
-  };
-}
-
 export function AppUpdateProvider({ children }: { children: ReactNode }) {
-  const { user, profile, loading: authLoading } = useAuth();
-  const [status, setStatus] = useState<AppUpdateStatus>(initialStatus);
-  const [loading, setLoading] = useState(true);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { user, loading: authLoading } = useAuth();
+  const [visible, setVisible] = useState(false);
 
-  const refresh = useCallback(async () => {
-    if (!user) {
-      setStatus(prev => ({ ...prev, visible: false }));
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const next = await fetchAppUpdateStatus(user.id);
-      setStatus(next);
-    } finally {
-      setLoading(false);
+  const recheck = useCallback(() => {
+    const shouldShow = !!user && isUpdateNotificationVisible();
+    setVisible(shouldShow);
+    if (shouldShow) {
+      console.log('[Z&D Update] showing banner', APP_VERSION);
     }
   }, [user]);
 
   useEffect(() => {
     if (authLoading) return;
-    void refresh();
-  }, [authLoading, refresh]);
+    recheck();
+  }, [authLoading, recheck]);
 
   useEffect(() => {
-    if (!user?.id) {
-      if (pollRef.current) {
-        clearInterval(pollRef.current);
-        pollRef.current = null;
-      }
-      return;
-    }
-
-    if (pollRef.current) clearInterval(pollRef.current);
-    pollRef.current = setInterval(() => {
-      if (isUpdateNotificationVisible()) {
-        void refresh();
-      }
-    }, UPDATE_POLL_MS);
-
-    const channel = supabase
-      .channel(`app_update_notify_${user.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'app_updates' }, () => refresh())
-      .subscribe();
-
-    return () => {
-      if (pollRef.current) {
-        clearInterval(pollRef.current);
-        pollRef.current = null;
-      }
-      void supabase.removeChannel(channel);
-    };
-  }, [user?.id, refresh]);
+    if (!user) return;
+    const onFocus = () => recheck();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [user, recheck]);
 
   const refreshNow = useCallback(() => {
-    void acknowledgeUpdateExtras(profile?.id ?? user?.id, status.latestUpdate);
+    saveSeenAppVersion();
+    setVisible(false);
     void applyAppUpdateAndReload();
-  }, [profile?.id, user?.id, status.latestUpdate]);
+  }, []);
 
   const value = useMemo<AppUpdateContextValue>(() => ({
-    ...status,
-    loading,
+    visible,
     title: APP_UPDATE_NOTIFICATION_TITLE,
     message: APP_UPDATE_NOTIFICATION_MESSAGE,
     buttonLabel: APP_UPDATE_BUTTON_LABEL,
+    clientVersion: APP_VERSION,
+    clientVersionLabel: APP_VERSION_LABEL,
     refreshNow,
-    refresh,
-  }), [status, loading, refreshNow, refresh]);
+    recheck,
+  }), [visible, refreshNow, recheck]);
 
   return (
     <AppUpdateContext.Provider value={value}>

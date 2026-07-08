@@ -83,24 +83,14 @@ export const ALL_MODULES: ModuleKey[] = [
 const ROLE_MODULES: Record<AppRole, readonly ModuleKey[]> = {
   visitor: ['wall', 'profile', 'recruitment', 'recruitment_applications'],
   recruit: ['wall', 'profile', 'recruitment', 'recruitment_applications', 'join'],
-  driver: ['dashboard', 'wall', 'profile', 'road_sheets', 'freight_market'],
-  dispatcher: [
-    'dashboard', ...COMMUNITY_MODULES, 'profile', 'dispatch', 'freight_market', 'road_sheets',
-    'gps_tracking', 'fleet_map', 'statistics', 'notifications', 'training_center', 'settings',
-  ],
+  driver: ['dashboard', 'wall', 'profile', 'road_sheets', 'freight_market', 'driver_portal'],
+  dispatcher: ['dashboard', 'wall', 'profile', 'dispatch', 'freight_market', 'road_sheets', 'gps_tracking'],
   fleet_manager: [
     'dashboard', ...COMMUNITY_MODULES, 'profile', 'fleet', 'maintenance', 'gps_tracking',
     'fleet_map', 'statistics', 'garages', 'reports', 'settings',
   ],
-  manager: [
-    'dashboard', ...COMMUNITY_MODULES, 'profile', 'drivers', 'fleet', 'reports', 'freight_market',
-    'clients', 'dispatch', 'finance', 'invoices', 'salaries', 'accounting', 'assistant',
-    'training_center', 'settings', 'notifications',
-  ],
-  accountant: [
-    'dashboard', ...COMMUNITY_MODULES, 'profile', 'finance', 'invoices', 'salaries', 'accounting',
-    'clients', 'settings',
-  ],
+  manager: ['dashboard', 'wall', 'profile', 'drivers', 'fleet', 'reports', 'freight_market'],
+  accountant: ['dashboard', 'wall', 'profile', 'finance', 'invoices', 'salaries'],
   admin: ALL_MODULES,
 };
 

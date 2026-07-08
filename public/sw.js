@@ -1,5 +1,5 @@
 /* Keep CACHE_NAME in sync with APP_VERSION in src/lib/appVersion.ts */
-const CACHE_NAME = 'zd-thermoliner-1-0-1';
+const CACHE_NAME = 'zd-thermoliner-1-0-2';
 const PRECACHE = ['/', '/index.html', '/manifest.json', '/icons/icon-192.svg', '/icons/icon-512.svg'];
 
 self.addEventListener('install', (event) => {
@@ -30,7 +30,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  /* Network-first for HTML + hashed assets — avoid stale JS bundles */
   if (request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.includes('/assets/')) {
     event.respondWith(
       fetch(request)

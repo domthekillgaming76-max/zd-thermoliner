@@ -11,6 +11,7 @@ import type {
   PaymentStatus,
   Trailer,
 } from '../lib/driverTypes';
+import { fetchDriverProfilesFromRoles, ensureDriverProfile, isVirtualDriverId } from './driverSyncService';
 
 export interface DriverFormInput {
   name: string;
@@ -150,10 +151,92 @@ function formToPayload(input: DriverFormInput): Record<string, unknown> {
   };
 }
 
+function virtualDriverFromProfile(p: {
+  id: string;
+  email: string;
+  full_name: string;
+  pseudo: string | null;
+  avatar_url: string | null;
+  truck_photo_url: string | null;
+  role: string;
+}): DriverProfile {
+  const name = p.pseudo?.trim() || p.full_name?.trim() || p.email || 'Chauffeur';
+  const now = new Date().toISOString();
+  return {
+    id: `profile-${p.id}`,
+    user_id: p.id,
+    name,
+    pseudo: p.pseudo,
+    photo_url: p.truck_photo_url ?? p.avatar_url,
+    avatar_url: p.avatar_url,
+    phone: null,
+    license_number: null,
+    truck_id: null,
+    garage_id: null,
+    status: 'active',
+    monthly_km: 0,
+    total_km: 0,
+    deliveries_count: 0,
+    profile_description: null,
+    joined_at: now,
+    created_at: now,
+    email: p.email,
+    address: null,
+    city: null,
+    postal_code: null,
+    country: null,
+    emergency_contact_name: null,
+    emergency_contact_phone: null,
+    employment_contract: 'CDI',
+    salary_mode: 'percentage',
+    salary_base: 0,
+    driver_level: 1,
+    experience_years: 0,
+    license_categories: null,
+    license_expires_at: null,
+    has_adr: false,
+    dangerous_goods_authorized: false,
+    driving_status: 'resting',
+    presence_status: 'offline',
+    member_role: 'driver',
+    trailer_id: null,
+    driving_hours_month: 0,
+    rest_hours_month: 0,
+    is_active_driver: true,
+    is_suspended: false,
+    role: p.role,
+    banner_url: null,
+    date_of_birth: null,
+    discord_name: null,
+    truckersmp_id: null,
+    steam_id: null,
+    employee_number: null,
+    hiring_date: null,
+    eco_driving_score: 0,
+    driver_rating: 0,
+    fleet_name: 'Z&D Thermoliner',
+    last_seen_at: null,
+  };
+}
+
 export async function fetchDrivers(): Promise<DriverProfile[]> {
   const { data, error } = await supabase.from('drivers').select('*').order('name');
   if (error) throw error;
   return (data ?? []).map(row => normalizeDriver(row as Record<string, unknown>));
+}
+
+export async function fetchDriversWithProfiles(): Promise<DriverProfile[]> {
+  const [drivers, profiles] = await Promise.all([
+    fetchDrivers(),
+    fetchDriverProfilesFromRoles(),
+  ]);
+
+  const linkedUserIds = new Set(drivers.map(d => d.user_id).filter(Boolean));
+  const virtual = profiles
+    .filter(p => !linkedUserIds.has(p.id))
+    .map(virtualDriverFromProfile);
+
+  return [...drivers, ...virtual];
 }
 
 export async function fetchDriverById(id: string): Promise<DriverProfile | null> {
@@ -169,12 +252,31 @@ export async function createDriver(input: DriverFormInput): Promise<DriverProfil
 }
 
 export async function updateDriver(id: string, input: DriverFormInput): Promise<DriverProfile> {
+  if (isVirtualDriverId(id)) {
+    const userId = id.replace(/^profile-/, '');
+    await ensureDriverProfileFromUserId(userId);
+    const { data: row } = await supabase.from('drivers').select('id').eq('user_id', userId).maybeSingle();
+    if (!row?.id) throw new Error('Impossible de créer la fiche chauffeur.');
+    id = row.id as string;
+  }
   const { data, error } = await supabase.from('drivers').update(formToPayload(input)).eq('id', id).select().single();
   if (error) throw error;
   return normalizeDriver(data as Record<string, unknown>);
 }
 
+async function ensureDriverProfileFromUserId(userId: string): Promise<void> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('id, email, full_name, pseudo, avatar_url, truck_photo_url, role')
+    .eq('id', userId)
+    .maybeSingle();
+  if (data) await ensureDriverProfile(data);
+}
+
 export async function deleteDriver(id: string): Promise<void> {
+  if (isVirtualDriverId(id)) {
+    throw new Error('Ce chauffeur sera créé automatiquement — actualisation en cours.');
+  }
   const { error } = await supabase.from('drivers').delete().eq('id', id);
   if (error) throw error;
 }
@@ -534,7 +636,7 @@ export async function promoteDriverMemberRole(driverId: string): Promise<DriverP
 
 export async function fetchDriverModuleBundle() {
   const [drivers, roadSheets, trucks, trailers, documents, garages] = await Promise.all([
-    fetchDrivers(),
+    fetchDriversWithProfiles(),
     fetchAllRoadSheetsForDrivers(),
     fetchTrucks(),
     fetchTrailers(),

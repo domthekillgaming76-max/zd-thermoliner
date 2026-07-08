@@ -61,6 +61,7 @@ const DRIVER_NAV: NavItem[] = [
   PROFILE_NAV,
   { to: '/road-sheets', icon: Route, label: 'Feuilles de route', module: 'road_sheets' },
   { to: '/freight', icon: Container, label: 'Marché Fret', module: 'freight_market' },
+  { to: '/driver', icon: Smartphone, label: 'Portail chauffeur', module: 'driver_portal' },
 ];
 
 export interface NavSection {
@@ -156,6 +157,7 @@ export function buildMobileNavItems(
       { to: '/profile', icon: User, label: 'Profil', module: 'profile' },
       { to: '/road-sheets', icon: Route, label: 'Routes', module: 'road_sheets' },
       { to: '/freight', icon: Container, label: 'Fret', module: 'freight_market' },
+      { to: '/driver', icon: Smartphone, label: 'Portail', module: 'driver_portal' },
     ], role);
   }
 

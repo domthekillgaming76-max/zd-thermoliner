@@ -63,7 +63,12 @@ export function useChangeUserRole() {
   return useMutation({
     mutationFn: ({ userId, role, email }: { userId: string; role: string; email: string }) =>
       changeUserRole(userId, role, email),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.admin.all }),
+    onSuccess: (result) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.admin.all });
+      if (result.driverEnsured) {
+        void qc.invalidateQueries({ queryKey: queryKeys.drivers.all });
+      }
+    },
   });
 }
 

@@ -1,5 +1,5 @@
 /** Bump this constant on each production release. */
-export const APP_VERSION = '1.0.1';
+export const APP_VERSION = '1.0.2';
 
 export const APP_VERSION_LABEL = `v${APP_VERSION}`;
 
@@ -8,7 +8,7 @@ export const SEEN_APP_VERSION_KEY = 'zd_seen_app_version';
 export const APP_UPDATE_NOTIFICATION_TITLE = 'Nouvelle mise à jour disponible';
 
 export const APP_UPDATE_NOTIFICATION_MESSAGE =
-  'Une nouvelle version de Z&D Thermoliner ERP est disponible. Cliquez sur le bouton ci-dessous pour recharger l\'application.';
+  'Une nouvelle version de Z&D Thermoliner ERP est disponible.';
 
 export const APP_UPDATE_BUTTON_LABEL = 'Télécharger la mise à jour';
 
@@ -28,7 +28,7 @@ export function saveSeenAppVersion(): void {
   }
 }
 
-/** Show notification when the user has not acknowledged the current APP_VERSION. */
+/** Pure client-side check — no database dependency. */
 export function isUpdateNotificationVisible(): boolean {
   return getSeenAppVersion() !== APP_VERSION;
 }

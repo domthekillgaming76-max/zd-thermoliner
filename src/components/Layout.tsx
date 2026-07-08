@@ -2,9 +2,10 @@ import { ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { AppHeader } from './AppHeader';
-import { AppUpdateBanner } from './AppUpdateBanner';
 import { RoleSyncGuard } from './RoleSyncGuard';
+import { OnlineMembersPanel } from './OnlineMembersPanel';
 import { SidebarProvider, useSidebar } from '../contexts/SidebarContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LayoutProps {
   children: ReactNode;
@@ -12,6 +13,7 @@ interface LayoutProps {
 
 function LayoutShell({ children }: LayoutProps) {
   const { collapsed } = useSidebar();
+  const { user } = useAuth();
 
   return (
     <RoleSyncGuard>
@@ -20,10 +22,9 @@ function LayoutShell({ children }: LayoutProps) {
         <div
           className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
             collapsed ? 'md:ml-[72px]' : 'md:ml-60'
-          }`}
+          } lg:pr-64`}
         >
           <AppHeader />
-          <AppUpdateBanner />
           <MobileNav />
           <main className="flex-1 p-4 md:p-6 lg:p-8 pb-24 md:pb-8">
             <div className="max-w-[1440px] mx-auto">
@@ -31,6 +32,7 @@ function LayoutShell({ children }: LayoutProps) {
             </div>
           </main>
         </div>
+        {user && <OnlineMembersPanel />}
       </div>
     </RoleSyncGuard>
   );

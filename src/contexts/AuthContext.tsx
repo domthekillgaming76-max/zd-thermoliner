@@ -13,6 +13,8 @@ import {
   getRoleLabel,
   dispatchRoleUpdated,
 } from '../lib/roleEngine';
+import { ensureDriverProfile } from '../services/driverSyncService';
+import { createUserNotification } from '../services/notificationService';
 import { queryKeys } from '../lib/queryKeys';
 
 export type UserProfile = NormalizedProfile;
@@ -70,6 +72,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void queryClient.invalidateQueries({ queryKey: queryKeys.wall.module(userId) });
     void queryClient.invalidateQueries({ queryKey: queryKeys.admin.all });
     void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.list(userId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.drivers.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.onlinePresence.all });
   }, [queryClient]);
 
   const applyFetchedProfile = useCallback((next: UserProfile | null) => {
@@ -80,20 +84,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const applyRoleChange = useCallback((newProfile: UserProfile, prevRole: string | null) => {
     const nextRole = newProfile.role;
+    const prevNorm = normalizeRole(prevRole);
+    const nextNorm = normalizeRole(nextRole);
     console.log(`[Z&D Role Polling] role changed from ${prevRole} to ${nextRole}`);
 
     setProfile(newProfile);
     setRole(nextRole);
-    setNormalizedRole(normalizeRole(nextRole));
+    setNormalizedRole(nextNorm);
     profileRoleRef.current = nextRole;
 
     dispatchRoleUpdated(newProfile as unknown as Record<string, unknown>);
     invalidateRoleQueries(newProfile.id);
 
-    setRoleToast({
-      message: 'Votre rôle a été mis à jour.',
-      label: getRoleLabel(nextRole),
-    });
+    if (nextNorm === 'driver') {
+      void ensureDriverProfile(newProfile);
+    }
+
+    const roleLabel = getRoleLabel(nextRole);
+    if (prevNorm === 'visitor' && nextNorm === 'driver') {
+      setRoleToast({
+        message: 'Bienvenue dans l\'espace chauffeur',
+        label: `Votre rôle a été mis à jour : ${roleLabel}`,
+      });
+      void createUserNotification(
+        newProfile.id,
+        `Votre rôle a été mis à jour : ${roleLabel}`,
+        'Bienvenue dans l\'espace chauffeur. Vos salons chauffeur sont maintenant disponibles.',
+        'info',
+      );
+    } else {
+      setRoleToast({
+        message: 'Votre rôle a été mis à jour.',
+        label: `Votre rôle a été mis à jour : ${roleLabel}`,
+      });
+      void createUserNotification(
+        newProfile.id,
+        `Votre rôle a été mis à jour : ${roleLabel}`,
+        'Votre rôle a été mis à jour.',
+        'info',
+      );
+    }
     setTimeout(() => setRoleToast(null), 8000);
   }, [invalidateRoleQueries]);
 
@@ -148,6 +178,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setProfileError(null);
         applyFetchedProfile(result.profile);
+        if (result.profile && normalizeRole(result.profile.role) === 'driver') {
+          void ensureDriverProfile(result.profile);
+        }
         void touchProfileLastSeen(userId);
       }
     } catch (err) {
@@ -222,10 +255,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       void pollProfileRole(user.id);
     }, ROLE_POLL_INTERVAL_MS);
 
+    const channelName = `profile-role-sync-${user.id}`;
+    const rtChannel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+        payload => {
+          const incoming = payload.new as UserProfile;
+          const prevRole = profileRoleRef.current;
+          if (incoming.role !== prevRole) {
+            applyRoleChange(incoming, prevRole);
+          } else {
+            setProfile(prev => ({ ...(prev ?? {}), ...incoming } as UserProfile));
+          }
+        },
+      )
+      .subscribe();
+
     return () => {
       clearRolePolling();
+      void supabase.removeChannel(rtChannel);
     };
-  }, [user?.id, loading, pollProfileRole, clearRolePolling]);
+  }, [user?.id, loading, pollProfileRole, clearRolePolling, applyRoleChange]);
 
   async function signIn(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });

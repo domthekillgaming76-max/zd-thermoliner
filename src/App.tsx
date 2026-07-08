@@ -6,6 +6,7 @@ import { Component, ReactNode } from 'react';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AppUpdateProvider } from './contexts/AppUpdateContext';
+import { AppUpdateGlobalNotice } from './components/AppUpdateBanner';
 import { LiveNotificationProvider } from './contexts/LiveNotificationContext';
 import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 
@@ -455,6 +456,7 @@ function App() {
           <AuthProvider>
             <AppUpdateProvider>
               <LiveNotificationProvider>
+                <AppUpdateGlobalNotice />
                 <AppRoutes />
                 <PwaInstallPrompt />
               </LiveNotificationProvider>
