@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import {
   FileText, CreditCard, Receipt, Bell, Download, RefreshCw, Wallet,
   Calendar, CheckCircle, Clock, Shield,
@@ -8,7 +9,7 @@ import { HR_COMPANY_NAME } from '../../lib/driverHrTypes';
 import { exportContractPdf, exportPayslipPdf } from '../../lib/driverHrPdf';
 import { fmtEuro } from '../../lib/format';
 
-interface DriverHrDossierPanelProps {
+export interface DriverHrDossierPanelProps {
   driver: DriverProfile;
   dossier: DriverHrDossier;
   canManage: boolean;
@@ -25,6 +26,10 @@ export function DriverHrDossierPanel({
   onRegenerateCard,
   regenerating,
 }: DriverHrDossierPanelProps) {
+  useEffect(() => {
+    console.log('DriverHrFolder mounted', { driverId: driver.id, driverName: driver.name });
+  }, [driver.id, driver.name]);
+
   const contractMeta = dossier.contract?.metadata as DriverHrContractMetadata | undefined;
 
   return (
@@ -120,7 +125,7 @@ function ContractCard({
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-red-500/15 text-red-400 border border-red-500/25 hover:bg-red-500/20 disabled:opacity-40"
         >
           <Download className="w-3.5 h-3.5" />
-          Télécharger le contrat PDF
+          Télécharger
         </button>
         {canManage && (
           <button
@@ -245,7 +250,7 @@ function PayslipsSection({ driverName, payslips }: { driverName: string; payslip
                     className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/15"
                   >
                     <Download className="w-3 h-3" />
-                    PDF
+                    Télécharger
                   </button>
                 </div>
               </li>

@@ -49,7 +49,7 @@ import {
 } from '../lib/profileThemes';
 
 import { RoleBadge } from '../components/erp/RoleBadge';
-import { ProfileHrFolderSection } from '../components/profile/ProfileHrFolderSection';
+import { DriverHrFolderSection } from '../components/drivers/DriverHrFolderSection';
 import { canViewOwnHrFolderOnProfile } from '../lib/driverPermissions';
 
 
@@ -102,7 +102,7 @@ function ProfileHrFolderMount() {
   useEffect(() => {
     console.log('[HR Folder] mounted in real ProfilePage');
   }, []);
-  return <ProfileHrFolderSection isOwnProfileContext />;
+  return <DriverHrFolderSection isOwnProfileContext />;
 }
 
 function SaveStatus({ state, error }: { state: string; error: string | null }) {

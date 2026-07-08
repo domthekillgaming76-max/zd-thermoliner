@@ -6,19 +6,22 @@ const TABS: { id: DriverPortalTab; icon: typeof Home }[] = [
   { id: 'home', icon: Home },
   { id: 'missions', icon: ClipboardList },
   { id: 'sheet', icon: FileText },
-  { id: 'docs', icon: FolderOpen },
+  { id: 'docs', icon: FileText },
+  { id: 'hr_folder', icon: FolderOpen },
 ];
 
 interface DriverMobileNavProps {
   tab: DriverPortalTab;
   onTabChange: (tab: DriverPortalTab) => void;
+  showHrFolder?: boolean;
 }
 
-export function DriverMobileNav({ tab, onTabChange }: DriverMobileNavProps) {
+export function DriverMobileNav({ tab, onTabChange, showHrFolder = true }: DriverMobileNavProps) {
+  const visibleTabs = showHrFolder ? TABS : TABS.filter(t => t.id !== 'hr_folder');
   return (
     <nav className="driver-portal-nav fixed bottom-0 left-0 right-0 z-50 px-3 py-2 safe-area-bottom">
       <div className="max-w-lg mx-auto flex items-center justify-around driver-portal-nav-inner rounded-2xl px-1 py-1">
-        {TABS.map(item => {
+        {visibleTabs.map(item => {
           const active = tab === item.id;
           return (
             <button

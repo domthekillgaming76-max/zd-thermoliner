@@ -249,6 +249,7 @@ export function useRegenerateHrContract(driverId: string) {
     mutationFn: (driver: DriverProfile) => regenerateDriverContract(driver),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.drivers.detail(driverId) });
+      qc.invalidateQueries({ queryKey: ['drivers', 'hrFolder'] });
     },
   });
 }
@@ -259,6 +260,7 @@ export function useRegenerateHrCard(driverId: string) {
     mutationFn: (driver: DriverProfile) => regenerateCompanyCard(driver),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.drivers.detail(driverId) });
+      qc.invalidateQueries({ queryKey: ['drivers', 'hrFolder'] });
     },
   });
 }

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, BarChart3, FileText, AlertTriangle, Euro, Link2,
   Circle, Star, MapPin, Phone, Mail, MessageCircle, Hash, Calendar,
@@ -23,20 +24,21 @@ import type { RoadSheet, Truck } from '../../lib/supabase';
 import { fmtEuro } from '../../lib/format';
 import { DEFAULT_TRUCK_BANNER_URL } from '../../lib/profileDefaults';
 import { DriverAssignmentPanel, DriverDocumentsPanel } from './DriverProfilePanels';
-import { DriverHrDossierPanel } from './DriverHrDossierPanel';
+import { DriverHrFolder } from './DriverHrFolder';
 import { useUploadDriverDocument, useCreateIncident, useCreateSalaryRecord, useApproveDriverDocument, useSuspendDriver, usePromoteDriver, useRegenerateHrContract, useRegenerateHrCard } from '../../hooks/useDrivers';
 import { describeDriverPromotion } from '../../services/driverService';
 import { useAuth } from '../../contexts/AuthContext';
-import { canManageDrivers, canManageDriverHr, canViewDriverHrDossier } from '../../lib/driverPermissions';
+import { canManageDrivers, canManageDriverHr, canViewHrFolder } from '../../lib/driverPermissions';
 import type { DriverHrDossier } from '../../lib/driverHrTypes';
+import { EMPTY_DRIVER_HR_DOSSIER } from '../../lib/driverHrTypes';
 
 type ProfileTab = 'overview' | 'statistics' | 'documents' | 'incidents' | 'salary' | 'assignments' | 'hr_dossier';
 
-const ALL_TABS: { id: ProfileTab; label: string; icon: typeof LayoutDashboard; hrOnly?: boolean }[] = [
+const ALL_TABS: { id: ProfileTab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: 'Vue d\'ensemble', icon: LayoutDashboard },
   { id: 'statistics', label: 'Statistiques', icon: BarChart3 },
   { id: 'documents', label: 'Documents', icon: FileText },
-  { id: 'hr_dossier', label: 'Dossier chauffeur', icon: FolderOpen, hrOnly: true },
+  { id: 'hr_dossier', label: 'Dossier Chauffeur', icon: FolderOpen },
   { id: 'incidents', label: 'Incidents', icon: AlertTriangle },
   { id: 'salary', label: 'Salaire', icon: Euro },
   { id: 'assignments', label: 'Affectations', icon: Link2 },
@@ -58,11 +60,38 @@ interface DriverProfileViewProps {
 export function DriverProfileView(props: DriverProfileViewProps) {
   const { driver, roadSheets, documents, salaryHistory, incidents, assignments, trucks, trailers, garages = [], hrDossier } = props;
   const [tab, setTab] = useState<ProfileTab>('overview');
-  const { profile, user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const { profile, user, isAdministrator } = useAuth();
+
+  useEffect(() => {
+    if (location.pathname.endsWith('/dossier')) {
+      setTab('hr_dossier');
+      return;
+    }
+    const t = searchParams.get('tab');
+    if (t === 'dossier' || t === 'hr_folder' || t === 'hr_dossier') setTab('hr_dossier');
+  }, [searchParams, location.pathname]);
+
+  const canView = canViewHrFolder({
+    viewerRole: profile?.role ?? null,
+    viewerEmail: user?.email ?? profile?.email ?? null,
+    viewerUserId: user?.id ?? null,
+    driverUserId: driver.user_id ?? null,
+    isOwnProfileContext: Boolean(user?.id && driver.user_id && user.id === driver.user_id),
+    isAdministrator,
+  });
+
+  console.log('[HR Folder] render check', {
+    currentUser: { id: user?.id, role: profile?.role, email: user?.email, isAdministrator },
+    driver: { id: driver.id, user_id: driver.user_id, name: driver.name },
+    canView,
+  });
+
   const isAdmin = canManageDrivers(profile?.role, user?.email);
-  const canViewHr = canViewDriverHrDossier(profile?.role, user?.email, user?.id, driver.user_id);
   const canManageHr = canManageDriverHr(profile?.role, user?.email);
-  const tabs = ALL_TABS.filter(t => !t.hrOnly || canViewHr);
+  const tabs = ALL_TABS.filter(t => t.id !== 'hr_dossier' || canView);
+  const resolvedHrDossier = hrDossier ?? EMPTY_DRIVER_HR_DOSSIER;
   const stats = computeDriverStatistics(driver, roadSheets, salaryHistory);
   const driving = DRIVING_STATUS_LABELS[driver.driving_status] ?? DRIVING_STATUS_LABELS.resting;
   const presence = PRESENCE_STATUS_LABELS[driver.presence_status] ?? PRESENCE_STATUS_LABELS.offline;
@@ -271,10 +300,10 @@ export function DriverProfileView(props: DriverProfileViewProps) {
         />
       )}
 
-      {tab === 'hr_dossier' && canViewHr && hrDossier && (
-        <DriverHrDossierPanel
+      {tab === 'hr_dossier' && canView && (
+        <DriverHrFolder
           driver={driver}
-          dossier={hrDossier}
+          dossier={resolvedHrDossier}
           canManage={canManageHr}
           onRegenerateContract={() => regenerateContract.mutate(driver)}
           onRegenerateCard={() => regenerateCard.mutate(driver)}

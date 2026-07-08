@@ -11,6 +11,7 @@ interface DriverPortalLayoutProps {
   tab: DriverPortalTab;
   onTabChange: (tab: DriverPortalTab) => void;
   driverName?: string;
+  showHrFolder?: boolean;
 }
 
 export function DriverPortalLayout({
@@ -18,6 +19,7 @@ export function DriverPortalLayout({
   tab,
   onTabChange,
   driverName,
+  showHrFolder = true,
 }: DriverPortalLayoutProps) {
   const { signOut } = useAuth();
 
@@ -57,7 +59,7 @@ export function DriverPortalLayout({
         {children}
       </main>
 
-      <DriverMobileNav tab={tab} onTabChange={onTabChange} />
+      <DriverMobileNav tab={tab} onTabChange={onTabChange} showHrFolder={showHrFolder} />
     </div>
   );
 }

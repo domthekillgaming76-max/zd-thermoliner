@@ -10,6 +10,7 @@ export const queryKeys = {
     list: () => ['drivers', 'list'] as const,
     module: () => ['drivers', 'module'] as const,
     detail: (id: string) => ['drivers', 'detail', id] as const,
+    hrFolder: (userId: string) => ['drivers', 'hrFolder', userId] as const,
   },
   trucks: {
     all: ['trucks'] as const,

@@ -13,6 +13,7 @@ import type {
 } from '../lib/driverTypes';
 import { fetchDriverProfilesFromRoles, ensureDriverProfile, isVirtualDriverId } from './driverSyncService';
 import { ensureDriverHrDossier, fetchDriverHrDossier } from './driverHrService';
+import { EMPTY_DRIVER_HR_DOSSIER } from '../lib/driverHrTypes';
 
 export interface DriverFormInput {
   name: string;
@@ -670,8 +671,13 @@ export async function fetchDriverDetailBundle(driverId: string) {
 
   if (!driver) throw new Error('Chauffeur introuvable.');
 
-  await ensureDriverHrDossier(driver);
-  const hrDossier = await fetchDriverHrDossier(driverId, driver.user_id);
+  let hrDossier = { ...EMPTY_DRIVER_HR_DOSSIER };
+  try {
+    await ensureDriverHrDossier(driver);
+    hrDossier = await fetchDriverHrDossier(driverId, driver.user_id);
+  } catch (err) {
+    console.warn('[Z&D HR] detail bundle HR load failed:', err);
+  }
 
   const garage = garages.find(g => g.id === driver.garage_id);
 

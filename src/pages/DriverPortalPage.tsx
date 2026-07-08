@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AlertTriangle, Loader2, Smartphone } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useDriverPortal } from '../hooks/useDriverPortal';
@@ -10,17 +11,33 @@ import { DriverHomePanel } from '../components/driver-portal/DriverHomePanel';
 import { DriverMissionsPanel } from '../components/driver-portal/DriverMissionsPanel';
 import { DriverMobileRoadSheetForm } from '../components/driver-portal/DriverMobileRoadSheetForm';
 import { DriverDocumentsPanel } from '../components/driver-portal/DriverDocumentsPanel';
+import { DriverHrFolderSection } from '../components/drivers/DriverHrFolderSection';
+import { canViewOwnHrFolderOnProfile } from '../lib/driverPermissions';
 import type { RoadSheetFormData } from '../services/roadSheetService';
 import { uploadDeliveryProof } from '../services/driverPortalService';
 
+function resolvePortalTab(param: string | null): DriverPortalTab {
+  if (param === 'dossier' || param === 'hr_folder') return 'hr_folder';
+  if (param === 'missions') return 'missions';
+  if (param === 'sheet' || param === 'feuille') return 'sheet';
+  if (param === 'docs' || param === 'documents') return 'docs';
+  return 'home';
+}
+
 export function DriverPortalPage() {
-  const { user, profile } = useAuth();
+  const { user, profile, isAdministrator } = useAuth();
+  const [searchParams] = useSearchParams();
   const proofInputRef = useRef<HTMLInputElement>(null);
-  const [tab, setTab] = useState<DriverPortalTab>('home');
+  const [tab, setTab] = useState<DriverPortalTab>(() => resolvePortalTab(searchParams.get('tab')));
   const [pageError, setPageError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [highlightPayslip, setHighlightPayslip] = useState(false);
   const [pendingMissionId, setPendingMissionId] = useState<string | undefined>();
+
+  useEffect(() => {
+    const next = resolvePortalTab(searchParams.get('tab'));
+    setTab(next);
+  }, [searchParams]);
 
   const {
     data,
@@ -44,6 +61,19 @@ export function DriverPortalPage() {
     uploadProof.isPending;
 
   const isAdminView = canViewAllDriverPortalActivity(profile?.role, user?.email ?? profile?.email);
+
+  const canViewHr = canViewOwnHrFolderOnProfile(
+    profile?.role,
+    user?.email ?? profile?.email,
+    true,
+    isAdministrator,
+  );
+
+  console.log('[HR Folder] render check', {
+    currentUser: { id: user?.id, role: profile?.role, email: user?.email, isAdministrator },
+    driver: data?.home ? { driverId: data.home.driverId, driverName: data.home.driverName } : null,
+    canView: canViewHr,
+  });
 
   async function handleAction(action: string, payload?: string) {
     setPageError(null);
@@ -86,7 +116,7 @@ export function DriverPortalPage() {
           break;
         case 'payslip':
           setHighlightPayslip(true);
-          setTab('docs');
+          setTab('hr_folder');
           setTimeout(() => setHighlightPayslip(false), 3000);
           break;
         default:
@@ -149,6 +179,7 @@ export function DriverPortalPage() {
       tab={tab}
       onTabChange={setTab}
       driverName={data.home.driverName}
+      showHrFolder={canViewHr}
     >
       <input
         ref={proofInputRef}
@@ -193,6 +224,11 @@ export function DriverPortalPage() {
           payslips={data.payslips}
           highlightPayslip={highlightPayslip}
         />
+      )}
+      {tab === 'hr_folder' && canViewHr && (
+        <div className={highlightPayslip ? 'ring-2 ring-red-500/30 rounded-2xl' : ''}>
+          <DriverHrFolderSection isOwnProfileContext />
+        </div>
       )}
     </DriverPortalLayout>
   );

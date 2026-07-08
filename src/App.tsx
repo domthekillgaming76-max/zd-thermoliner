@@ -299,6 +299,8 @@ function AppRoutes() {
 
       <Route path="/drivers" element={<ProtectedPage page="drivers"><DriversPage /></ProtectedPage>} />
 
+      <Route path="/drivers/:id/dossier" element={<ProtectedPage page="drivers"><DriverProfilePage /></ProtectedPage>} />
+
       <Route path="/drivers/:id" element={<ProtectedPage page="drivers"><DriverProfilePage /></ProtectedPage>} />
 
       <Route path="/fleet" element={<ProtectedPage page="fleet"><FleetPage /></ProtectedPage>} />
@@ -306,6 +308,8 @@ function AppRoutes() {
       <Route path="/fleet/:id" element={<ProtectedPage page="fleet"><TruckProfilePage /></ProtectedPage>} />
 
       <Route path="/dispatch" element={<ProtectedPage page="dispatch"><DispatchPage /></ProtectedPage>} />
+
+      <Route path="/driver/dossier" element={<Navigate to="/driver?tab=dossier" replace />} />
 
       <Route path="/driver" element={
 
@@ -430,6 +434,8 @@ function AppRoutes() {
       } />
 
       <Route path="/settings" element={<ProtectedPage page="settings"><SettingsPage /></ProtectedPage>} />
+
+      <Route path="/profile/dossier" element={<Navigate to="/profile?tab=dossier" replace />} />
 
       <Route path="/profile" element={<ProtectedPage page="profile"><ProfilePage /></ProtectedPage>} />
 

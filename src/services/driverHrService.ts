@@ -11,6 +11,7 @@ import {
   HR_COMPANY_NAME,
   HR_CONTRACT_TYPE,
   HR_DEFAULT_CARD_LIMIT,
+  EMPTY_DRIVER_HR_DOSSIER,
 } from '../lib/driverHrTypes';
 import {
   notifyPayslipAvailable,
@@ -288,7 +289,8 @@ export async function fetchDriverHrDossier(
   driverId: string,
   driverUserId: string | null,
 ): Promise<DriverHrDossier> {
-  const [contractRes, cardRes, payslipsRes, salaryRes, notifRes] = await Promise.all([
+  try {
+    const [contractRes, cardRes, payslipsRes, salaryRes, notifRes] = await Promise.all([
     supabase
       .from('driver_documents')
       .select('*')
@@ -364,6 +366,10 @@ export async function fetchDriverHrDossier(
     paymentHistory,
     hrNotifications: (notifRes.data ?? []) as DriverHrDossier['hrNotifications'],
   };
+  } catch (err) {
+    console.warn('[Z&D HR] fetchDriverHrDossier failed:', err);
+    return { ...EMPTY_DRIVER_HR_DOSSIER };
+  }
 }
 
 export async function fetchPayslipTransactionReference(payslip: DriverPayslip): Promise<string | null> {

@@ -87,3 +87,11 @@ export interface DriverHrDossier {
 export const HR_COMPANY_NAME = 'Z&D Thermoliner';
 export const HR_CONTRACT_TYPE = 'Contrat RP / VTC ETS2-ATS';
 export const HR_DEFAULT_CARD_LIMIT = 5000;
+
+export const EMPTY_DRIVER_HR_DOSSIER: DriverHrDossier = {
+  contract: null,
+  companyCard: null,
+  payslips: [],
+  paymentHistory: [],
+  hrNotifications: [],
+};
