@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Component, ReactNode } from 'react';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AppModulesProvider } from './contexts/AppModulesContext';
 import { AppUpdateProvider } from './contexts/AppUpdateContext';
 import { AppUpdateGlobalNotice } from './components/AppUpdateBanner';
 import { LiveNotificationProvider } from './contexts/LiveNotificationContext';
@@ -74,6 +75,7 @@ import { TrainingCenterPage } from './pages/TrainingCenterPage';
 import { MaintenancePage } from './pages/MaintenancePage';
 
 import { AdminSecurityPage } from './pages/AdminSecurityPage';
+import { SalonsManagementPage } from './pages/SalonsManagementPage';
 
 import { RecruitmentPage } from './pages/recruitment/RecruitmentPage';
 
@@ -411,6 +413,12 @@ function AppRoutes() {
 
       <Route path="/notifications" element={<ProtectedPage page="notifications"><NotificationsPage /></ProtectedPage>} />
 
+      <Route path="/administration/salons" element={
+        <ProtectedPage page="administration">
+          <SalonsManagementPage />
+        </ProtectedPage>
+      } />
+
       <Route path="/administration" element={
 
         <ProtectedPage page="administration">
@@ -454,6 +462,7 @@ function App() {
         <BrowserRouter>
 
           <AuthProvider>
+            <AppModulesProvider>
             <AppUpdateProvider>
               <LiveNotificationProvider>
                 <AppUpdateGlobalNotice />
@@ -461,6 +470,7 @@ function App() {
                 <PwaInstallPrompt />
               </LiveNotificationProvider>
             </AppUpdateProvider>
+            </AppModulesProvider>
           </AuthProvider>
 
         </BrowserRouter>

@@ -1,8 +1,9 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useAppModules } from '../contexts/AppModulesContext';
 import { canAccessPage, getAccessDeniedRedirect, getPostLoginPath } from '../lib/accessControl';
 import { isAdministratorEmail } from '../lib/admin';
-import { canAccessModule, canAccessRoute, getRoleRedirect, type ModuleKey } from '../lib/roleEngine';
+import { canAccessModule, canAccessRoute, getRoleRedirect, pathnameToModule, type ModuleKey } from '../lib/roleEngine';
 
 interface RoleBasedRouteProps {
   children: React.ReactNode;
@@ -15,7 +16,7 @@ const MODULE_PAGES = new Set<string>([
   'road_sheets', 'freight_market', 'dispatch', 'gps_tracking', 'fleet', 'maintenance',
   'drivers', 'reports', 'finance', 'invoices', 'salaries', 'accounting', 'bank',
   'administration', 'settings', 'updates', 'events', 'training_center', 'driver_portal',
-  'documents', 'notifications', 'fleet_map', 'statistics', 'assistant', 'garages', 'clients',
+  'documents', 'notifications', 'fleet_map', 'statistics', 'assistant', 'garages', 'clients', 'salons_admin',
 ]);
 
 function isModulePage(page: string): page is ModuleKey {
@@ -24,6 +25,7 @@ function isModulePage(page: string): page is ModuleKey {
 
 export function RoleBasedRoute({ children, requiredRole, page }: RoleBasedRouteProps) {
   const { user, profile, loading, role, normalizedRole } = useAuth();
+  const { canAccessModuleKey, isModuleEnabledKey, isRouteEnabledPath } = useAppModules();
   const location = useLocation();
   const liveRole = role ?? profile?.role ?? normalizedRole;
 
@@ -82,7 +84,15 @@ export function RoleBasedRoute({ children, requiredRole, page }: RoleBasedRouteP
     ? canAccessModule(liveRole, page) && canAccessRoute(liveRole, location.pathname)
     : canAccessRoute(liveRole, location.pathname);
 
-  const allowed = isAdministratorEmail(email) ? legacyAllowed : legacyAllowed && engineAllowed;
+  const moduleKey = isModulePage(page) ? page : pathnameToModule(location.pathname);
+  const configAllowed = moduleKey
+    ? canAccessModuleKey(moduleKey) && isModuleEnabledKey(moduleKey)
+    : true;
+  const routeEnabled = isRouteEnabledPath(location.pathname);
+
+  const allowed = isAdministratorEmail(email)
+    ? legacyAllowed && routeEnabled
+    : legacyAllowed && engineAllowed && configAllowed && routeEnabled;
 
   if (!allowed) {
     if (!user) return <Navigate to="/login" replace />;

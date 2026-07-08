@@ -99,4 +99,7 @@ export const queryKeys = {
     all: ['onlinePresence'] as const,
     list: () => ['onlinePresence', 'list'] as const,
   },
+  appModules: {
+    all: ['appModules'] as const,
+  },
 };

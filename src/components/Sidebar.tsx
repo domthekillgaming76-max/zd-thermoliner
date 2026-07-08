@@ -3,21 +3,34 @@ import { useEffect } from 'react';
 import { LogOut, ChevronLeft } from 'lucide-react';
 import { RoleBadge } from './erp/RoleBadge';
 import { useAuth } from '../contexts/AuthContext';
+import { APP_MODULES_SYNC_EVENT, useAppModules } from '../contexts/AppModulesContext';
 import { useAppUpdateBadge } from '../contexts/AppUpdateContext';
 import { useSidebar } from '../contexts/SidebarContext';
+import { buildDynamicSidebarSections } from '../lib/dynamicNavBuilder';
 import { buildSidebarSections } from '../lib/navConfig';
 
 export function Sidebar() {
   const { signOut, profile, user, role, normalizedRole } = useAuth();
+  const { modules } = useAppModules();
   const { collapsed, toggleCollapsed } = useSidebar();
   const hasUpdate = useAppUpdateBadge();
 
   const liveRole = role ?? normalizedRole;
-  const sections = buildSidebarSections(liveRole, user?.email ?? profile?.email);
+  const dynamicSections = buildDynamicSidebarSections(liveRole, user?.email ?? profile?.email, modules);
+  const fallbackSections = buildSidebarSections(liveRole, user?.email ?? profile?.email);
+  const sections = dynamicSections.length > 0 ? dynamicSections : fallbackSections;
 
   useEffect(() => {
     console.log('[Z&D Sidebar] rerender role', liveRole);
   }, [liveRole]);
+
+  useEffect(() => {
+    const onModulesUpdated = () => {
+      console.log('[Z&D Sidebar] modules updated');
+    };
+    window.addEventListener(APP_MODULES_SYNC_EVENT, onModulesUpdated);
+    return () => window.removeEventListener(APP_MODULES_SYNC_EVENT, onModulesUpdated);
+  }, []);
 
   return (
     <aside

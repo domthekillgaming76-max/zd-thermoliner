@@ -6,6 +6,7 @@ import { FormAlert, FormSuccess } from '../components/erp/FormAlert';
 import { AdminDashboard } from '../components/admin/AdminDashboard';
 import { UserManagementTable } from '../components/admin/UserManagementTable';
 import { PermissionEditor } from '../components/admin/PermissionEditor';
+import { SalonsManagementPanel } from '../components/admin/SalonsManagementPanel';
 import { SecurityTimeline } from '../components/admin/SecurityTimeline';
 import { useAuth } from '../contexts/AuthContext';
 import { canAccessAdministration } from '../lib/adminPermissions';
@@ -26,7 +27,7 @@ import {
 import { fetchSecurityLogs } from '../services/securityLogService';
 import { useQuery } from '@tanstack/react-query';
 
-type TabId = 'dashboard' | 'users' | 'security';
+type TabId = 'dashboard' | 'users' | 'security' | 'salons';
 
 const ASSIGNABLE_ROLES = ['visitor', 'candidat', 'chauffeur', 'tractionnaire', 'dispatcher', 'directeur', 'patron', 'admin'];
 
@@ -146,6 +147,7 @@ export function AdminSecurityPage() {
           {([
             { id: 'dashboard' as TabId, label: 'Tableau de bord' },
             { id: 'users' as TabId, label: `Utilisateurs (${filteredUsers.length})` },
+            { id: 'salons' as TabId, label: 'Gestion des salons' },
             { id: 'security' as TabId, label: 'Sécurité' },
           ]).map(t => (
             <button key={t.id} type="button" onClick={() => setTab(t.id)}
@@ -225,6 +227,8 @@ export function AdminSecurityPage() {
             />
           </div>
         )}
+
+        {tab === 'salons' && <SalonsManagementPanel />}
 
         {tab === 'security' && (
           <div className="grid lg:grid-cols-2 gap-4">

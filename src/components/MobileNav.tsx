@@ -1,11 +1,16 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useAppModules } from '../contexts/AppModulesContext';
+import { buildDynamicMobileNavItems } from '../lib/dynamicNavBuilder';
 import { buildMobileNavItems } from '../lib/navConfig';
 
 export function MobileNav() {
   const { profile, user, role, normalizedRole } = useAuth();
+  const { modules } = useAppModules();
   const liveRole = role ?? normalizedRole;
-  const items = buildMobileNavItems(liveRole, user?.email ?? profile?.email);
+  const dynamicItems = buildDynamicMobileNavItems(liveRole, user?.email ?? profile?.email, modules);
+  const fallbackItems = buildMobileNavItems(liveRole, user?.email ?? profile?.email);
+  const items = dynamicItems.length > 0 ? dynamicItems : fallbackItems;
 
   if (items.length === 0) return null;
 
