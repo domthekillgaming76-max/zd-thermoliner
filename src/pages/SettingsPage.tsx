@@ -10,6 +10,7 @@ import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { canAccessAdministration } from '../lib/adminPermissions';
 import { FormAlert, FormSuccess } from '../components/erp/FormAlert';
+import { APP_VERSION_LABEL } from '../lib/appVersion';
 
 const BLOCKED_ROLES = ['candidat', 'banni', 'ancien_membre'];
 const PREFS_KEY = 'zd_erp_settings';
@@ -202,7 +203,7 @@ export function SettingsPage() {
             )}
 
             <div className="text-center py-6">
-              <p className="text-white/20 text-sm">Z&D Thermoliner ERP v2.0</p>
+              <p className="text-white/20 text-sm">Z&D Thermoliner ERP {APP_VERSION_LABEL}</p>
               <p className="text-white/10 text-xs mt-1">© 2026 Z&D Thermoliner</p>
             </div>
           </>

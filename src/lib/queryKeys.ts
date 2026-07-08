@@ -75,4 +75,12 @@ export const queryKeys = {
     all: ['training'] as const,
     module: (userId?: string) => ['training', 'module', userId ?? 'anonymous'] as const,
   },
+  finance: {
+    all: ['finance'] as const,
+    module: () => ['finance', 'module'] as const,
+    invoices: () => ['finance', 'invoices'] as const,
+    salaries: (driverId?: string) => ['finance', 'salaries', driverId ?? 'all'] as const,
+    settings: () => ['finance', 'settings'] as const,
+    accounting: () => ['finance', 'accounting'] as const,
+  },
 };

@@ -5,6 +5,8 @@ import { canAccessVault } from './vaultPermissions';
 import { canAccessTracking } from './trackingPermissions';
 import { canAccessFreightMarket } from './freightPermissions';
 import { canAccessTrainingCenter } from './trainingPermissions';
+import { canAccessFinanceModule, canAccessSalariesPage } from './financePermissions';
+import { canAccessBank } from './bankPermissions';
 
 export const VISITOR_RESTRICTED_MESSAGE =
   'Accès réservé aux membres Z&D Thermoliner.';
@@ -42,11 +44,43 @@ export const DRIVER_ALLOWED_PAGES = new Set([
   'tracking',
   'freight_market',
   'training_center',
+  'salaries',
 ]);
 
 export const SUSPENDED_ALLOWED_PAGES = new Set(['profile', 'settings']);
 
 const ADMIN_ONLY_PAGES = new Set(['administration']);
+
+/** Tableau de bord : tous les rôles internes connectés, sauf visiteur. */
+export function canAccessDashboard(
+  role: string | null | undefined,
+  options?: AccessCheckOptions,
+): boolean {
+  if (options?.email && isAdministratorEmail(options.email)) return true;
+
+  if (isSuspendedAccount(role, options?.isActive, options?.isSuspended)) {
+    return false;
+  }
+
+  if (role === 'ancien_membre' || role === 'banni' || role === 'candidat') {
+    return false;
+  }
+
+  if (isVisitorRole(role)) return false;
+
+  return true;
+}
+
+export function getAccessDeniedRedirect(
+  role: string | null | undefined,
+  _page?: string,
+): string {
+  if (isVisitorRole(role)) return '/wall';
+  if (role === 'candidat') return '/join';
+  if (role === 'banni') return '/suspended';
+  if (role === 'ancien_membre') return '/departed';
+  return '/dashboard';
+}
 
 export function isVisitorRole(role: string | null | undefined): boolean {
   return role === 'visitor' || role === 'visiteur';
@@ -116,6 +150,22 @@ export function canAccessPage(
     return canAccessTrainingCenter(role, options?.email);
   }
 
+  if (page === 'salaries') {
+    return canAccessSalariesPage(role, options?.email);
+  }
+
+  if (page === 'dashboard') {
+    return canAccessDashboard(role, options);
+  }
+
+  if (page === 'bank') {
+    return canAccessBank(role, options?.email);
+  }
+
+  if (page === 'finance' || page === 'invoices' || page === 'accounting' || page === 'economy') {
+    return canAccessFinanceModule(role, options?.email);
+  }
+
   if (isVisitorRole(role)) {
     return VISITOR_ALLOWED_PAGES.has(page);
   }
@@ -148,6 +198,12 @@ export function getAccessDeniedReason(
   }
   if (ADMIN_ONLY_PAGES.has(page)) {
     return 'Accès réservé aux administrateurs.';
+  }
+  if (page === 'bank') {
+    return 'Accès réservé au rôle administrateur.';
+  }
+  if (page === 'dashboard') {
+    return 'Le tableau de bord est réservé aux membres internes.';
   }
   if (isVisitorRole(role)) return VISITOR_RESTRICTED_MESSAGE;
   if (isDriverRole(role)) return 'Accès réservé — chauffeurs: mur, profil, feuilles de route et missions.';

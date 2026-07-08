@@ -1,6 +1,6 @@
 export type ClientStatus = 'active' | 'inactive' | 'prospect' | 'suspended';
 export type ContractStatus = 'draft' | 'active' | 'expired' | 'cancelled';
-export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'late' | 'cancelled';
+export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'late' | 'overdue' | 'cancelled';
 
 export interface ErpClient {
   id: string;
@@ -82,6 +82,9 @@ export interface Invoice {
   payment_status: InvoiceStatus;
   paid_at: string | null;
   transaction_id: string | null;
+  route_summary: string | null;
+  distance_km: number | null;
+  cargo_type: string | null;
   notes: string | null;
   created_by: string | null;
   created_at: string;
@@ -167,6 +170,7 @@ export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, { label: string; color
   draft: { label: 'Brouillon', color: 'text-white/50 bg-white/10 border-white/15' },
   sent: { label: 'Envoyée', color: 'text-blue-400 bg-blue-500/10 border-blue-500/25' },
   paid: { label: 'Payée', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25' },
+  overdue: { label: 'En retard', color: 'text-red-400 bg-red-500/10 border-red-500/25' },
   late: { label: 'En retard', color: 'text-red-400 bg-red-500/10 border-red-500/25' },
   cancelled: { label: 'Annulée', color: 'text-white/30 bg-white/5 border-white/10' },
 };
@@ -188,7 +192,7 @@ export function computeInvoiceAmounts(lines: { quantity: number; unit_price: num
 export function resolveInvoiceStatus(invoice: Invoice): InvoiceStatus {
   if (invoice.payment_status === 'paid' || invoice.payment_status === 'cancelled') return invoice.payment_status;
   const today = new Date().toISOString().slice(0, 10);
-  if (invoice.due_date < today && ['sent', 'draft'].includes(invoice.payment_status)) return 'late';
+  if (invoice.due_date < today && ['sent', 'draft'].includes(invoice.payment_status)) return 'overdue';
   return invoice.payment_status;
 }
 

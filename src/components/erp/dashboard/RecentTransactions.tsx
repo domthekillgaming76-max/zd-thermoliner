@@ -4,6 +4,8 @@ import { fmt, fmtDate } from '../../../lib/format';
 import { Panel, PanelHeader } from '../Panel';
 import { EmptyState } from '../EmptyState';
 import { SkeletonList } from '../Skeleton';
+import { useAuth } from '../../../contexts/AuthContext';
+import { canAccessBank } from '../../../lib/bankPermissions';
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
@@ -11,9 +13,12 @@ interface RecentTransactionsProps {
 }
 
 export function RecentTransactions({ transactions, loading }: RecentTransactionsProps) {
+  const { profile, user } = useAuth();
+  const bankLink = canAccessBank(profile?.role, user?.email ?? profile?.email) ? '/bank' : '/finance';
+
   return (
     <Panel className="h-full">
-      <PanelHeader title="Transactions récentes" icon={Banknote} to="/bank" />
+      <PanelHeader title="Transactions récentes" icon={Banknote} to={bankLink} />
       {loading ? (
         <SkeletonList count={5} />
       ) : transactions.length === 0 ? (

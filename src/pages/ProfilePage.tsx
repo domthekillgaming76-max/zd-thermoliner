@@ -15,6 +15,7 @@ import { PageHeader } from '../components/erp/PageHeader';
 import { FormAlert, FormSuccess } from '../components/erp/FormAlert';
 
 import { AdminBadge } from '../components/erp/AdminBadge';
+import { AppUpdateProfileCard } from '../components/AppUpdateProfileCard';
 
 import { ProfilePreview } from '../components/profile/ProfilePreview';
 
@@ -411,6 +412,8 @@ export function ProfilePage() {
         {displayError && <FormAlert message={displayError} onDismiss={() => setManualError(null)} />}
 
         {flashSuccess && <FormSuccess message={flashSuccess} onDismiss={() => setFlashSuccess(null)} />}
+
+        <AppUpdateProfileCard />
 
         {!profileCustomizationAvailable && (
 

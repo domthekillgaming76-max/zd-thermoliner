@@ -7,16 +7,18 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { Logo } from './Logo';
 import { NotificationBar } from './NotificationBar';
+import { AppUpdateBadge } from './AppUpdateBadge';
 import { AdminBadge } from './erp/AdminBadge';
+import { canAccessBank } from '../lib/bankPermissions';
 
 const QUICK_ACTIONS = [
-  { to: '/road-sheets', icon: Route, label: 'Feuille de route', color: '#fb923c' },
-  { to: '/bank', icon: Banknote, label: 'Transaction', color: '#34d399' },
-  { to: '/drivers', icon: Plus, label: 'Chauffeur', color: '#22d3ee' },
+  { to: '/road-sheets', icon: Route, label: 'Feuille de route', color: '#fb923c', bankOnly: false },
+  { to: '/bank', icon: Banknote, label: 'Transaction', color: '#34d399', bankOnly: true },
+  { to: '/drivers', icon: Plus, label: 'Chauffeur', color: '#22d3ee', bankOnly: false },
 ];
 
 export function AppHeader() {
-  const { profile, signOut, isAdministrator } = useAuth();
+  const { profile, signOut, user, isAdministrator } = useAuth();
   const { toggleCollapsed } = useSidebar();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
@@ -25,6 +27,8 @@ export function AppHeader() {
 
   const displayName = profile?.pseudo || profile?.full_name || 'Membre';
   const initials = displayName[0]?.toUpperCase() ?? '?';
+  const showBank = canAccessBank(profile?.role, user?.email ?? profile?.email);
+  const quickActions = QUICK_ACTIONS.filter(a => !a.bankOnly || showBank);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -32,7 +36,7 @@ export function AppHeader() {
     if (!q) return;
     if (q.includes('chauff') || q.includes('driver')) navigate('/drivers');
     else if (q.includes('flott') || q.includes('camion') || q.includes('truck')) navigate('/fleet');
-    else if (q.includes('banq') || q.includes('bank')) navigate('/bank');
+    else if (q.includes('banq') || q.includes('bank')) navigate(showBank ? '/bank' : '/finance');
     else if (q.includes('route') || q.includes('feuille')) navigate('/road-sheets');
     else if (q.includes('garage')) navigate('/garages');
     else navigate('/dashboard');
@@ -98,7 +102,7 @@ export function AppHeader() {
       <div className="flex items-center gap-2 md:gap-3 ml-auto flex-shrink-0">
         {/* Quick actions */}
         <div className="hidden lg:flex items-center gap-1.5">
-          {QUICK_ACTIONS.map(action => (
+          {quickActions.map(action => (
             <Link
               key={action.to}
               to={action.to}
@@ -121,6 +125,16 @@ export function AppHeader() {
 
         <NotificationBar />
 
+        <Link
+          to="/profile"
+          className="relative hidden sm:flex w-9 h-9 items-center justify-center rounded-xl hover:bg-white/5 transition-colors"
+          title="Mon profil"
+          aria-label="Mon profil"
+        >
+          <User className="w-4 h-4 text-white/40" />
+          <AppUpdateBadge className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 text-[0px]" />
+        </Link>
+
         {/* User menu */}
         <div className="relative">
           <button
@@ -129,12 +143,13 @@ export function AppHeader() {
             className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-xl hover:bg-white/5 transition-colors"
           >
             <div
-              className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center font-bold text-xs text-white flex-shrink-0"
+              className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center font-bold text-xs text-white flex-shrink-0 relative"
               style={{ background: 'linear-gradient(135deg, #dc2626, #7f1d1d)' }}
             >
               {profile?.avatar_url
                 ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
                 : initials}
+              <AppUpdateBadge className="absolute -top-1 -right-1 w-2.5 h-2.5 text-[0px] ring-2 ring-[#080808]" />
             </div>
             <span className="hidden md:block text-sm font-semibold text-white/80 max-w-[120px] truncate">
               {displayName}
@@ -162,7 +177,9 @@ export function AppHeader() {
                     onClick={() => setUserOpen(false)}
                     className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-white/60 hover:text-white hover:bg-white/[0.04] transition-colors"
                   >
-                    <User className="w-4 h-4" /> Mon profil
+                    <User className="w-4 h-4" />
+                    <span className="flex-1">Mon profil</span>
+                    <AppUpdateBadge className="w-4 h-4 text-[9px]" showCount />
                   </Link>
                   <Link
                     to="/settings"

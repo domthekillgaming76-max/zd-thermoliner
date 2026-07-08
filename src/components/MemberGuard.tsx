@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   canAccessPage,
   getAccessDeniedReason,
+  getAccessDeniedRedirect,
   VISITOR_RESTRICTED_MESSAGE,
 } from '../lib/accessControl';
 import { logAccessAttempt } from '../services/securityLogService';
@@ -44,7 +45,7 @@ export function MemberGuard({ children, page }: MemberGuardProps) {
   if (profile && !allowed) {
     return (
       <Navigate
-        to="/wall"
+        to={getAccessDeniedRedirect(profile.role, page)}
         replace
         state={{
           accessDenied: getAccessDeniedReason(profile.role, page, {

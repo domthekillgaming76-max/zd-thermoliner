@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 import { AppHeader } from './AppHeader';
+import { AppUpdateBanner } from './AppUpdateBanner';
 import { SidebarProvider, useSidebar } from '../contexts/SidebarContext';
 
 interface LayoutProps {
@@ -20,6 +21,7 @@ function LayoutShell({ children }: LayoutProps) {
         }`}
       >
         <AppHeader />
+        <AppUpdateBanner />
         <MobileNav />
         <main className="flex-1 p-4 md:p-6 lg:p-8 pb-24 md:pb-8">
           <div className="max-w-[1440px] mx-auto">

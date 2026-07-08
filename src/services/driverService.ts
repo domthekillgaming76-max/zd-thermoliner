@@ -360,21 +360,54 @@ export async function fetchDriverAssignmentHistory(driverId: string): Promise<Dr
 }
 
 export async function syncSalaryFromValidatedRoadSheet(sheet: RoadSheet): Promise<void> {
-  if (!sheet.driver_id || !(sheet.validated || sheet.status === 'approved')) return;
+  if (!sheet.driver_id || !(sheet.validated || sheet.status === 'validated' || sheet.status === 'approved')) return;
 
-  const salary = Number(sheet.driver_salary || sheet.driver_bonus || 0);
-  if (salary <= 0) return;
+  const { data: existing } = await supabase
+    .from('driver_salary_history')
+    .select('id')
+    .eq('road_sheet_id', sheet.id)
+    .maybeSingle();
+  if (existing?.id) return;
+
+  const settingsRes = await supabase.from('finance_settings').select('delivery_bonus_eur, default_salary_per_km').limit(1).maybeSingle();
+  const deliveryBonus = Number(settingsRes.data?.delivery_bonus_eur ?? 25);
+  const defaultKmRate = Number(settingsRes.data?.default_salary_per_km ?? 0.35);
+
+  const { data: driver } = await supabase
+    .from('drivers')
+    .select('salary_mode, salary_base')
+    .eq('id', sheet.driver_id)
+    .maybeSingle();
+
+  const km = Number(sheet.km ?? sheet.total_distance ?? 0);
+  const revenue = Number(sheet.revenue ?? 0);
+  const mode = (driver?.salary_mode as string) ?? sheet.driver_salary_mode ?? 'percentage';
+  const base = Number(driver?.salary_base ?? sheet.driver_salary_value ?? 20);
+  const kmRate = mode === 'per_km' ? base : defaultKmRate;
+
+  let baseSalary = 0;
+  if (mode === 'per_km') baseSalary = km * kmRate;
+  else if (mode === 'fixed') baseSalary = base;
+  else baseSalary = revenue * (base / 100);
+
+  const salaryFromSheet = Number(sheet.driver_salary ?? 0);
+  const net = Math.round((salaryFromSheet > 0 ? salaryFromSheet : baseSalary + deliveryBonus) * 100) / 100;
+  if (net <= 0) return;
 
   const d = new Date(sheet.date || sheet.created_at);
   const { error } = await supabase.from('driver_salary_history').insert({
     driver_id: sheet.driver_id,
     period_month: d.getMonth() + 1,
     period_year: d.getFullYear(),
-    base_salary: 0,
-    bonus: salary,
+    base_salary: Math.round(baseSalary * 100) / 100,
+    bonus: 0,
     penalty: 0,
-    net_amount: salary,
+    delivery_bonus: deliveryBonus,
+    km_rate: kmRate,
+    km_total: km,
+    net_amount: net,
     road_sheet_id: sheet.id,
+    payment_status: 'pending',
     notes: `Feuille validée — ${sheet.departure ?? ''} → ${sheet.arrival ?? ''}`,
   });
 

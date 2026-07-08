@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 
 import { syncSalaryFromValidatedRoadSheet } from '../services/driverService';
+import { autoInvoiceFromValidatedRoadSheet } from '../services/invoicingService';
 import { queryKeys } from '../lib/queryKeys';
 import { supabase } from '../lib/supabase';
 
@@ -254,7 +255,7 @@ export interface ValidateRoadSheetResult {
   bankSyncError?: string;
 }
 
-export function useValidateRoadSheet(_userId: string | undefined) {
+export function useValidateRoadSheet(userId: string | undefined) {
   const qc = useQueryClient();
 
   return useMutation({
@@ -274,6 +275,12 @@ export function useValidateRoadSheet(_userId: string | undefined) {
         await syncSalaryFromValidatedRoadSheet(sheet);
       } catch (salaryError) {
         console.warn('[Z&D] driver salary sync after validation:', salaryError);
+      }
+
+      try {
+        await autoInvoiceFromValidatedRoadSheet(sheetId, userId);
+      } catch (invoiceError) {
+        console.warn('[Z&D] auto invoice after validation:', invoiceError);
       }
 
       return { sheetId, bankSyncFailed: false };

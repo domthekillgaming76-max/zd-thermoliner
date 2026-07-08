@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Component, ReactNode } from 'react';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AppUpdateProvider } from './contexts/AppUpdateContext';
 
 import { LoginPage } from './pages/LoginPage';
 
@@ -36,7 +37,10 @@ import { GaragesPage } from './pages/GaragesPage';
 
 import { RoadSheetsPage } from './pages/RoadSheetsPage';
 
-import { EconomyPage } from './pages/EconomyPage';
+import { FinancePage } from './pages/FinancePage';
+import { InvoicesPage } from './pages/InvoicesPage';
+import { SalariesPage } from './pages/SalariesPage';
+import { AccountingPage } from './pages/AccountingPage';
 
 import { BankPage } from './pages/BankPage';
 
@@ -356,7 +360,13 @@ function AppRoutes() {
 
       <Route path="/road-sheets" element={<ProtectedPage page="road_sheets"><RoadSheetsPage /></ProtectedPage>} />
 
-      <Route path="/finance" element={<ProtectedPage page="economy"><EconomyPage /></ProtectedPage>} />
+      <Route path="/finance" element={<ProtectedPage page="finance"><FinancePage /></ProtectedPage>} />
+
+      <Route path="/invoices" element={<ProtectedPage page="invoices"><InvoicesPage /></ProtectedPage>} />
+
+      <Route path="/salaries" element={<ProtectedPage page="salaries"><SalariesPage /></ProtectedPage>} />
+
+      <Route path="/accounting" element={<ProtectedPage page="accounting"><AccountingPage /></ProtectedPage>} />
 
       <Route path="/economy" element={<Navigate to="/finance" replace />} />
 
@@ -445,9 +455,9 @@ function App() {
         <BrowserRouter>
 
           <AuthProvider>
-
-            <AppRoutes />
-
+            <AppUpdateProvider>
+              <AppRoutes />
+            </AppUpdateProvider>
           </AuthProvider>
 
         </BrowserRouter>

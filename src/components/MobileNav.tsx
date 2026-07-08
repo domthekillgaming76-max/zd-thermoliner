@@ -1,7 +1,8 @@
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Truck, Route, Banknote, BarChart3, Smartphone, Map } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { isDriverRole } from '../lib/accessControl';
+import { isDriverRole, isVisitorRole } from '../lib/accessControl';
+import { canAccessBank } from '../lib/bankPermissions';
 
 const ERP_MOBILE_NAV = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Accueil' },
@@ -12,16 +13,31 @@ const ERP_MOBILE_NAV = [
 ];
 
 const DRIVER_MOBILE_NAV = [
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Accueil' },
   { to: '/driver', icon: Smartphone, label: 'Portail' },
   { to: '/tracking', icon: Map, label: 'GPS' },
   { to: '/dispatch', icon: Route, label: 'Missions' },
-  { to: '/wall', icon: LayoutDashboard, label: 'Mur' },
-  { to: '/profile', icon: BarChart3, label: 'Profil' },
+  { to: '/wall', icon: BarChart3, label: 'Mur' },
 ];
 
+function getMobileNavItems(role: string | undefined, email: string | undefined) {
+  if (isVisitorRole(role)) return [];
+
+  if (isDriverRole(role)) {
+    return DRIVER_MOBILE_NAV;
+  }
+
+  return ERP_MOBILE_NAV.filter(item => {
+    if (item.to === '/bank') return canAccessBank(role, email);
+    return true;
+  });
+}
+
 export function MobileNav() {
-  const { profile } = useAuth();
-  const items = isDriverRole(profile?.role) ? DRIVER_MOBILE_NAV : ERP_MOBILE_NAV;
+  const { profile, user } = useAuth();
+  const items = getMobileNavItems(profile?.role, user?.email ?? profile?.email);
+
+  if (items.length === 0) return null;
 
   return (
     <nav

@@ -163,12 +163,33 @@ export async function fetchInvoiceById(id: string): Promise<Invoice | null> {
   return { ...inv, payment_status: resolveInvoiceStatus(inv), client_name: client?.name ?? null, lines };
 }
 
-export async function createInvoice(input: InvoiceFormInput, createdBy?: string): Promise<Invoice> {
+async function generateInvoiceNumber(): Promise<string> {
+  const { data, error } = await supabase.rpc('generate_zd_invoice_number');
+  if (!error && data) return data as string;
+
+  const now = new Date();
+  const prefix = `ZD-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const { count } = await supabase
+    .from('invoices')
+    .select('id', { count: 'exact', head: true })
+    .like('invoice_number', `${prefix}-%`);
+  const seq = String((count ?? 0) + 1).padStart(4, '0');
+  return `${prefix}-${seq}`;
+}
+
+export async function createInvoice(input: InvoiceFormInput, createdBy?: string, meta?: {
+  route_summary?: string;
+  distance_km?: number;
+  cargo_type?: string;
+  payment_status?: Invoice['payment_status'];
+}): Promise<Invoice> {
   const vatRate = input.vat_rate ?? 20;
   const { amountHt, vatAmount, amountTtc } = computeInvoiceAmounts(input.lines, vatRate);
+  const invoiceNumber = await generateInvoiceNumber();
 
   const { data, error } = await supabase.from('invoices').insert({
     client_id: input.client_id,
+    invoice_number: invoiceNumber,
     road_sheet_id: input.road_sheet_id || null,
     mission_id: input.mission_id || null,
     contract_id: input.contract_id || null,
@@ -178,7 +199,10 @@ export async function createInvoice(input: InvoiceFormInput, createdBy?: string)
     vat_rate: vatRate,
     vat_amount: vatAmount,
     amount_ttc: amountTtc,
-    payment_status: 'draft',
+    payment_status: meta?.payment_status ?? 'draft',
+    route_summary: meta?.route_summary ?? null,
+    distance_km: meta?.distance_km ?? null,
+    cargo_type: meta?.cargo_type ?? null,
     notes: input.notes || null,
     created_by: createdBy ?? null,
   }).select().single();
@@ -211,17 +235,50 @@ export async function createInvoiceFromRoadSheet(roadSheetId: string, createdBy?
   const due = new Date();
   due.setDate(due.getDate() + paymentTerms);
 
+  const dep = (sheet.departure ?? sheet.departure_city ?? '?') as string;
+  const arr = (sheet.arrival ?? sheet.arrival_city ?? '?') as string;
+  const km = Number(sheet.km ?? sheet.total_distance ?? 0);
+  const cargo = (sheet.cargo ?? sheet.cargo_type ?? null) as string | null;
+  const routeSummary = `${dep} → ${arr}`;
+
   return createInvoice({
     client_id: clientId,
     road_sheet_id: roadSheetId,
     invoice_date: invoiceDate,
     due_date: due.toISOString().slice(0, 10),
     lines: [{
-      description: `Transport ${sheet.departure ?? sheet.departure_city ?? '?'} → ${sheet.arrival ?? sheet.arrival_city ?? '?'} (${sheet.km ?? sheet.total_distance ?? 0} km)`,
+      description: `Transport ${routeSummary} — ${km} km${cargo ? ` — ${cargo}` : ''}`,
       quantity: 1,
       unit_price: amount,
     }],
-  }, createdBy);
+  }, createdBy, {
+    route_summary: routeSummary,
+    distance_km: km,
+    cargo_type: cargo ?? undefined,
+    payment_status: 'sent',
+  });
+}
+
+export async function autoInvoiceFromValidatedRoadSheet(
+  roadSheetId: string,
+  createdBy?: string,
+): Promise<Invoice | null> {
+  const { data: existing } = await supabase
+    .from('invoices')
+    .select('id')
+    .eq('road_sheet_id', roadSheetId)
+    .maybeSingle();
+  if (existing?.id) return null;
+
+  const settings = await supabase.from('finance_settings').select('auto_invoice_on_validation').limit(1).maybeSingle();
+  if (settings.data && settings.data.auto_invoice_on_validation === false) return null;
+
+  try {
+    return await createInvoiceFromRoadSheet(roadSheetId, createdBy);
+  } catch (err) {
+    console.error('[Z&D] autoInvoiceFromValidatedRoadSheet:', err);
+    return null;
+  }
 }
 
 export async function createInvoiceFromMission(missionId: string, createdBy?: string): Promise<Invoice> {

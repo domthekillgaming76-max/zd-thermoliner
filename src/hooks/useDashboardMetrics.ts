@@ -23,6 +23,7 @@ export function useDashboardMetrics(
   stats: DashboardStats,
   trends: DashboardTrends,
   fmtEuro: (n: number) => string,
+  canAccessBankModule = false,
 ): DashboardMetric[] {
   return useMemo(
     () => [
@@ -55,7 +56,7 @@ export function useDashboardMetrics(
         rawValue: stats.companyBalance,
         color: '#a78bfa',
         glow: 'rgba(167,139,250,0.25)',
-        to: '/bank',
+        to: canAccessBankModule ? '/bank' : '/finance',
         highlight: true,
       },
       {
@@ -111,7 +112,7 @@ export function useDashboardMetrics(
         to: '/road-sheets',
       },
     ],
-    [stats, trends, fmtEuro],
+    [stats, trends, fmtEuro, canAccessBankModule],
   );
 }
 

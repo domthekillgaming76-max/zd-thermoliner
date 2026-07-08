@@ -6,11 +6,12 @@ import {
 
   Route, BarChart3, LogOut, ChevronLeft, Settings, Wrench, FileBarChart,
 
-  MessageSquare, Newspaper, Calendar, Briefcase, FileText, Shield, Radio, Receipt, Bot, Smartphone, Archive, Map, Container, GraduationCap,
+  MessageSquare, Newspaper, Calendar, Briefcase, FileText, Shield, Radio, Receipt, Bot, Smartphone, Archive, Map, Container, GraduationCap, Calculator,
 
 } from 'lucide-react';
 
 import { useAuth } from '../contexts/AuthContext';
+import { useAppUpdateBadge } from '../contexts/AppUpdateContext';
 
 import { useSidebar } from '../contexts/SidebarContext';
 
@@ -18,6 +19,7 @@ import { isAdministratorEmail } from '../lib/admin';
 import { canAccessAdministration } from '../lib/adminPermissions';
 
 import { isVisitorRole, isDriverRole } from '../lib/accessControl';
+import { canAccessBank } from '../lib/bankPermissions';
 
 import type { LucideIcon } from 'lucide-react';
 
@@ -59,6 +61,12 @@ const MEMBER_NAV: NavItem[] = [
 
   { to: '/finance', icon: BarChart3, label: 'Finance' },
 
+  { to: '/invoices', icon: Receipt, label: 'Factures' },
+
+  { to: '/salaries', icon: Users, label: 'Salaires' },
+
+  { to: '/accounting', icon: Calculator, label: 'Comptabilité' },
+
   { to: '/bank', icon: Banknote, label: 'Banque' },
 
   { to: '/maintenance', icon: Wrench, label: 'Maintenance' },
@@ -99,6 +107,13 @@ const RECRUITMENT_NAV: NavItem[] = [
 
 
 
+function filterErpNav(items: NavItem[], role: string | undefined, email: string | undefined): NavItem[] {
+  return items.filter(item => {
+    if (item.to === '/bank') return canAccessBank(role, email);
+    return true;
+  });
+}
+
 function getNavSections(role: string | undefined, email: string | undefined) {
 
   const visitor = isVisitorRole(role);
@@ -135,6 +150,7 @@ function getNavSections(role: string | undefined, email: string | undefined) {
   if (isDriverRole(role)) {
     return [
       { title: 'Chauffeur', items: [
+        { to: '/dashboard', icon: LayoutDashboard, label: 'Tableau de bord' },
         { to: '/driver', icon: Smartphone, label: 'Portail mobile' },
         { to: '/freight', icon: Container, label: 'Marché Fret' },
         { to: '/training', icon: GraduationCap, label: 'Formation' },
@@ -142,6 +158,7 @@ function getNavSections(role: string | undefined, email: string | undefined) {
         { to: '/documents', icon: Archive, label: 'Mes documents' },
         { to: '/dispatch', icon: Radio, label: 'Missions' },
         { to: '/road-sheets', icon: Route, label: 'Feuilles de route' },
+        { to: '/salaries', icon: Users, label: 'Mes salaires' },
       ]},
       { title: 'Communauté', items: COMMUNITY_NAV },
       { title: 'Recrutement', items: recruitment },
@@ -149,7 +166,7 @@ function getNavSections(role: string | undefined, email: string | undefined) {
     ];
   }
 
-  const erpNav = [...MEMBER_NAV];
+  const erpNav = filterErpNav(MEMBER_NAV, role, email);
   if (canAdmin) {
     erpNav.push({ to: '/administration', icon: Shield, label: 'Administration' });
   }
@@ -175,6 +192,7 @@ export function Sidebar() {
   const { signOut, profile, user } = useAuth();
 
   const { collapsed, toggleCollapsed } = useSidebar();
+  const hasUpdate = useAppUpdateBadge();
 
   const sections = getNavSections(profile?.role, user?.email ?? profile?.email);
 
@@ -263,6 +281,12 @@ export function Sidebar() {
                       <>
 
                         <span className="font-medium text-sm flex-1">{item.label}</span>
+
+                        {item.to === '/updates' && hasUpdate && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-500 text-white">
+                            NEW
+                          </span>
+                        )}
 
                         {item.badge && (
 

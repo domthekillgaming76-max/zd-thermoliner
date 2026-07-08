@@ -3,6 +3,8 @@ import type { ElementType } from 'react';
 import {
   Users, Truck, Route, Wallet, Building2, ClipboardList, PackageCheck, BarChart3,
 } from 'lucide-react';
+import { useAuth } from '../../../../contexts/AuthContext';
+import { canAccessBank } from '../../../../lib/bankPermissions';
 
 interface ModuleShortcut {
   label: string;
@@ -10,6 +12,7 @@ interface ModuleShortcut {
   icon: ElementType;
   to: string;
   color: string;
+  adminOnly?: boolean;
 }
 
 const MODULES: ModuleShortcut[] = [
@@ -17,13 +20,17 @@ const MODULES: ModuleShortcut[] = [
   { label: 'Flotte', description: 'Véhicules & maintenance', icon: Truck, to: '/fleet', color: '#fbbf24' },
   { label: 'Feuilles de route', description: 'Missions & livraisons', icon: Route, to: '/road-sheets', color: '#fb923c' },
   { label: 'Finance', description: 'Revenus & dépenses', icon: Wallet, to: '/finance', color: '#34d399' },
-  { label: 'Banque', description: 'Comptes & virements', icon: Building2, to: '/bank', color: '#a78bfa' },
+  { label: 'Banque', description: 'Comptes & virements', icon: Building2, to: '/bank', color: '#a78bfa', adminOnly: true },
   { label: 'Rapports', description: 'Analyses & exports', icon: BarChart3, to: '/reports', color: '#60a5fa' },
   { label: 'Planning', description: 'Organisation', icon: ClipboardList, to: '/road-sheets', color: '#f472b6' },
   { label: 'Livraisons', description: 'Suivi colis', icon: PackageCheck, to: '/road-sheets', color: '#4ade80' },
 ];
 
 export function ModuleShortcuts() {
+  const { profile, user } = useAuth();
+  const showBank = canAccessBank(profile?.role, user?.email ?? profile?.email);
+  const modules = MODULES.filter(m => !m.adminOnly || showBank);
+
   return (
     <div className="premium-panel rounded-2xl md:rounded-3xl p-5 md:p-6">
       <div className="mb-5">
@@ -32,7 +39,7 @@ export function ModuleShortcuts() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {MODULES.map(mod => {
+        {modules.map(mod => {
           const Icon = mod.icon;
           return (
             <Link

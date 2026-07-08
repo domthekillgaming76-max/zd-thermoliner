@@ -4,6 +4,7 @@ import { useDashboardData } from '../hooks/useDashboardData';
 import { useDashboardRefresh } from '../hooks/useDashboardRefresh';
 import { useDashboardMetrics, useExecutiveHighlights } from '../hooks/useDashboardMetrics';
 import { fmtEuro } from '../lib/format';
+import { canAccessBank } from '../lib/bankPermissions';
 import {
   PremiumDashboardHero,
   ExecutiveSummary,
@@ -22,7 +23,8 @@ export function DashboardPage() {
   const { profile, user } = useAuth();
   const data = useDashboardData(user?.id);
   const { refresh, lastUpdated, isRefreshing } = useDashboardRefresh(data.refresh, data.isFetching);
-  const metrics = useDashboardMetrics(data.stats, data.trends, fmtEuro);
+  const showBank = canAccessBank(profile?.role, user?.email ?? profile?.email);
+  const metrics = useDashboardMetrics(data.stats, data.trends, fmtEuro, showBank);
   const highlights = useExecutiveHighlights(data, fmtEuro);
 
   const displayName = profile?.pseudo || profile?.full_name || 'Membre';

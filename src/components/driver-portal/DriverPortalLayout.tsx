@@ -1,6 +1,8 @@
 import { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { LogOut, Settings, Truck } from 'lucide-react';
+import { AppUpdateBanner } from '../AppUpdateBanner';
+import { AppUpdateBadge } from '../AppUpdateBadge';
 import { useAuth } from '../../contexts/AuthContext';
 import { DriverMobileNav } from './DriverMobileNav';
 import type { DriverPortalTab } from '../../lib/driverPortalTypes';
@@ -35,10 +37,11 @@ export function DriverPortalLayout({
         <div className="flex items-center gap-1">
           <Link
             to="/settings"
-            className="p-2.5 rounded-xl text-white/40 hover:text-white hover:bg-white/5 transition-colors"
+            className="relative p-2.5 rounded-xl text-white/40 hover:text-white hover:bg-white/5 transition-colors"
             aria-label="Paramètres"
           >
             <Settings className="w-5 h-5" />
+            <AppUpdateBadge className="absolute top-1 right-1 w-2.5 h-2.5 text-[0px]" />
           </Link>
           <button
             type="button"
@@ -52,6 +55,7 @@ export function DriverPortalLayout({
       </header>
 
       <main className="flex-1 px-4 pt-2 pb-28 max-w-lg mx-auto w-full driver-portal-main">
+        <AppUpdateBanner />
         {children}
       </main>
 

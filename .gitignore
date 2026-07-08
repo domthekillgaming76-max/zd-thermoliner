@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Environment (never commit secrets)
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Supabase local
+supabase/.temp/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
+
+# Vite
+.vite/
