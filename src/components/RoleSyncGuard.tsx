@@ -9,16 +9,17 @@ interface RoleSyncGuardProps {
 
 /** Live route guard — redirects when role change revokes current page access */
 export function RoleSyncGuard({ children }: RoleSyncGuardProps) {
-  const { profile, normalizedRole, user } = useAuth();
+  const { user, role, normalizedRole } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const liveRole = role ?? normalizedRole;
 
   useEffect(() => {
-    if (!profile || !user) return;
+    if (!user) return;
 
     const check = () => {
-      if (!canAccessRoute(normalizedRole, location.pathname)) {
-        navigate(getRoleRedirect(profile.role ?? normalizedRole), { replace: true });
+      if (!canAccessRoute(liveRole, location.pathname)) {
+        navigate(getRoleRedirect(liveRole), { replace: true });
       }
     };
 
@@ -27,7 +28,7 @@ export function RoleSyncGuard({ children }: RoleSyncGuardProps) {
     const onRoleUpdated = () => check();
     window.addEventListener(ROLE_SYNC_EVENT, onRoleUpdated);
     return () => window.removeEventListener(ROLE_SYNC_EVENT, onRoleUpdated);
-  }, [profile, user, normalizedRole, location.pathname, navigate]);
+  }, [user, liveRole, normalizedRole, role, location.pathname, navigate]);
 
   return <>{children}</>;
 }

@@ -11,8 +11,6 @@ import {
   type AppRole,
   normalizeRole,
   getRoleLabel,
-  logRoleSync,
-  logRoleSyncNormalized,
   dispatchRoleUpdated,
 } from '../lib/roleEngine';
 import { queryKeys } from '../lib/queryKeys';
@@ -39,6 +37,17 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function syncRoleState(
+  rawRole: string | null | undefined,
+  setRole: (r: string | null) => void,
+  setNormalizedRole: (r: AppRole) => void,
+): void {
+  const nextRole = rawRole ?? null;
+  setRole(nextRole);
+  setNormalizedRole(normalizeRole(nextRole));
+  console.log('[Z&D RoleSync] normalized role', normalizeRole(nextRole));
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
@@ -47,30 +56,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileCustomizationAvailable, setProfileCustomizationAvailable] = useState(true);
+  const [role, setRole] = useState<string | null>(null);
+  const [normalizedRole, setNormalizedRole] = useState<AppRole>('visitor');
   const [roleToast, setRoleToast] = useState<{ message: string; label?: string } | null>(null);
-  const profileRoleRef = useRef<string | undefined>(profile?.role);
-
-  useEffect(() => {
-    profileRoleRef.current = profile?.role;
-  }, [profile?.role]);
+  const profileRoleRef = useRef<string | null>(null);
 
   const invalidateRoleQueries = useCallback((userId: string) => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.userRole(userId) });
     void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard(userId) });
     void queryClient.invalidateQueries({ queryKey: queryKeys.wall.module(userId) });
     void queryClient.invalidateQueries({ queryKey: queryKeys.admin.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.list(userId) });
   }, [queryClient]);
 
-  const applyProfileUpdate = useCallback((userId: string, updated: Partial<UserProfile>, fromRealtime = false) => {
-    setProfile(prev => {
-      const merged = prev ? { ...prev, ...updated } : (updated as UserProfile);
-      return merged;
-    });
-
-    if (fromRealtime) {
-      invalidateRoleQueries(userId);
-    }
-  }, [invalidateRoleQueries]);
+  const applyFetchedProfile = useCallback((next: UserProfile | null) => {
+    setProfile(next);
+    syncRoleState(next?.role, setRole, setNormalizedRole);
+    profileRoleRef.current = next?.role ?? null;
+  }, []);
 
   const fetchProfile = useCallback(async (userId: string, options?: { fromRealtime?: boolean }) => {
     try {
@@ -79,13 +82,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (result.error) {
         setProfileError(result.error);
-        setProfile(result.profile);
+        applyFetchedProfile(result.profile);
         console.error('[Z&D] fetchProfile error:', result.error, { userId });
       } else {
         setProfileError(null);
-        setProfile(result.profile);
-        logRoleSync('current role:', result.profile?.role ?? null);
-        logRoleSyncNormalized(result.profile?.role ?? null);
+        applyFetchedProfile(result.profile);
         void touchProfileLastSeen(userId);
       }
 
@@ -96,11 +97,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const message = err instanceof Error ? err.message : 'Erreur lors du chargement du profil.';
       console.error('[Z&D] fetchProfile exception:', err, { userId });
       setProfileError(message);
-      setProfile(null);
+      applyFetchedProfile(null);
     } finally {
       setLoading(false);
     }
-  }, [invalidateRoleQueries]);
+  }, [applyFetchedProfile, invalidateRoleQueries]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -137,6 +138,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
         }
         setProfile(null);
+        setRole(null);
+        setNormalizedRole('visitor');
+        profileRoleRef.current = null;
         setProfileError(null);
         setProfileCustomizationAvailable(true);
         setLoading(false);
@@ -147,10 +151,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchProfile]);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || loading) return;
 
     const channelName = `profile-role-sync-${user.id}`;
-    logRoleSync('subscribed', channelName);
+    console.log('[Z&D RoleSync] subscribed', channelName);
 
     const channel = supabase
       .channel(channelName)
@@ -163,33 +167,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           filter: `id=eq.${user.id}`,
         },
         payload => {
-          logRoleSync('realtime payload', payload.new);
-          const updated = payload.new as Partial<UserProfile>;
+          console.log('[Z&D RoleSync] realtime payload', payload);
+          const incoming = payload.new as UserProfile;
           const prevRole = profileRoleRef.current;
-          const nextRole = updated.role ?? prevRole;
+          const nextRole = typeof incoming.role === 'string' ? incoming.role : prevRole;
 
-          applyProfileUpdate(user.id, updated, true);
+          setProfile(prev => ({ ...(prev ?? {}), ...incoming } as UserProfile));
+          if (nextRole) {
+            setRole(nextRole);
+            setNormalizedRole(normalizeRole(nextRole));
+            console.log('[Z&D RoleSync] normalized role', normalizeRole(nextRole));
+          }
+
           dispatchRoleUpdated(payload.new as Record<string, unknown>);
+          invalidateRoleQueries(user.id);
 
           if (nextRole && nextRole !== prevRole) {
-            logRoleSync('role updated live', nextRole);
-            logRoleSyncNormalized(nextRole);
+            console.log('[Z&D RoleSync] role updated live', nextRole);
             profileRoleRef.current = nextRole;
             setRoleToast({
               message: 'Votre rôle a été mis à jour.',
               label: getRoleLabel(nextRole),
             });
-            void fetchProfile(user.id, { fromRealtime: true });
             setTimeout(() => setRoleToast(null), 8000);
-          } else if (updated.role === undefined) {
-            void fetchProfile(user.id, { fromRealtime: true });
           }
         },
       )
-      .subscribe();
+      .subscribe(status => {
+        console.log('[Z&D RoleSync] subscription status', status);
+      });
 
-    return () => { void channel.unsubscribe(); };
-  }, [user?.id, fetchProfile, applyProfileUpdate]);
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [user?.id, loading, invalidateRoleQueries]);
 
   async function signIn(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -216,6 +227,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);
+    setRole(null);
+    setNormalizedRole('visitor');
+    profileRoleRef.current = null;
     setProfileError(null);
     setSession(null);
   }
@@ -245,9 +259,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfileError(null);
     await fetchProfile(user.id);
   }
-
-  const normalizedRole = normalizeRole(profile?.role);
-  const role = profile?.role ?? null;
 
   return (
     <AuthContext.Provider

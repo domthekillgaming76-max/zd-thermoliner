@@ -7,11 +7,12 @@ import { useSidebar } from '../contexts/SidebarContext';
 import { buildSidebarSections } from '../lib/navConfig';
 
 export function Sidebar() {
-  const { signOut, profile, user, normalizedRole } = useAuth();
+  const { signOut, profile, user, role, normalizedRole } = useAuth();
   const { collapsed, toggleCollapsed } = useSidebar();
   const hasUpdate = useAppUpdateBadge();
 
-  const sections = buildSidebarSections(profile?.role ?? normalizedRole, user?.email ?? profile?.email);
+  const liveRole = role ?? normalizedRole;
+  const sections = buildSidebarSections(liveRole, user?.email ?? profile?.email);
 
   return (
     <aside
@@ -79,9 +80,9 @@ export function Sidebar() {
       </nav>
 
       <div className="border-t p-3 space-y-2" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-        {!collapsed && profile?.role && (
+        {!collapsed && liveRole && (
           <div className="px-3 pb-1">
-            <RoleBadge role={profile.role} size="xs" />
+            <RoleBadge role={liveRole} size="xs" />
           </div>
         )}
         <button

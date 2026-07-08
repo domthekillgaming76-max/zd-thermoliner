@@ -252,9 +252,9 @@ export function shouldShowRoleOnWall(role: string | null | undefined): boolean {
 
 export function getAllowedModules(role: string | null | undefined): ModuleKey[] {
   const appRole = normalizeRole(role);
-  const set = new Set<ModuleKey>(ROLE_MODULES[appRole]);
-  console.log('[Z&D Sidebar] modules for role', appRole, Array.from(set));
-  return Array.from(set);
+  const modules = Array.from(new Set<ModuleKey>(ROLE_MODULES[appRole]));
+  console.log('[Z&D Sidebar] modules updated', appRole, modules);
+  return modules;
 }
 
 export function canAccessModule(role: string | null | undefined, moduleKey: ModuleKey): boolean {

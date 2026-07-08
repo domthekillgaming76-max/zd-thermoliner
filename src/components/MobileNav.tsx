@@ -3,8 +3,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { buildMobileNavItems } from '../lib/navConfig';
 
 export function MobileNav() {
-  const { profile, user, normalizedRole } = useAuth();
-  const items = buildMobileNavItems(profile?.role ?? normalizedRole, user?.email ?? profile?.email);
+  const { profile, user, role, normalizedRole } = useAuth();
+  const liveRole = role ?? normalizedRole;
+  const items = buildMobileNavItems(liveRole, user?.email ?? profile?.email);
 
   if (items.length === 0) return null;
 

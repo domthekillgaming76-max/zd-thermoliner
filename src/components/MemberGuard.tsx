@@ -34,12 +34,13 @@ function isModulePage(page: string): page is ModuleKey {
 }
 
 export function MemberGuard({ children, page }: MemberGuardProps) {
-  const { profile, user, normalizedRole } = useAuth();
+  const { profile, user, role, normalizedRole } = useAuth();
   const location = useLocation();
   const email = user?.email ?? profile?.email;
+  const liveRole = role ?? profile?.role ?? normalizedRole;
 
   const legacyAllowed = profile
-    ? canAccessPage(profile.role, page, {
+    ? canAccessPage(liveRole, page, {
         email,
         isActive: profile.is_active,
         isSuspended: profile.is_suspended,
@@ -47,10 +48,10 @@ export function MemberGuard({ children, page }: MemberGuardProps) {
     : true;
 
   const engineModuleAllowed = isModulePage(page)
-    ? canAccessModule(normalizedRole, page)
+    ? canAccessModule(liveRole, page)
     : true;
 
-  const engineRouteAllowed = canAccessRoute(normalizedRole, location.pathname);
+  const engineRouteAllowed = canAccessRoute(liveRole, location.pathname);
 
   const allowed = isAdministratorEmail(email)
     ? legacyAllowed
@@ -63,7 +64,7 @@ export function MemberGuard({ children, page }: MemberGuardProps) {
         email: profile.email,
         page,
         allowed: false,
-        reason: getAccessDeniedReason(profile.role, page, {
+        reason: getAccessDeniedReason(liveRole, page, {
           email: profile.email,
           isActive: profile.is_active,
           isSuspended: profile.is_suspended,
@@ -75,25 +76,25 @@ export function MemberGuard({ children, page }: MemberGuardProps) {
   useEffect(() => {
     const onRoleUpdated = () => {
       if (!profile) return;
-      if (!canAccessRoute(normalizedRole, location.pathname)) {
+      if (!canAccessRoute(liveRole, location.pathname)) {
         // Navigate handled by RoleSyncGuard; guard re-renders on context update
       }
     };
     window.addEventListener(ROLE_SYNC_EVENT, onRoleUpdated);
     return () => window.removeEventListener(ROLE_SYNC_EVENT, onRoleUpdated);
-  }, [profile, normalizedRole, location.pathname]);
+  }, [profile, liveRole, normalizedRole, location.pathname]);
 
   if (profile && !allowed) {
     const redirectTo = !user
       ? '/login'
-      : getRoleRedirect(profile.role);
+      : getRoleRedirect(liveRole);
 
     return (
       <Navigate
         to={redirectTo}
         replace
         state={{
-          accessDenied: getAccessDeniedReason(profile.role, page, {
+          accessDenied: getAccessDeniedReason(liveRole, page, {
             email: profile.email,
             isActive: profile.is_active,
             isSuspended: profile.is_suspended,

@@ -19,7 +19,7 @@ const QUICK_ACTIONS = [
 ];
 
 export function AppHeader() {
-  const { profile, signOut, isAdministrator, normalizedRole } = useAuth();
+  const { profile, signOut, isAdministrator, role, normalizedRole } = useAuth();
   const { toggleCollapsed } = useSidebar();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
@@ -28,7 +28,8 @@ export function AppHeader() {
 
   const displayName = profile?.pseudo || profile?.full_name || 'Membre';
   const initials = displayName[0]?.toUpperCase() ?? '?';
-  const showBank = canAccessModule(profile?.role ?? normalizedRole, 'bank');
+  const liveRole = role ?? normalizedRole;
+  const showBank = canAccessModule(liveRole, 'bank');
   const quickActions = QUICK_ACTIONS.filter(a => !a.bankOnly || showBank);
 
   function handleSearch(e: React.FormEvent) {
@@ -156,7 +157,7 @@ export function AppHeader() {
               {displayName}
             </span>
             {isAdministrator && <AdminBadge className="hidden md:inline-flex" />}
-            {profile?.role && <RoleBadge role={profile.role} size="xs" className="hidden md:inline-flex" />}
+            {liveRole && <RoleBadge role={liveRole} size="xs" className="hidden md:inline-flex" />}
             <ChevronDown className={`hidden md:block w-3.5 h-3.5 text-white/30 transition-transform ${userOpen ? 'rotate-180' : ''}`} />
           </button>
 
@@ -171,7 +172,7 @@ export function AppHeader() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-bold text-white truncate">{displayName}</p>
                     {isAdministrator && <AdminBadge />}
-                    {profile?.role && <RoleBadge role={profile.role} size="xs" />}
+                    {liveRole && <RoleBadge role={liveRole} size="xs" />}
                   </div>
                   <p className="text-xs text-white/35 truncate mt-1">{profile?.email}</p>
                 </div>

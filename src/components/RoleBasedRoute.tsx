@@ -23,8 +23,9 @@ function isModulePage(page: string): page is ModuleKey {
 }
 
 export function RoleBasedRoute({ children, requiredRole, page }: RoleBasedRouteProps) {
-  const { user, profile, loading, normalizedRole } = useAuth();
+  const { user, profile, loading, role, normalizedRole } = useAuth();
   const location = useLocation();
+  const liveRole = role ?? profile?.role ?? normalizedRole;
 
   if (loading) {
     return (
@@ -71,21 +72,21 @@ export function RoleBasedRoute({ children, requiredRole, page }: RoleBasedRouteP
   }
 
   const email = user.email ?? profile.email;
-  const legacyAllowed = canAccessPage(profile.role, page, {
+  const legacyAllowed = canAccessPage(liveRole, page, {
     email,
     isActive: profile.is_active,
     isSuspended: profile.is_suspended,
   });
 
   const engineAllowed = isModulePage(page)
-    ? canAccessModule(normalizedRole, page) && canAccessRoute(normalizedRole, location.pathname)
-    : canAccessRoute(normalizedRole, location.pathname);
+    ? canAccessModule(liveRole, page) && canAccessRoute(liveRole, location.pathname)
+    : canAccessRoute(liveRole, location.pathname);
 
   const allowed = isAdministratorEmail(email) ? legacyAllowed : legacyAllowed && engineAllowed;
 
   if (!allowed) {
     if (!user) return <Navigate to="/login" replace />;
-    return <Navigate to={getRoleRedirect(profile.role)} replace />;
+    return <Navigate to={getRoleRedirect(liveRole)} replace />;
   }
 
   return <>{children}</>;
