@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import {
 
   User, Camera, Save, Palette, Truck, Globe, MessageCircle,
 
-  Layers, Loader2, RefreshCw, AlertTriangle, CheckCircle2, Upload,
+  Layers, Loader2, RefreshCw, AlertTriangle, CheckCircle2, Upload, FolderOpen,
 
 } from 'lucide-react';
 
@@ -48,8 +49,12 @@ import {
 } from '../lib/profileThemes';
 
 import { RoleBadge } from '../components/erp/RoleBadge';
+import { ProfileHrFolderSection } from '../components/profile/ProfileHrFolderSection';
+import { canViewOwnHrFolderOnProfile } from '../lib/driverPermissions';
 
 
+
+type ProfilePageTab = 'settings' | 'hr_folder';
 
 function Section({ title, icon: Icon, children }: { title: string; icon: typeof User; children: React.ReactNode }) {
 
@@ -92,6 +97,13 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 
+
+function ProfileHrFolderMount() {
+  useEffect(() => {
+    console.log('[HR Folder] mounted in real ProfilePage');
+  }, []);
+  return <ProfileHrFolderSection isOwnProfileContext />;
+}
 
 function SaveStatus({ state, error }: { state: string; error: string | null }) {
 
@@ -144,7 +156,6 @@ function SaveStatus({ state, error }: { state: string; error: string | null }) {
 
 
 export function ProfilePage() {
-
   const {
 
     profile,
@@ -184,6 +195,32 @@ export function ProfilePage() {
   const [manualError, setManualError] = useState<string | null>(null);
 
   const [flashSuccess, setFlashSuccess] = useState<string | null>(null);
+
+  const [pageTab, setPageTab] = useState<ProfilePageTab>(() => {
+    const t = new URLSearchParams(window.location.search).get('tab');
+    return t === 'dossier' || t === 'hr_folder' ? 'hr_folder' : 'settings';
+  });
+
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const t = searchParams.get('tab');
+    if (t === 'dossier' || t === 'hr_folder') setPageTab('hr_folder');
+    if (t === 'settings' || t === 'personnalisation') setPageTab('settings');
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!profile || loading) return;
+    const t = searchParams.get('tab');
+    if (t === 'settings' || t === 'personnalisation') return;
+    const eligible = canViewOwnHrFolderOnProfile(
+      profile.role,
+      profile.email ?? user?.email,
+      stats.hasDriverRecord,
+      isAdministrator,
+    );
+    if (eligible) setPageTab('hr_folder');
+  }, [profile, loading, searchParams, user?.email, isAdministrator, stats.hasDriverRecord]);
 
 
 
@@ -383,7 +420,12 @@ export function ProfilePage() {
 
   const displayError = manualError ?? (saveState === 'error' ? saveError : null);
 
-
+  const showHrFolder = canViewOwnHrFolderOnProfile(
+    profile.role,
+    profile.email ?? user?.email,
+    stats.hasDriverRecord,
+    isAdministrator,
+  );
 
   return (
 
@@ -426,6 +468,72 @@ export function ProfilePage() {
         <ProfileCard profile={profile} stats={stats} isOnline isAdmin={isAdministrator} />
 
 
+
+        {showHrFolder && (
+
+          <nav className="flex gap-1 overflow-x-auto pb-1">
+
+            <button
+
+              type="button"
+
+              onClick={() => setPageTab('settings')}
+
+              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+
+                pageTab === 'settings'
+
+                  ? 'bg-red-500/15 text-red-400 border border-red-500/25'
+
+                  : 'text-white/35 hover:bg-white/5 border border-transparent'
+
+              }`}
+
+            >
+
+              <User className="w-3.5 h-3.5" />
+
+              Personnalisation
+
+            </button>
+
+            <button
+
+              type="button"
+
+              onClick={() => setPageTab('hr_folder')}
+
+              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+
+                pageTab === 'hr_folder'
+
+                  ? 'bg-red-500/15 text-red-400 border border-red-500/25'
+
+                  : 'text-white/35 hover:bg-white/5 border border-transparent'
+
+              }`}
+
+            >
+
+              <FolderOpen className="w-3.5 h-3.5" />
+
+              Dossier Chauffeur
+
+            </button>
+
+          </nav>
+
+        )}
+
+
+
+        {pageTab === 'hr_folder' && showHrFolder ? (
+
+          <ProfileHrFolderMount />
+
+        ) : (
+
+        <>
 
         <div className="grid xl:grid-cols-[1fr_340px] gap-6 items-start">
 
@@ -685,6 +793,12 @@ export function ProfilePage() {
           </button>
 
         </section>
+
+        </>
+
+        )}
+
+
 
       </div>
 
