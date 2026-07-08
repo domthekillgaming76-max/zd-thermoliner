@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { X, Loader2, Play, CheckCircle2, Ban, Link2, Pencil } from 'lucide-react';
 import {
@@ -25,13 +26,14 @@ interface MissionDetailPanelProps {
   onDeliver: () => void;
   onCancel: () => void;
   onEdit?: () => void;
+  aiPanel?: ReactNode;
 }
 
 export function MissionDetailPanel(props: MissionDetailPanelProps) {
   const {
     mission, assignments, drivers, trucks, trailers, garages,
     canManage, canDeliver, assigning, delivering,
-    onClose, onAssign, onStart, onDeliver, onCancel, onEdit,
+    onClose, onAssign, onStart, onDeliver, onCancel, onEdit, aiPanel,
   } = props;
 
   const [driverId, setDriverId] = useState(mission.driver_id ?? '');
@@ -69,6 +71,8 @@ export function MissionDetailPanel(props: MissionDetailPanelProps) {
             <Info label="Distance" value={`${mission.distance_km} km`} />
             <Info label="Poids / palettes" value={`${mission.weight_kg} kg / ${mission.pallets} pal.`} />
           </div>
+
+          {canManage && aiPanel}
 
           {canManage && !['delivered', 'cancelled'].includes(mission.status) && (
             <div className="dispatch-control-panel rounded-xl p-4 space-y-3">

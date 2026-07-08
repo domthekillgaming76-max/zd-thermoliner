@@ -20,6 +20,7 @@ import { canAccessAdministration } from '../lib/adminPermissions';
 
 import { isVisitorRole, isDriverRole } from '../lib/accessControl';
 import { canAccessBank } from '../lib/bankPermissions';
+import { canAccessFleetMap, canAccessStatistics } from '../lib/phase5Permissions';
 
 import type { LucideIcon } from 'lucide-react';
 
@@ -54,6 +55,10 @@ const MEMBER_NAV: NavItem[] = [
   { to: '/freight', icon: Container, label: 'Marché Fret' },
 
   { to: '/tracking', icon: Map, label: 'GPS Tracking' },
+
+  { to: '/fleet-map', icon: Map, label: 'Carte flotte' },
+
+  { to: '/statistics', icon: FileBarChart, label: 'Statistiques' },
 
   { to: '/clients', icon: Receipt, label: 'Clients & Factures' },
 
@@ -110,6 +115,8 @@ const RECRUITMENT_NAV: NavItem[] = [
 function filterErpNav(items: NavItem[], role: string | undefined, email: string | undefined): NavItem[] {
   return items.filter(item => {
     if (item.to === '/bank') return canAccessBank(role, email);
+    if (item.to === '/fleet-map') return canAccessFleetMap(role, email);
+    if (item.to === '/statistics') return canAccessStatistics(role, email);
     return true;
   });
 }

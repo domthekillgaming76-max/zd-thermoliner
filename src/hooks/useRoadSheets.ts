@@ -32,6 +32,7 @@ import {
 } from '../services/roadSheetService';
 
 import { syncRoadSheetToBank } from '../services/bankSyncService';
+import { notifyRoadSheetValidated } from '../services/notificationService';
 
 import type { RoadSheet } from '../lib/supabase';
 
@@ -282,6 +283,11 @@ export function useValidateRoadSheet(userId: string | undefined) {
       } catch (invoiceError) {
         console.warn('[Z&D] auto invoice after validation:', invoiceError);
       }
+
+      const route = `${sheet.departure ?? sheet.departure_city ?? '?'} → ${sheet.arrival ?? sheet.arrival_city ?? '?'}`;
+      try {
+        await notifyRoadSheetValidated(sheet.driver_user_id ?? null, route);
+      } catch { /* non-blocking */ }
 
       return { sheetId, bankSyncFailed: false };
     },

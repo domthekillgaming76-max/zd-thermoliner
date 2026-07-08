@@ -21,6 +21,9 @@ import {
   useUpdateMission,
 } from '../hooks/useDispatch';
 import { canManageDispatch, canMarkMissionDelivered, canViewAllMissions } from '../lib/dispatchPermissions';
+import { canUseDispatchAi } from '../lib/phase5Permissions';
+import { useDispatchAiSuggestion } from '../hooks/useDispatchAi';
+import { DispatchAiPanel } from '../components/dispatch/DispatchAiPanel';
 import {
   computeDispatchDashboard,
   buildMissionTimeline,
@@ -45,6 +48,7 @@ export function DispatchPage() {
   const { profile, user } = useAuth();
   const isManager = canManageDispatch(profile?.role, user?.email);
   const viewAll = canViewAllMissions(profile?.role, user?.email);
+  const showAi = canUseDispatchAi(profile?.role, user?.email);
 
   const [tab, setTab] = useState<TabId>('dashboard');
   const [search, setSearch] = useState('');
@@ -52,6 +56,7 @@ export function DispatchPage() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<TransportMission | null>(null);
   const [selected, setSelected] = useState<TransportMission | null>(null);
+  const { data: aiSuggestion, isLoading: aiLoading } = useDispatchAiSuggestion(showAi ? selected : null);
   const [assignments, setAssignments] = useState<Awaited<ReturnType<typeof fetchMissionAssignments>>>([]);
   const [linkedDriverIds, setLinkedDriverIds] = useState<string[]>([]);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -340,6 +345,14 @@ export function DispatchPage() {
               setShowForm(true);
               setSelected(null);
             } : undefined}
+            aiPanel={showAi ? (
+              <DispatchAiPanel
+                suggestion={aiSuggestion}
+                loading={aiLoading}
+                applying={assignMutation.isPending}
+                onApply={driverId => handleAssign(driverId, null, null, null, 'Attribution IA — confirmation admin')}
+              />
+            ) : undefined}
           />
         )}
       </div>

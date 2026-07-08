@@ -3,8 +3,14 @@ import { useAuth } from '../contexts/AuthContext';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useDashboardRefresh } from '../hooks/useDashboardRefresh';
 import { useDashboardMetrics, useExecutiveHighlights } from '../hooks/useDashboardMetrics';
+import { useLiveOpsMetrics, useFleetMap } from '../hooks/useLiveOps';
 import { fmtEuro } from '../lib/format';
 import { canAccessBank } from '../lib/bankPermissions';
+import { canAccessLiveOps, canAccessFleetMap } from '../lib/phase5Permissions';
+import { isDriverRole } from '../lib/accessControl';
+import { LiveOpsPanel } from '../components/liveops/LiveOpsPanel';
+import { FleetMapPanel } from '../components/liveops/FleetMapPanel';
+import { DriverSalarySummary } from '../components/liveops/DriverSalarySummary';
 import {
   PremiumDashboardHero,
   ExecutiveSummary,
@@ -24,8 +30,13 @@ export function DashboardPage() {
   const data = useDashboardData(user?.id);
   const { refresh, lastUpdated, isRefreshing } = useDashboardRefresh(data.refresh, data.isFetching);
   const showBank = canAccessBank(profile?.role, user?.email ?? profile?.email);
+  const showLiveOps = canAccessLiveOps(profile?.role, user?.email);
+  const showFleetMap = canAccessFleetMap(profile?.role, user?.email);
+  const isDriver = isDriverRole(profile?.role);
   const metrics = useDashboardMetrics(data.stats, data.trends, fmtEuro, showBank);
   const highlights = useExecutiveHighlights(data, fmtEuro);
+  const liveOps = useLiveOpsMetrics();
+  const fleetMap = useFleetMap(user?.id, profile?.role, user?.email);
 
   const displayName = profile?.pseudo || profile?.full_name || 'Membre';
 
@@ -40,6 +51,21 @@ export function DashboardPage() {
         />
 
         <ExecutiveSummary highlights={highlights} loading={data.loading} />
+
+        {showLiveOps && (
+          <LiveOpsPanel
+            metrics={liveOps.data ?? {
+              connectedDrivers: 0, deliveriesInProgress: 0, revenueToday: 0, expensesToday: 0,
+              netProfitToday: 0, pendingRoadSheets: 0, activeFreightOffers: 0,
+              systemStatus: 'ok', systemMessage: 'Chargement...', lastUpdated: new Date().toISOString(),
+            }}
+            loading={liveOps.isLoading}
+            onRefresh={() => liveOps.refetch()}
+            refreshing={liveOps.isFetching}
+          />
+        )}
+
+        {isDriver && <DriverSalarySummary userId={user?.id} />}
 
         <MetricsGrid metrics={metrics} loading={data.loading} />
 
@@ -91,6 +117,14 @@ export function DashboardPage() {
             loading={data.loading}
           />
         </div>
+
+        {showFleetMap && (
+          <FleetMapPanel
+            vehicles={fleetMap.data ?? []}
+            loading={fleetMap.isLoading}
+            compact
+          />
+        )}
 
         <ModuleShortcuts />
       </div>

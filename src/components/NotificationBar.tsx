@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Bell, Info, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Bell, Info, AlertTriangle, CheckCircle, XCircle, Container, FileText, Wallet } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -45,6 +46,9 @@ export function NotificationBar() {
   }
 
   function getIcon(type: string) {
+    if (type === 'freight') return <Container className="w-4 h-4 text-purple-400" />;
+    if (type === 'road_sheet') return <FileText className="w-4 h-4 text-orange-400" />;
+    if (type === 'salary') return <Wallet className="w-4 h-4 text-emerald-400" />;
     if (type === 'success') return <CheckCircle className="w-4 h-4 text-emerald-400" />;
     if (type === 'warning') return <AlertTriangle className="w-4 h-4 text-yellow-400" />;
     if (type === 'error') return <XCircle className="w-4 h-4 text-red-400" />;
@@ -91,6 +95,12 @@ export function NotificationBar() {
                   </div>
                 ))
               )}
+            </div>
+            <div className="p-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+              <Link to="/notifications" onClick={() => setIsOpen(false)}
+                className="block text-center text-xs text-red-400 hover:text-red-300 py-1">
+                Voir toutes les notifications
+              </Link>
             </div>
           </div>
         </>

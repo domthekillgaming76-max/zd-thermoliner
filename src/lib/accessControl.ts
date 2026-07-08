@@ -7,6 +7,13 @@ import { canAccessFreightMarket } from './freightPermissions';
 import { canAccessTrainingCenter } from './trainingPermissions';
 import { canAccessFinanceModule, canAccessSalariesPage } from './financePermissions';
 import { canAccessBank } from './bankPermissions';
+import {
+  canAccessFleetMap,
+  canAccessStatistics,
+  canAccessNotificationsPage,
+  isDispatcherOnlyRole,
+  canDispatcherAccessPage,
+} from './phase5Permissions';
 
 export const VISITOR_RESTRICTED_MESSAGE =
   'Accès réservé aux membres Z&D Thermoliner.';
@@ -45,6 +52,8 @@ export const DRIVER_ALLOWED_PAGES = new Set([
   'freight_market',
   'training_center',
   'salaries',
+  'notifications',
+  'dashboard',
 ]);
 
 export const SUSPENDED_ALLOWED_PAGES = new Set(['profile', 'settings']);
@@ -164,6 +173,22 @@ export function canAccessPage(
 
   if (page === 'finance' || page === 'invoices' || page === 'accounting' || page === 'economy') {
     return canAccessFinanceModule(role, options?.email);
+  }
+
+  if (page === 'fleet_map') {
+    return canAccessFleetMap(role, options?.email);
+  }
+
+  if (page === 'statistics') {
+    return canAccessStatistics(role, options?.email);
+  }
+
+  if (page === 'notifications') {
+    return canAccessNotificationsPage(role, options?.email);
+  }
+
+  if (isDispatcherOnlyRole(role) && !canDispatcherAccessPage(page)) {
+    return false;
   }
 
   if (isVisitorRole(role)) {

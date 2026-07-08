@@ -6,6 +6,8 @@ import { Component, ReactNode } from 'react';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AppUpdateProvider } from './contexts/AppUpdateContext';
+import { LiveNotificationProvider } from './contexts/LiveNotificationContext';
+import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 
 import { LoginPage } from './pages/LoginPage';
 
@@ -41,6 +43,9 @@ import { FinancePage } from './pages/FinancePage';
 import { InvoicesPage } from './pages/InvoicesPage';
 import { SalariesPage } from './pages/SalariesPage';
 import { AccountingPage } from './pages/AccountingPage';
+import { FleetMapPage } from './pages/FleetMapPage';
+import { StatisticsPage } from './pages/StatisticsPage';
+import { NotificationsPage } from './pages/NotificationsPage';
 
 import { BankPage } from './pages/BankPage';
 
@@ -48,7 +53,6 @@ import { ProfilePage } from './pages/ProfilePage';
 
 import { SettingsPage } from './pages/SettingsPage';
 
-import { ModulePlaceholderPage } from './pages/ModulePlaceholderPage';
 
 import { EventsPage } from './pages/EventsPage';
 
@@ -79,8 +83,6 @@ import { RecruitmentAdminPage } from './pages/recruitment/RecruitmentAdminPage';
 import { MemberGuard } from './components/MemberGuard';
 
 import { getPostLoginPath } from './lib/accessControl';
-
-import { Bell } from 'lucide-react';
 
 
 
@@ -402,15 +404,11 @@ function AppRoutes() {
 
       } />
 
-      <Route path="/notifications" element={
+      <Route path="/fleet-map" element={<ProtectedPage page="fleet_map"><FleetMapPage /></ProtectedPage>} />
 
-        <ProtectedPage page="notifications">
+      <Route path="/statistics" element={<ProtectedPage page="statistics"><StatisticsPage /></ProtectedPage>} />
 
-          <ModulePlaceholderPage title="Notifications" description="Centre de notifications et alertes système" icon={Bell} />
-
-        </ProtectedPage>
-
-      } />
+      <Route path="/notifications" element={<ProtectedPage page="notifications"><NotificationsPage /></ProtectedPage>} />
 
       <Route path="/administration" element={
 
@@ -456,7 +454,10 @@ function App() {
 
           <AuthProvider>
             <AppUpdateProvider>
-              <AppRoutes />
+              <LiveNotificationProvider>
+                <AppRoutes />
+                <PwaInstallPrompt />
+              </LiveNotificationProvider>
             </AppUpdateProvider>
           </AuthProvider>
 

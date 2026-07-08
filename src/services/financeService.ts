@@ -11,6 +11,7 @@ import type {
   FinanceSettings,
 } from '../lib/financeTypes';
 import { resolveFinanceInvoiceStatus } from '../lib/financeTypes';
+import { notifySalaryPaid } from './notificationService';
 
 async function adjustCompanyBalance(delta: number): Promise<void> {
   const { data: account } = await supabase.from('company_bank_account').select('*').limit(1).maybeSingle();
@@ -229,6 +230,12 @@ export async function payDriverSalary(
     .single();
 
   if (updErr) throw updErr;
+
+  const { data: driver } = await supabase.from('drivers').select('user_id').eq('id', salary.driver_id as string).maybeSingle();
+  try {
+    await notifySalaryPaid(driver?.user_id as string | null, `${amount.toLocaleString('fr-FR')} €`);
+  } catch { /* non-blocking */ }
+
   return mapSalary(updated as Record<string, unknown>);
 }
 

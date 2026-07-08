@@ -83,4 +83,16 @@ export const queryKeys = {
     settings: () => ['finance', 'settings'] as const,
     accounting: () => ['finance', 'accounting'] as const,
   },
+  liveOps: {
+    metrics: () => ['liveOps', 'metrics'] as const,
+    fleetMap: (userId?: string) => ['liveOps', 'fleetMap', userId ?? 'anonymous'] as const,
+  },
+  statistics: {
+    all: ['statistics'] as const,
+    bundle: () => ['statistics', 'bundle'] as const,
+  },
+  notifications: {
+    all: ['notifications'] as const,
+    list: (userId?: string) => ['notifications', 'list', userId ?? 'anonymous'] as const,
+  },
 };
