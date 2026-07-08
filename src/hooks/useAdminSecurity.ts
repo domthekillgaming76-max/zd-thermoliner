@@ -9,6 +9,7 @@ import {
   fetchUserActivity,
   fetchUserPermissions,
   reactivateUser,
+  resetRpEconomy,
   resetUserTheme,
   suspendUser,
   upsertUserPermission,
@@ -94,6 +95,22 @@ export function useResetUserTheme() {
   return useMutation({
     mutationFn: ({ userId, email }: { userId: string; email: string }) => resetUserTheme(userId, email),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.admin.all }),
+  });
+}
+
+export function useResetRpEconomy() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (confirmation: string) => resetRpEconomy(confirmation),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.admin.all });
+      void qc.invalidateQueries({ queryKey: queryKeys.drivers.all });
+      void qc.invalidateQueries({ queryKey: ['dashboard'] });
+      void qc.invalidateQueries({ queryKey: ['finance'] });
+      void qc.invalidateQueries({ queryKey: ['bank'] });
+      void qc.invalidateQueries({ queryKey: ['statistics'] });
+      void qc.invalidateQueries({ queryKey: ['road-sheets'] });
+    },
   });
 }
 

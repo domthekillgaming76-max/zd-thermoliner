@@ -7,6 +7,7 @@ import { AdminDashboard } from '../components/admin/AdminDashboard';
 import { UserManagementTable } from '../components/admin/UserManagementTable';
 import { PermissionEditor } from '../components/admin/PermissionEditor';
 import { SalonsManagementPanel } from '../components/admin/SalonsManagementPanel';
+import { RpResetPanel } from '../components/admin/RpResetPanel';
 import { SecurityTimeline } from '../components/admin/SecurityTimeline';
 import { useAuth } from '../contexts/AuthContext';
 import { canAccessAdministration } from '../lib/adminPermissions';
@@ -160,6 +161,7 @@ export function AdminSecurityPage() {
         {tab === 'dashboard' && (
           <div className="space-y-4">
             <AdminDashboard stats={stats} loading={isLoading} />
+            <RpResetPanel />
             <SecurityTimeline
               securityLogs={securityLogs}
               adminActions={data?.adminActions ?? []}

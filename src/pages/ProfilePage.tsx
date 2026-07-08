@@ -14,7 +14,7 @@ import { PageHeader } from '../components/erp/PageHeader';
 
 import { FormAlert, FormSuccess } from '../components/erp/FormAlert';
 
-import { AdminBadge } from '../components/erp/AdminBadge';
+import { UserBadges } from '../components/erp/UserBadges';
 import { AppUpdateProfileCard } from '../components/AppUpdateProfileCard';
 
 import { ProfilePreview } from '../components/profile/ProfilePreview';
@@ -463,9 +463,16 @@ export function ProfilePage() {
 
                   <div className="erp-input w-full flex items-center gap-2 bg-white/[0.02] cursor-not-allowed opacity-80">
 
-                    {isAdministrator ? <AdminBadge size="sm" /> : null}
-
-                    <RoleBadge role={profile.role} size="sm" />
+                    {isAdministrator ? (
+                      <UserBadges
+                        isAdministrator={isAdministrator}
+                        role={profile.role}
+                        email={profile.email}
+                        size="sm"
+                      />
+                    ) : (
+                      <RoleBadge role={profile.role} size="sm" />
+                    )}
 
                   </div>
 

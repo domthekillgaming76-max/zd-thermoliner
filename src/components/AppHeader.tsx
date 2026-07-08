@@ -8,8 +8,7 @@ import { useSidebar } from '../contexts/SidebarContext';
 import { Logo } from './Logo';
 import { NotificationBar } from './NotificationBar';
 import { AppUpdateBadge } from './AppUpdateBadge';
-import { AdminBadge } from './erp/AdminBadge';
-import { RoleBadge } from './erp/RoleBadge';
+import { UserBadges } from './erp/UserBadges';
 import { canAccessModule } from '../lib/roleEngine';
 
 const QUICK_ACTIONS = [
@@ -19,7 +18,7 @@ const QUICK_ACTIONS = [
 ];
 
 export function AppHeader() {
-  const { profile, signOut, isAdministrator, role, normalizedRole } = useAuth();
+  const { profile, signOut, isAdministrator, role, normalizedRole, user } = useAuth();
   const { toggleCollapsed } = useSidebar();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
@@ -156,11 +155,13 @@ export function AppHeader() {
             <span className="hidden md:block text-sm font-semibold text-white/80 max-w-[120px] truncate">
               {displayName}
             </span>
-            {isAdministrator ? (
-              <AdminBadge className="hidden md:inline-flex" />
-            ) : (
-              liveRole && <RoleBadge role={liveRole} size="xs" className="hidden md:inline-flex" />
-            )}
+            <UserBadges
+              isAdministrator={isAdministrator}
+              role={liveRole}
+              email={user?.email ?? profile?.email}
+              size="xs"
+              className="hidden md:inline-flex"
+            />
             <ChevronDown className={`hidden md:block w-3.5 h-3.5 text-white/30 transition-transform ${userOpen ? 'rotate-180' : ''}`} />
           </button>
 
@@ -174,11 +175,12 @@ export function AppHeader() {
                 <div className="p-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-bold text-white truncate">{displayName}</p>
-                    {isAdministrator ? (
-                      <AdminBadge />
-                    ) : (
-                      liveRole && <RoleBadge role={liveRole} size="xs" />
-                    )}
+                    <UserBadges
+                      isAdministrator={isAdministrator}
+                      role={liveRole}
+                      email={user?.email ?? profile?.email}
+                      size="xs"
+                    />
                   </div>
                   <p className="text-xs text-white/35 truncate mt-1">{profile?.email}</p>
                 </div>

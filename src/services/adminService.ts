@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { assertCanAssignRole, assertCanModifyUser } from '../lib/dom76Protection';
-import { ensureDriverProfile, isDriverProfileRole } from './driverSyncService';
+import { ensureDriverProfile, isDriverProfileRole, shouldEnsureDriverProfile } from './driverSyncService';
 import { createUserNotification } from './notificationService';
 import type {
   AdminAction,
@@ -186,19 +186,20 @@ export async function changeUserRole(
   }
 
   let driverId: string | null = null;
-  if (isDriverProfileRole(newRole)) {
-    const { data: profileRow } = await supabase
-      .from('profiles')
-      .select('id, email, full_name, pseudo, avatar_url, truck_photo_url, role')
-      .eq('id', targetUserId)
-      .maybeSingle();
+  const { data: profileRow } = await supabase
+    .from('profiles')
+    .select('id, email, full_name, pseudo, avatar_url, truck_photo_url, role')
+    .eq('id', targetUserId)
+    .maybeSingle();
 
-    if (profileRow) {
-      driverId = await ensureDriverProfile(profileRow);
-    }
+  if (profileRow && shouldEnsureDriverProfile(profileRow)) {
+    driverId = await ensureDriverProfile(profileRow);
   }
 
-  return { driverEnsured: isDriverProfileRole(newRole), driverId };
+  return {
+    driverEnsured: Boolean(driverId) || isDriverProfileRole(newRole),
+    driverId,
+  };
 }
 
 export async function suspendUser(targetUserId: string, targetEmail: string, reason?: string): Promise<void> {
@@ -223,6 +224,25 @@ export async function resetUserTheme(targetUserId: string, targetEmail: string):
     p_target_user_id: targetUserId,
   });
   if (error) throw error;
+}
+
+export interface RpResetResult {
+  success: boolean;
+  message: string;
+  deleted?: Record<string, number>;
+}
+
+export async function resetRpEconomy(confirmation: string): Promise<RpResetResult> {
+  const { data, error } = await supabase.rpc('admin_reset_rp_economy', {
+    p_confirmation: confirmation,
+  });
+  if (error) throw error;
+  const payload = (data ?? {}) as RpResetResult;
+  return {
+    success: payload.success ?? true,
+    message: payload.message ?? 'Réinitialisation RP terminée',
+    deleted: payload.deleted as Record<string, number> | undefined,
+  };
 }
 
 export async function deleteUserProfile(targetUserId: string, targetEmail: string, reason?: string): Promise<void> {

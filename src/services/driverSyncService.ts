@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { isAdministratorEmail } from '../lib/admin';
 import { normalizeRole, type AppRole } from '../lib/roleEngine';
 import { resolveDisplayStatus } from './onlinePresenceService';
 import type { NormalizedProfile } from './profileService';
@@ -14,6 +15,15 @@ export type DriverProfileInput = Pick<
 export function isDriverProfileRole(role: string | null | undefined): boolean {
   if (!role) return false;
   return normalizeRole(role) === 'driver' || DRIVER_PROFILE_ROLES.includes(role as typeof DRIVER_PROFILE_ROLES[number]);
+}
+
+/** DOM76 admin keeps profile role admin but also gets a drivers row. */
+export function shouldEnsureDriverProfile(profile: Pick<DriverProfileInput, 'role' | 'email'>): boolean {
+  return isDriverProfileRole(profile.role) || isAdministratorEmail(profile.email);
+}
+
+export function isDom76DualRole(email: string | null | undefined): boolean {
+  return isAdministratorEmail(email);
 }
 
 export function isVirtualDriverId(id: string): boolean {
@@ -39,7 +49,7 @@ async function fetchPresenceStatus(userId: string): Promise<'online' | 'offline'
  * Returns the driver id, or null if the profile is not a driver role.
  */
 export async function ensureDriverProfile(profile: DriverProfileInput): Promise<string | null> {
-  if (!isDriverProfileRole(profile.role)) return null;
+  if (!shouldEnsureDriverProfile(profile)) return null;
 
   const { data, error } = await supabase.rpc('ensure_driver_profile', {
     p_profile_id: profile.id,
@@ -74,6 +84,8 @@ async function directEnsureDriver(profile: DriverProfileInput): Promise<string |
   const presenceStatus = await fetchPresenceStatus(profile.id);
   const now = new Date().toISOString();
 
+  const memberRole = isAdministratorEmail(profile.email) ? 'admin' : 'driver';
+
   const payload = {
     user_id: profile.id,
     name,
@@ -81,7 +93,7 @@ async function directEnsureDriver(profile: DriverProfileInput): Promise<string |
     email: profile.email,
     avatar_url: profile.avatar_url,
     photo_url: profile.truck_photo_url ?? profile.avatar_url,
-    member_role: 'driver',
+    member_role: memberRole,
     role: 'chauffeur',
     status: 'active',
     presence_status: presenceStatus,
@@ -110,7 +122,7 @@ async function directEnsureDriver(profile: DriverProfileInput): Promise<string |
         email: profile.email,
         avatar_url: profile.avatar_url,
         photo_url: profile.truck_photo_url ?? profile.avatar_url,
-        member_role: 'driver',
+        member_role: memberRole,
         role: 'chauffeur',
         is_active_driver: true,
         presence_status: presenceStatus,

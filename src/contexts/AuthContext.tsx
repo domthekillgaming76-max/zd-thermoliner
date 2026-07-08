@@ -13,7 +13,7 @@ import {
   getRoleLabel,
   dispatchRoleUpdated,
 } from '../lib/roleEngine';
-import { ensureDriverProfile } from '../services/driverSyncService';
+import { ensureDriverProfile, shouldEnsureDriverProfile } from '../services/driverSyncService';
 import { createUserNotification } from '../services/notificationService';
 import { queryKeys } from '../lib/queryKeys';
 
@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     dispatchRoleUpdated(newProfile as unknown as Record<string, unknown>);
     invalidateRoleQueries(newProfile.id);
 
-    if (nextNorm === 'driver') {
+    if (nextNorm === 'driver' || shouldEnsureDriverProfile(newProfile)) {
       void ensureDriverProfile(newProfile);
     }
 
@@ -178,7 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setProfileError(null);
         applyFetchedProfile(result.profile);
-        if (result.profile && normalizeRole(result.profile.role) === 'driver') {
+        if (result.profile && shouldEnsureDriverProfile(result.profile)) {
           void ensureDriverProfile(result.profile);
         }
         void touchProfileLastSeen(userId);

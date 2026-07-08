@@ -1,7 +1,7 @@
 import type { ComponentType, CSSProperties } from 'react';
 import { NavLink } from 'react-router-dom';
 import { LogOut, ChevronLeft } from 'lucide-react';
-import { RoleBadge } from './erp/RoleBadge';
+import { UserBadges } from './erp/UserBadges';
 import { Logo } from './Logo';
 import { useAuth } from '../contexts/AuthContext';
 import { useAppModules } from '../contexts/AppModulesContext';
@@ -150,7 +150,7 @@ function SidebarSection({
 }
 
 export function Sidebar() {
-  const { signOut, profile, user, role, normalizedRole } = useAuth();
+  const { signOut, profile, user, role, normalizedRole, isAdministrator } = useAuth();
   const { modules } = useAppModules();
   const { collapsed, toggleCollapsed } = useSidebar();
   const hasUpdate = useAppUpdateBadge();
@@ -209,7 +209,12 @@ export function Sidebar() {
       >
         {!collapsed && liveRole && (
           <div className="px-2 pb-1">
-            <RoleBadge role={liveRole} size="xs" />
+            <UserBadges
+              isAdministrator={isAdministrator}
+              role={liveRole}
+              email={user?.email ?? profile?.email}
+              size="xs"
+            />
           </div>
         )}
         <button
