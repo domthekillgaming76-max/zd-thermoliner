@@ -15,6 +15,7 @@ import {
   canDispatcherAccessPage,
 } from './phase5Permissions';
 import { canAccessWall } from './wallPermissions';
+import { isCanonicalDriver, isCanonicalRecruit, isCanonicalVisitor } from './roles';
 
 export const VISITOR_RESTRICTED_MESSAGE =
   'Accès réservé aux membres Z&D Thermoliner.';
@@ -94,15 +95,15 @@ export function getAccessDeniedRedirect(
 }
 
 export function isVisitorRole(role: string | null | undefined): boolean {
-  return role === 'visitor' || role === 'visiteur';
+  return isCanonicalVisitor(role);
 }
 
 export function isRecruitRole(role: string | null | undefined): boolean {
-  return role === 'candidat';
+  return isCanonicalRecruit(role);
 }
 
 export function isDriverRole(role: string | null | undefined): boolean {
-  return role === 'chauffeur' || role === 'tractionnaire';
+  return isCanonicalDriver(role);
 }
 
 export function isSuspendedAccount(

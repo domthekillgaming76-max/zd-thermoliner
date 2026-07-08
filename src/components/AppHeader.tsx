@@ -9,6 +9,7 @@ import { Logo } from './Logo';
 import { NotificationBar } from './NotificationBar';
 import { AppUpdateBadge } from './AppUpdateBadge';
 import { AdminBadge } from './erp/AdminBadge';
+import { RoleBadge } from './erp/RoleBadge';
 import { canAccessBank } from '../lib/bankPermissions';
 
 const QUICK_ACTIONS = [
@@ -154,7 +155,8 @@ export function AppHeader() {
             <span className="hidden md:block text-sm font-semibold text-white/80 max-w-[120px] truncate">
               {displayName}
             </span>
-            {isAdministrator && <AdminBadge className="hidden md:inline-flex" />}            <ChevronDown className={`hidden md:block w-3.5 h-3.5 text-white/30 transition-transform ${userOpen ? 'rotate-180' : ''}`} />
+            {isAdministrator && <AdminBadge className="hidden md:inline-flex" />}
+            {profile?.role && <RoleBadge role={profile.role} size="xs" className="hidden md:inline-flex" />}            <ChevronDown className={`hidden md:block w-3.5 h-3.5 text-white/30 transition-transform ${userOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {userOpen && (
@@ -168,6 +170,7 @@ export function AppHeader() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-bold text-white truncate">{displayName}</p>
                     {isAdministrator && <AdminBadge />}
+                    {profile?.role && <RoleBadge role={profile.role} size="xs" />}
                   </div>
                   <p className="text-xs text-white/35 truncate mt-1">{profile?.email}</p>
                 </div>

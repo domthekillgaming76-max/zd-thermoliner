@@ -10,13 +10,14 @@ import {
   resolveBannerUrl,
   resolveTruckPhotoUrl,
 } from '../../lib/profileDefaults';
-import { getRoleLabel } from '../../lib/rolePromotion';
+import { RoleBadge } from '../erp/RoleBadge';
 import { getThemeOrDefault } from '../../lib/profileThemes';
 
 interface ProfileCardProps {
   profile: NormalizedProfile;
   stats: ProfileCardStats;
   isOnline?: boolean;
+  /** @deprecated Role badge uses profile.role */
   isAdmin?: boolean;
 }
 
@@ -36,7 +37,7 @@ function formatMemberSince(date: string): string {
   }
 }
 
-export function ProfileCard({ profile, stats, isOnline = true, isAdmin }: ProfileCardProps) {
+export function ProfileCard({ profile, stats, isOnline = true }: ProfileCardProps) {
   const theme = getThemeOrDefault(profile.profile_theme);
   const primary = profile.primary_color ?? theme.primary;
   const secondary = profile.secondary_color ?? theme.secondary;
@@ -88,13 +89,7 @@ export function ProfileCard({ profile, stats, isOnline = true, isAdmin }: Profil
           <div className="flex-1 min-w-0 pb-1">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-xl font-black text-white truncate">{displayName}</h2>
-              <span
-                className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border font-semibold ${
-                  isAdmin ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' : 'border-white/10 bg-white/5 text-white/60'
-                }`}
-              >
-                {getRoleLabel(profile.role)}
-              </span>
+              <RoleBadge role={profile.role} size="sm" />
               <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400">
                 <Circle className={`w-2 h-2 fill-current ${isOnline ? 'text-emerald-400' : 'text-white/20'}`} />
                 {isOnline ? 'En ligne' : 'Hors ligne'}

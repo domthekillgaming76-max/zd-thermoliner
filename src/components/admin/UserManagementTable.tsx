@@ -1,7 +1,8 @@
 import type { ElementType } from 'react';
-import { Crown, Shield, Ban, RotateCcw, Trash2, Palette, KeyRound, Activity } from 'lucide-react';
+import { Shield, Ban, RotateCcw, Trash2, Palette, KeyRound, Activity } from 'lucide-react';
 import { isDom76Protected } from '../../lib/dom76Protection';
-import { ERP_ROLE_COLORS, ERP_ROLE_LABELS, type AdminUser } from '../../lib/adminTypes';
+import { RoleBadge } from '../erp/RoleBadge';
+import type { AdminUser } from '../../lib/adminTypes';
 
 interface UserManagementTableProps {
   users: AdminUser[];
@@ -61,10 +62,7 @@ export function UserManagementTable({
                 </div>
               </div>
               <div className="col-span-2">
-                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border ${ERP_ROLE_COLORS[u.role] ?? 'bg-white/5 text-white/40'}`}>
-                  {u.role === 'pdg' && <Crown className="w-2.5 h-2.5 inline mr-0.5" />}
-                  {ERP_ROLE_LABELS[u.role] ?? u.role}
-                </span>
+                <RoleBadge role={u.role} size="xs" />
               </div>
               <div className="col-span-2">
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${

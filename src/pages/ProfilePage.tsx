@@ -47,7 +47,7 @@ import {
 
 } from '../lib/profileThemes';
 
-import { getRoleLabel } from '../lib/rolePromotion';
+import { RoleBadge } from '../components/erp/RoleBadge';
 
 
 
@@ -465,7 +465,7 @@ export function ProfilePage() {
 
                     {isAdministrator ? <AdminBadge size="sm" /> : null}
 
-                    <span className="text-sm text-white/60">{getRoleLabel(profile.role)}</span>
+                    <RoleBadge role={profile.role} size="sm" />
 
                   </div>
 

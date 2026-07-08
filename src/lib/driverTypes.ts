@@ -1,4 +1,5 @@
 import type { Driver, RoadSheet } from './supabase';
+import { getRoleLabel } from './roles';
 
 export type DrivingStatus = 'driving' | 'resting' | 'vacation' | 'sick' | 'rest';
 export type PresenceStatus = 'online' | 'offline' | 'driving' | 'rest' | 'vacation';
@@ -367,7 +368,7 @@ export const MEMBER_ROLE_LABELS: Record<string, string> = {
 
 export function getMemberRoleLabel(role: string | null | undefined): string {
   if (!role) return 'Chauffeur';
-  return MEMBER_ROLE_LABELS[role] ?? role;
+  return getRoleLabel(role);
 }
 
 export function getPresenceLabel(status: string | null | undefined): string {

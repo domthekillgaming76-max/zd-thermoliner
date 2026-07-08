@@ -1,36 +1,19 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
-  Shield, Crown, Search, Edit, UserX, Ban,
+  Shield, Search, Edit, UserX, Ban,
   UserMinus, RotateCcw, AlertTriangle, X, ChevronDown, ChevronUp, ArrowUpCircle,
 } from 'lucide-react';
 import { Layout } from '../components/Layout';
+import { FormSuccess } from '../components/erp/FormAlert';
+import { RoleBadge } from '../components/erp/RoleBadge';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase, Profile } from '../lib/supabase';
 import { promoteMemberRole, describePromotion } from '../services/rolePromotionService';
-import { getRoleLabel } from '../lib/rolePromotion';
+import { changeUserRole } from '../services/adminService';
+import { getRoleLabel } from '../lib/roles';
+import { assertCanAssignRole, filterAssignableRoles, isDom76Protected } from '../lib/dom76Protection';
 
 type UserRole = 'pdg' | 'patron' | 'directeur' | 'dispatcher' | 'chauffeur' | 'tractionnaire' | 'candidat' | 'visitor' | 'ancien_membre' | 'banni';
-
-const ROLE_LABELS: Record<string, string> = {
-  pdg: 'PDG', patron: 'Patron', directeur: 'Directeur', dispatcher: 'Dispatcher',
-  chauffeur: 'Chauffeur', tractionnaire: 'Tractionnaire', candidat: 'Recrue',
-  visitor: 'Visiteur', visiteur: 'Visiteur',
-  ancien_membre: 'Ancien membre', banni: 'Banni',
-};
-
-const ROLE_COLORS: Record<string, string> = {
-  pdg: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/25',
-  patron: 'bg-purple-500/15 text-purple-400 border-purple-500/25',
-  directeur: 'bg-blue-500/15 text-blue-400 border-blue-500/25',
-  dispatcher: 'bg-orange-500/15 text-orange-400 border-orange-500/25',
-  chauffeur: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
-  tractionnaire: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/25',
-  candidat: 'bg-white/5 text-white/30 border-white/10',
-  visitor: 'bg-slate-500/10 text-slate-300 border-slate-500/20',
-  visiteur: 'bg-slate-500/10 text-slate-300 border-slate-500/20',
-  ancien_membre: 'bg-white/5 text-white/25 border-white/8',
-  banni: 'bg-red-500/15 text-red-400 border-red-500/25',
-};
 
 type AuditLog = {
   id: string;
@@ -68,7 +51,7 @@ function UserAvatar({ u, size = 9 }: { u: Profile; size?: number }) {
 }
 
 export function AdminPage() {
-  const { profile, user } = useAuth();
+  const { profile, user, refreshProfile } = useAuth();
   const [members, setMembers] = useState<Profile[]>([]);
   const [archived, setArchived] = useState<Profile[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
@@ -84,6 +67,7 @@ export function AdminPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [promoteLoadingId, setPromoteLoadingId] = useState<string | null>(null);
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const isPDG = profile?.role === 'pdg';
   const canManage = profile?.role === 'pdg' || profile?.role === 'patron';
@@ -147,8 +131,14 @@ export function AdminPage() {
     let error: { message: string } | null = null;
 
     if (modalType === 'role') {
-      const res = await supabase.from('profiles').update({ role: modalRoleSelect }).eq('id', targetUser.id);
-      error = res.error;
+      try {
+        assertCanAssignRole(targetUser.email, modalRoleSelect);
+        await changeUserRole(targetUser.id, modalRoleSelect, targetUser.email);
+      } catch (err) {
+        setActionError(err instanceof Error ? err.message : 'Changement de rôle impossible');
+        setActionLoading(false);
+        return;
+      }
     } else if (modalType === 'fire') {
       const res = await supabase.rpc('fire_member', { target_user_id: targetUser.id, reason: modalReason });
       error = res.error;
@@ -161,6 +151,12 @@ export function AdminPage() {
     }
 
     if (error) { setActionError(error.message); setActionLoading(false); return; }
+    if (modalType === 'role') {
+      setSuccessMessage(`Rôle mis à jour → ${getRoleLabel(modalRoleSelect)}`);
+      if (targetUser.id === user?.id) {
+        void refreshProfile();
+      }
+    }
     setModalType(null);
     setTargetUser(null);
     setActionLoading(false);
@@ -182,6 +178,10 @@ export function AdminPage() {
   const activeRoles: UserRole[] = isPDG
     ? ['pdg','patron','directeur','dispatcher','chauffeur','tractionnaire','candidat','visitor']
     : ['patron','directeur','dispatcher','chauffeur','tractionnaire','candidat','visitor'];
+
+  const modalAssignableRoles = targetUser
+    ? filterAssignableRoles(activeRoles, targetUser.email) as UserRole[]
+    : activeRoles;
 
   const filteredMembers = members.filter(u => {
     const name = (u.pseudo || u.full_name || u.email || '').toLowerCase();
@@ -213,6 +213,8 @@ export function AdminPage() {
             <p className="text-xs text-white/30 mt-0.5">Gestion des membres et des rôles</p>
           </div>
         </div>
+
+        {successMessage && <FormSuccess message={successMessage} onDismiss={() => setSuccessMessage(null)} />}
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -275,10 +277,8 @@ export function AdminPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-semibold text-white truncate">{u.pseudo || u.full_name || 'Sans nom'}</p>
-                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border ${ROLE_COLORS[u.role] || ''}`}>
-                          {u.role === 'pdg' && <Crown className="w-2.5 h-2.5 inline mr-0.5" />}
-                          {ROLE_LABELS[u.role] || u.role}
-                        </span>
+                        <RoleBadge role={u.role} size="xs" />
+                        {isDom76Protected(u.email) && <Shield className="w-3 h-3 text-amber-400" aria-label="DOM76 protégé" />}
                       </div>
                       <p className="text-xs text-white/30 truncate">{u.email}</p>
                     </div>
@@ -286,7 +286,7 @@ export function AdminPage() {
                     {/* Actions */}
                     {u.id !== user?.id && (isPDG || (profile?.role === 'patron' && u.role !== 'pdg')) && (
                       <div className="flex items-center gap-1.5 flex-shrink-0">
-                        {describePromotion(u.role) && (
+                        {describePromotion(u.role) && !isDom76Protected(u.email) && (
                           <button
                             onClick={() => handlePromote(u)}
                             disabled={promoteLoadingId === u.id}
@@ -305,6 +305,7 @@ export function AdminPage() {
                           <Edit className="w-3.5 h-3.5" />
                         </button>
                         <button onClick={() => openModal('fire', u)}
+                          disabled={isDom76Protected(u.email)}
                           title="Licencier"
                           className="w-8 h-8 flex items-center justify-center rounded-xl transition-all hover:bg-orange-500/10"
                           style={{ color: 'rgba(249,115,22,0.6)' }}>
@@ -312,6 +313,7 @@ export function AdminPage() {
                         </button>
                         {isPDG && (
                           <button onClick={() => openModal('ban', u)}
+                            disabled={isDom76Protected(u.email)}
                             title="Bannir"
                             className="w-8 h-8 flex items-center justify-center rounded-xl transition-all hover:bg-red-500/10"
                             style={{ color: 'rgba(239,68,68,0.6)' }}>
@@ -347,9 +349,7 @@ export function AdminPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-semibold text-white/70 truncate">{u.pseudo || u.full_name || 'Sans nom'}</p>
-                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-lg border ${ROLE_COLORS[u.role] || ''}`}>
-                          {ROLE_LABELS[u.role] || u.role}
-                        </span>
+                        <RoleBadge role={u.role} size="xs" />
                         <span className={`text-[10px] px-2 py-0.5 rounded-lg font-medium ${
                           u.application_status === 'banned' ? 'bg-red-500/10 text-red-400' :
                           u.application_status === 'fired' ? 'bg-orange-500/10 text-orange-400' :
@@ -410,9 +410,9 @@ export function AdminPage() {
                       <div className="px-4 pb-3 space-y-2 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
                         {log.old_role && log.new_role && (
                           <p className="text-xs text-white/40">
-                            Rôle: <span className="text-white/60">{ROLE_LABELS[log.old_role] || log.old_role}</span>
+                            Rôle: <span className="text-white/60">{getRoleLabel(log.old_role)}</span>
                             {' → '}
-                            <span className="text-white/60">{ROLE_LABELS[log.new_role] || log.new_role}</span>
+                            <span className="text-white/60">{getRoleLabel(log.new_role)}</span>
                           </p>
                         )}
                         {log.reason && (
@@ -469,19 +469,15 @@ export function AdminPage() {
               {/* Role selector */}
               {modalType === 'role' && (
                 <div className="space-y-2">
-                  {activeRoles.map(role => (
+                  {modalAssignableRoles.map(role => (
                     <button key={role} onClick={() => setModalRoleSelect(role)}
                       className={`w-full px-4 py-3 rounded-xl text-left flex items-center gap-3 transition-all border text-sm font-medium ${
                         modalRoleSelect === role
                           ? 'border-red-500/40 bg-red-500/10 text-white'
                           : 'border-white/6 bg-white/[0.02] text-white/60 hover:bg-white/5'
                       }`}>
-                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                        role === 'pdg' ? 'bg-yellow-400' : role === 'patron' ? 'bg-purple-400' :
-                        role === 'directeur' ? 'bg-blue-400' : role === 'dispatcher' ? 'bg-orange-400' :
-                        role === 'chauffeur' ? 'bg-emerald-400' : role === 'tractionnaire' ? 'bg-cyan-400' : 'bg-white/20'
-                      }`} />
-                      {ROLE_LABELS[role]}
+                      <RoleBadge role={role} size="xs" showIcon={false} />
+                      {getRoleLabel(role)}
                       {targetUser.role === role && <span className="ml-auto text-xs text-red-400/70">Actuel</span>}
                     </button>
                   ))}

@@ -9,7 +9,6 @@ import {
   buildDriverTimeline,
   DRIVING_STATUS_LABELS,
   PRESENCE_STATUS_LABELS,
-  getMemberRoleLabel,
   INCIDENT_TYPE_LABELS,
   type DriverProfile,
   type DriverDocument,
@@ -19,6 +18,7 @@ import {
   type Trailer,
   type IncidentType,
 } from '../../lib/driverTypes';
+import { RoleBadge } from '../erp/RoleBadge';
 import type { RoadSheet, Truck } from '../../lib/supabase';
 import { fmtEuro } from '../../lib/format';
 import { DEFAULT_TRUCK_BANNER_URL } from '../../lib/profileDefaults';
@@ -98,9 +98,7 @@ export function DriverProfileView(props: DriverProfileViewProps) {
             <h1 className="text-2xl sm:text-3xl font-black text-white">{driver.name}</h1>
             {driver.pseudo && <p className="text-white/40">@{driver.pseudo}</p>}
             <div className="flex flex-wrap gap-2 mt-2">
-              <span className="text-xs px-2.5 py-0.5 rounded-full border font-semibold bg-red-500/10 text-red-400 border-red-500/25">
-                {getMemberRoleLabel(driver.member_role)}
-              </span>
+              <RoleBadge role={driver.member_role} size="sm" />
               <span className={`text-xs px-2.5 py-0.5 rounded-full border font-medium ${driving.color}`}>{driving.label}</span>
               <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1.5 bg-white/5 border border-white/10 ${presence.color}`}>
                 <Circle className={`w-2 h-2 fill-current ${presence.dot}`} />

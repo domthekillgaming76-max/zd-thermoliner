@@ -10,6 +10,7 @@ import {
 
 } from 'lucide-react';
 
+import { RoleBadge } from './erp/RoleBadge';
 import { useAuth } from '../contexts/AuthContext';
 import { useAppUpdateBadge } from '../contexts/AppUpdateContext';
 
@@ -331,8 +332,12 @@ export function Sidebar() {
 
 
 
-      <div className="border-t p-3" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-
+      <div className="border-t p-3 space-y-2" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+        {!collapsed && profile?.role && (
+          <div className="px-3 pb-1">
+            <RoleBadge role={profile.role} size="xs" />
+          </div>
+        )}
         <button
 
           type="button"

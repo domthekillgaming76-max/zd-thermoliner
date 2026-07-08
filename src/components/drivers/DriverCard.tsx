@@ -1,9 +1,9 @@
 import { Edit, Trash2, ChevronRight, Circle, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { RoleBadge } from '../erp/RoleBadge';
 import {
   DRIVING_STATUS_LABELS,
   PRESENCE_STATUS_LABELS,
-  getMemberRoleLabel,
   type DriverProfile,
 } from '../../lib/driverTypes';
 
@@ -33,9 +33,7 @@ export function DriverCard({ driver, truckLabel, onEdit, onDelete }: DriverCardP
           </Link>
           {driver.pseudo && <p className="text-white/40 text-xs">@{driver.pseudo}</p>}
           <div className="flex flex-wrap gap-1 mt-1">
-            <span className="text-[10px] px-2 py-0.5 rounded-full border font-medium bg-red-500/10 text-red-400 border-red-500/20">
-              {getMemberRoleLabel(driver.member_role)}
-            </span>
+            <RoleBadge role={driver.member_role} size="xs" />
             <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${driving.color}`}>{driving.label}</span>
             <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-1 ${presence.color}`}>
               <Circle className={`w-1.5 h-1.5 fill-current ${presence.dot}`} />

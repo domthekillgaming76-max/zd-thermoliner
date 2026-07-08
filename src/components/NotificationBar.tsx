@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, Info, AlertTriangle, CheckCircle, XCircle, Container, FileText, Wallet, Building2, MessageSquare } from 'lucide-react';
+import { Bell, Info, AlertTriangle, XCircle, Container, FileText, Wallet, Building2, MessageSquare, Shield } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { RoleBadge } from './erp/RoleBadge';
 import { supabase } from '../lib/supabase';
 
 interface Notif {
@@ -15,7 +16,7 @@ interface Notif {
 }
 
 export function NotificationBar() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [notifications, setNotifications] = useState<Notif[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -52,7 +53,7 @@ export function NotificationBar() {
     if (type === 'wall_post' || type === 'wall_announcement') return <Building2 className="w-4 h-4 text-red-400" />;
     if (type === 'wall_comment') return <MessageSquare className="w-4 h-4 text-blue-400" />;
     if (type === 'wall_reaction' || type === 'wall_convoy') return <Bell className="w-4 h-4 text-amber-400" />;
-    if (type === 'success') return <CheckCircle className="w-4 h-4 text-emerald-400" />;
+    if (type === 'role_change') return <Shield className="w-4 h-4 text-amber-400" />;
     if (type === 'warning') return <AlertTriangle className="w-4 h-4 text-yellow-400" />;
     if (type === 'error') return <XCircle className="w-4 h-4 text-red-400" />;
     return <Info className="w-4 h-4 text-blue-400" />;
@@ -75,8 +76,11 @@ export function NotificationBar() {
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
           <div className="absolute right-0 top-full mt-2 w-72 max-h-80 rounded-xl shadow-2xl z-50 overflow-hidden"
             style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <div className="p-3 border-b flex items-center justify-between" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-              <p className="font-semibold text-white text-sm">Notifications</p>
+            <div className="p-3 border-b flex items-center justify-between gap-2" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+              <div className="min-w-0">
+                <p className="font-semibold text-white text-sm">Notifications</p>
+                {profile?.role && <RoleBadge role={profile.role} size="xs" className="mt-1" />}
+              </div>
               {unreadCount > 0 && (
                 <button onClick={markAllRead} className="text-xs text-red-400 hover:text-red-300">Tout lire</button>
               )}

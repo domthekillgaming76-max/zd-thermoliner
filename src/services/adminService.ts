@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { assertCanModifyUser } from '../lib/dom76Protection';
+import { assertCanAssignRole, assertCanModifyUser } from '../lib/dom76Protection';
 import type {
   AdminAction,
   AdminUser,
@@ -142,12 +142,25 @@ export async function fetchAdminModuleBundle() {
 }
 
 export async function changeUserRole(targetUserId: string, newRole: string, targetEmail: string): Promise<void> {
-  assertCanModifyUser(targetEmail, 'downgrade_role');
+  assertCanAssignRole(targetEmail, newRole);
   const { error } = await supabase.rpc('admin_change_user_role', {
     p_target_user_id: targetUserId,
     p_new_role: newRole,
   });
-  if (error) throw error;
+  if (error) {
+    const rpcMissing = error.code === 'PGRST202'
+      || (error.message ?? '').toLowerCase().includes('function')
+      || error.code === '42883';
+    if (rpcMissing) {
+      const { error: directError } = await supabase
+        .from('profiles')
+        .update({ role: newRole, updated_at: new Date().toISOString() })
+        .eq('id', targetUserId);
+      if (directError) throw directError;
+      return;
+    }
+    throw error;
+  }
 }
 
 export async function suspendUser(targetUserId: string, targetEmail: string, reason?: string): Promise<void> {

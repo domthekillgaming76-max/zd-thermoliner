@@ -26,6 +26,18 @@ export function canModifyProtectedUser(
   };
 }
 
+export function assertCanAssignRole(
+  targetEmail: string | null | undefined,
+  newRole: string,
+): void {
+  if (!isDom76Protected(targetEmail)) return;
+  if (!['pdg', 'patron', 'admin'].includes(newRole)) {
+    throw new Error(
+      `Impossible d'assigner le rôle « ${newRole} » au compte propriétaire DOM76 (${ADMIN_EMAIL}). Rôles administrateur uniquement.`,
+    );
+  }
+}
+
 export function assertCanModifyUser(targetEmail: string | null | undefined, action: Dom76BlockedAction): void {
   const check = canModifyProtectedUser(targetEmail, action);
   if (!check.allowed) throw new Error(check.reason ?? 'Compte DOM76 protégé.');
