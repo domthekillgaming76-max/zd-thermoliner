@@ -1,52 +1,10 @@
 import { NavLink } from 'react-router-dom';
-import {
-  LayoutDashboard, Truck, Route, Banknote, BarChart3, Smartphone, Map,
-  MessageSquare, Newspaper, Calendar, Briefcase, Settings,
-} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { isDriverRole, isVisitorRole } from '../lib/accessControl';
-import { canAccessBank } from '../lib/bankPermissions';
-
-const ERP_MOBILE_NAV = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Accueil' },
-  { to: '/fleet', icon: Truck, label: 'Flotte' },
-  { to: '/road-sheets', icon: Route, label: 'Routes' },
-  { to: '/finance', icon: BarChart3, label: 'Finance' },
-  { to: '/bank', icon: Banknote, label: 'Banque' },
-];
-
-const DRIVER_MOBILE_NAV = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Accueil' },
-  { to: '/driver', icon: Smartphone, label: 'Portail' },
-  { to: '/tracking', icon: Map, label: 'GPS' },
-  { to: '/dispatch', icon: Route, label: 'Missions' },
-  { to: '/wall', icon: MessageSquare, label: 'Mur' },
-];
-
-const VISITOR_MOBILE_NAV = [
-  { to: '/wall', icon: MessageSquare, label: 'Mur' },
-  { to: '/updates', icon: Newspaper, label: 'Actus' },
-  { to: '/events', icon: Calendar, label: 'Événements' },
-  { to: '/recruitment', icon: Briefcase, label: 'Recrutement' },
-  { to: '/settings', icon: Settings, label: 'Compte' },
-];
-
-function getMobileNavItems(role: string | undefined, email: string | undefined) {
-  if (isVisitorRole(role)) return VISITOR_MOBILE_NAV;
-
-  if (isDriverRole(role)) {
-    return DRIVER_MOBILE_NAV;
-  }
-
-  return ERP_MOBILE_NAV.filter(item => {
-    if (item.to === '/bank') return canAccessBank(role, email);
-    return true;
-  });
-}
+import { buildMobileNavItems } from '../lib/navConfig';
 
 export function MobileNav() {
-  const { profile, user } = useAuth();
-  const items = getMobileNavItems(profile?.role, user?.email ?? profile?.email);
+  const { profile, user, normalizedRole } = useAuth();
+  const items = buildMobileNavItems(profile?.role ?? normalizedRole, user?.email ?? profile?.email);
 
   if (items.length === 0) return null;
 

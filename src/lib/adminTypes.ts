@@ -176,8 +176,8 @@ export const SECURITY_EVENT_LABELS: Record<SecurityEventType, string> = {
 };
 
 export function roleToCategory(role: string): AdminRoleCategory {
+  if (role === 'banni' || role === 'ancien_membre') return 'visitor';
   const canonical = normalizeRole(role);
-  if (canonical === 'legacy') return 'visitor';
   if (canonical === 'admin') return 'admin';
   if (canonical === 'manager') return 'manager';
   if (canonical === 'fleet_manager') return 'fleet_manager';

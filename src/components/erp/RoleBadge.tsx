@@ -1,4 +1,4 @@
-import { getRoleBadgeStyle, shouldShowRoleOnWall } from '../../lib/roles';
+import { getRoleBadge, shouldShowRoleOnWall } from '../../lib/roleEngine';
 
 interface RoleBadgeProps {
   role?: string | null;
@@ -30,7 +30,7 @@ export function RoleBadge({
   if (!role) return null;
   if (hideVisitor && (role === 'visitor' || role === 'visiteur')) return null;
 
-  const style = getRoleBadgeStyle(role);
+  const style = getRoleBadge(role);
   const Icon = style.icon;
 
   return (

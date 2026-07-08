@@ -4,9 +4,16 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   canAccessPage,
   getAccessDeniedReason,
-  getAccessDeniedRedirect,
   VISITOR_RESTRICTED_MESSAGE,
 } from '../lib/accessControl';
+import { isAdministratorEmail } from '../lib/admin';
+import {
+  type ModuleKey,
+  canAccessModule,
+  canAccessRoute,
+  getRoleRedirect,
+  ROLE_SYNC_EVENT,
+} from '../lib/roleEngine';
 import { logAccessAttempt } from '../services/securityLogService';
 
 interface MemberGuardProps {
@@ -14,17 +21,40 @@ interface MemberGuardProps {
   page: string;
 }
 
-export function MemberGuard({ children, page }: MemberGuardProps) {
-  const { profile, user } = useAuth();
-  const location = useLocation();
+const MODULE_PAGES = new Set<string>([
+  'wall', 'profile', 'recruitment', 'recruitment_applications', 'dashboard',
+  'road_sheets', 'freight_market', 'dispatch', 'gps_tracking', 'fleet', 'maintenance',
+  'drivers', 'reports', 'finance', 'invoices', 'salaries', 'accounting', 'bank',
+  'administration', 'settings', 'updates', 'events', 'training_center', 'driver_portal',
+  'documents', 'notifications', 'fleet_map', 'statistics', 'assistant', 'garages', 'clients',
+]);
 
-  const allowed = profile
+function isModulePage(page: string): page is ModuleKey {
+  return MODULE_PAGES.has(page);
+}
+
+export function MemberGuard({ children, page }: MemberGuardProps) {
+  const { profile, user, normalizedRole } = useAuth();
+  const location = useLocation();
+  const email = user?.email ?? profile?.email;
+
+  const legacyAllowed = profile
     ? canAccessPage(profile.role, page, {
-        email: user?.email ?? profile.email,
+        email,
         isActive: profile.is_active,
         isSuspended: profile.is_suspended,
       })
     : true;
+
+  const engineModuleAllowed = isModulePage(page)
+    ? canAccessModule(normalizedRole, page)
+    : true;
+
+  const engineRouteAllowed = canAccessRoute(normalizedRole, location.pathname);
+
+  const allowed = isAdministratorEmail(email)
+    ? legacyAllowed
+    : legacyAllowed && engineModuleAllowed && engineRouteAllowed;
 
   useEffect(() => {
     if (profile && !allowed) {
@@ -42,10 +72,25 @@ export function MemberGuard({ children, page }: MemberGuardProps) {
     }
   }, [profile, allowed, page]);
 
+  useEffect(() => {
+    const onRoleUpdated = () => {
+      if (!profile) return;
+      if (!canAccessRoute(normalizedRole, location.pathname)) {
+        // Navigate handled by RoleSyncGuard; guard re-renders on context update
+      }
+    };
+    window.addEventListener(ROLE_SYNC_EVENT, onRoleUpdated);
+    return () => window.removeEventListener(ROLE_SYNC_EVENT, onRoleUpdated);
+  }, [profile, normalizedRole, location.pathname]);
+
   if (profile && !allowed) {
+    const redirectTo = !user
+      ? '/login'
+      : getRoleRedirect(profile.role);
+
     return (
       <Navigate
-        to={getAccessDeniedRedirect(profile.role, page)}
+        to={redirectTo}
         replace
         state={{
           accessDenied: getAccessDeniedReason(profile.role, page, {

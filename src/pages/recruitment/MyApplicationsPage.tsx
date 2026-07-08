@@ -2,12 +2,13 @@ import { FileText, Clock } from 'lucide-react';
 import { Layout } from '../../components/Layout';
 import { PageHeader } from '../../components/erp/PageHeader';
 import { useAuth } from '../../contexts/AuthContext';
+import { RoleBadge } from '../../components/erp/RoleBadge';
 import { useMyApplication } from '../../hooks/useRecruitment';
 import { CANDIDATE_TYPE_LABELS, STATUS_LABELS } from '../../lib/recruitmentTypes';
 import { Link } from 'react-router-dom';
 
 export function MyApplicationsPage() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { data: app, isLoading } = useMyApplication(user?.id);
 
   return (
@@ -18,6 +19,7 @@ export function MyApplicationsPage() {
           subtitle="Suivez l'état de votre dossier de recrutement"
           icon={FileText}
         />
+        {profile?.role && <RoleBadge role={profile.role} size="sm" />}
 
         {isLoading ? (
           <div className="erp-card h-48 shimmer rounded-2xl" />

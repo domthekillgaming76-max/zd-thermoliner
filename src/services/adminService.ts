@@ -141,6 +141,17 @@ export async function fetchAdminModuleBundle() {
   };
 }
 
+import { createUserNotification } from './notificationService';
+
+export async function notifyRoleChanged(targetUserId: string): Promise<void> {
+  await createUserNotification(
+    targetUserId,
+    'Votre rôle a été mis à jour.',
+    'Votre rôle a été mis à jour.',
+    'info',
+  );
+}
+
 export async function changeUserRole(targetUserId: string, newRole: string, targetEmail: string): Promise<void> {
   assertCanAssignRole(targetEmail, newRole);
   const { error } = await supabase.rpc('admin_change_user_role', {
@@ -157,10 +168,12 @@ export async function changeUserRole(targetUserId: string, newRole: string, targ
         .update({ role: newRole, updated_at: new Date().toISOString() })
         .eq('id', targetUserId);
       if (directError) throw directError;
+      await notifyRoleChanged(targetUserId);
       return;
     }
     throw error;
   }
+  await notifyRoleChanged(targetUserId);
 }
 
 export async function suspendUser(targetUserId: string, targetEmail: string, reason?: string): Promise<void> {

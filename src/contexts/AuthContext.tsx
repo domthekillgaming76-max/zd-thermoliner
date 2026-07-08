@@ -7,7 +7,14 @@ import { isAdministratorEmail } from '../lib/admin';
 import { fetchUserProfile, type NormalizedProfile } from '../services/profileService';
 import { touchProfileLastSeen } from '../services/profileStatsService';
 import { logSecurityEvent } from '../services/securityLogService';
-import { logRoleState, normalizeRole, getRoleLabel } from '../lib/roles';
+import {
+  type AppRole,
+  normalizeRole,
+  getRoleLabel,
+  logRoleSync,
+  logRoleSyncNormalized,
+  dispatchRoleUpdated,
+} from '../lib/roleEngine';
 import { queryKeys } from '../lib/queryKeys';
 
 export type UserProfile = NormalizedProfile;
@@ -20,7 +27,9 @@ interface AuthContextType {
   profileError: string | null;
   profileCustomizationAvailable: boolean;
   isAdministrator: boolean;
-  normalizedRole: ReturnType<typeof normalizeRole>;
+  normalizedRole: AppRole;
+  role: string | null;
+  setProfile: React.Dispatch<React.SetStateAction<UserProfile | null>>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -38,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileCustomizationAvailable, setProfileCustomizationAvailable] = useState(true);
-  const [roleToast, setRoleToast] = useState<string | null>(null);
+  const [roleToast, setRoleToast] = useState<{ message: string; label?: string } | null>(null);
   const profileRoleRef = useRef<string | undefined>(profile?.role);
 
   useEffect(() => {
@@ -52,6 +61,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void queryClient.invalidateQueries({ queryKey: queryKeys.admin.all });
   }, [queryClient]);
 
+  const applyProfileUpdate = useCallback((userId: string, updated: Partial<UserProfile>, fromRealtime = false) => {
+    setProfile(prev => {
+      const merged = prev ? { ...prev, ...updated } : (updated as UserProfile);
+      return merged;
+    });
+
+    if (fromRealtime) {
+      invalidateRoleQueries(userId);
+    }
+  }, [invalidateRoleQueries]);
+
   const fetchProfile = useCallback(async (userId: string, options?: { fromRealtime?: boolean }) => {
     try {
       const result = await fetchUserProfile(userId);
@@ -64,7 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setProfileError(null);
         setProfile(result.profile);
-        logRoleState(result.profile?.role ?? null, 'current role');
+        logRoleSync('current role:', result.profile?.role ?? null);
+        logRoleSyncNormalized(result.profile?.role ?? null);
         void touchProfileLastSeen(userId);
       }
 
@@ -128,8 +149,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user?.id) return;
 
+    const channelName = `profile-role-sync-${user.id}`;
+    logRoleSync('subscribed', channelName);
+
     const channel = supabase
-      .channel(`profile_role_${user.id}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -139,19 +163,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           filter: `id=eq.${user.id}`,
         },
         payload => {
+          logRoleSync('realtime payload', payload.new);
           const updated = payload.new as Partial<UserProfile>;
           const prevRole = profileRoleRef.current;
           const nextRole = updated.role ?? prevRole;
 
-          console.log('[Z&D Role] realtime role updated:', nextRole);
-
-          setProfile(prev => (prev ? { ...prev, ...updated } : prev));
+          applyProfileUpdate(user.id, updated, true);
+          dispatchRoleUpdated(payload.new as Record<string, unknown>);
 
           if (nextRole && nextRole !== prevRole) {
-            logRoleState(nextRole, 'realtime role updated');
-            setRoleToast(
-              `Votre rôle a été mis à jour : ${getRoleLabel(nextRole)}.`,
-            );
+            logRoleSync('role updated live', nextRole);
+            logRoleSyncNormalized(nextRole);
+            profileRoleRef.current = nextRole;
+            setRoleToast({
+              message: 'Votre rôle a été mis à jour.',
+              label: getRoleLabel(nextRole),
+            });
             void fetchProfile(user.id, { fromRealtime: true });
             setTimeout(() => setRoleToast(null), 8000);
           } else if (updated.role === undefined) {
@@ -162,7 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .subscribe();
 
     return () => { void channel.unsubscribe(); };
-  }, [user?.id, fetchProfile]);
+  }, [user?.id, fetchProfile, applyProfileUpdate]);
 
   async function signIn(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -220,6 +247,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const normalizedRole = normalizeRole(profile?.role);
+  const role = profile?.role ?? null;
 
   return (
     <AuthContext.Provider
@@ -232,6 +260,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profileCustomizationAvailable,
         isAdministrator: isAdministratorEmail(user?.email),
         normalizedRole,
+        role,
+        setProfile,
         signIn,
         signUp,
         signOut,
@@ -246,7 +276,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             <Shield className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold text-white">Rôle mis à jour</p>
-              <p className="text-[10px] text-white/50 mt-0.5">{roleToast}</p>
+              <p className="text-[10px] text-white/50 mt-0.5">{roleToast.message}</p>
+              {roleToast.label && (
+                <p className="text-[10px] text-amber-400/80 mt-1">{roleToast.label}</p>
+              )}
             </div>
             <button
               type="button"

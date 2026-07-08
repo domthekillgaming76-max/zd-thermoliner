@@ -10,7 +10,7 @@ import { NotificationBar } from './NotificationBar';
 import { AppUpdateBadge } from './AppUpdateBadge';
 import { AdminBadge } from './erp/AdminBadge';
 import { RoleBadge } from './erp/RoleBadge';
-import { canAccessBank } from '../lib/bankPermissions';
+import { canAccessModule } from '../lib/roleEngine';
 
 const QUICK_ACTIONS = [
   { to: '/road-sheets', icon: Route, label: 'Feuille de route', color: '#fb923c', bankOnly: false },
@@ -19,7 +19,7 @@ const QUICK_ACTIONS = [
 ];
 
 export function AppHeader() {
-  const { profile, signOut, user, isAdministrator } = useAuth();
+  const { profile, signOut, isAdministrator, normalizedRole } = useAuth();
   const { toggleCollapsed } = useSidebar();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
@@ -28,7 +28,7 @@ export function AppHeader() {
 
   const displayName = profile?.pseudo || profile?.full_name || 'Membre';
   const initials = displayName[0]?.toUpperCase() ?? '?';
-  const showBank = canAccessBank(profile?.role, user?.email ?? profile?.email);
+  const showBank = canAccessModule(profile?.role ?? normalizedRole, 'bank');
   const quickActions = QUICK_ACTIONS.filter(a => !a.bankOnly || showBank);
 
   function handleSearch(e: React.FormEvent) {
@@ -156,7 +156,8 @@ export function AppHeader() {
               {displayName}
             </span>
             {isAdministrator && <AdminBadge className="hidden md:inline-flex" />}
-            {profile?.role && <RoleBadge role={profile.role} size="xs" className="hidden md:inline-flex" />}            <ChevronDown className={`hidden md:block w-3.5 h-3.5 text-white/30 transition-transform ${userOpen ? 'rotate-180' : ''}`} />
+            {profile?.role && <RoleBadge role={profile.role} size="xs" className="hidden md:inline-flex" />}
+            <ChevronDown className={`hidden md:block w-3.5 h-3.5 text-white/30 transition-transform ${userOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {userOpen && (

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Shield, Search, Edit, UserX, Ban,
   UserMinus, RotateCcw, AlertTriangle, X, ChevronDown, ChevronUp, ArrowUpCircle,
@@ -12,6 +13,7 @@ import { promoteMemberRole, describePromotion } from '../services/rolePromotionS
 import { changeUserRole } from '../services/adminService';
 import { getRoleLabel } from '../lib/roles';
 import { assertCanAssignRole, filterAssignableRoles, isDom76Protected } from '../lib/dom76Protection';
+import { queryKeys } from '../lib/queryKeys';
 
 type UserRole = 'pdg' | 'patron' | 'directeur' | 'dispatcher' | 'chauffeur' | 'tractionnaire' | 'candidat' | 'visitor' | 'ancien_membre' | 'banni';
 
@@ -51,6 +53,7 @@ function UserAvatar({ u, size = 9 }: { u: Profile; size?: number }) {
 }
 
 export function AdminPage() {
+  const queryClient = useQueryClient();
   const { profile, user, refreshProfile } = useAuth();
   const [members, setMembers] = useState<Profile[]>([]);
   const [archived, setArchived] = useState<Profile[]>([]);
@@ -111,6 +114,8 @@ export function AdminPage() {
     try {
       const newRole = await promoteMemberRole(u.id);
       console.log('[Z&D] Promoted', u.email, '→', newRole, getRoleLabel(newRole));
+      setSuccessMessage(`Rôle mis à jour → ${getRoleLabel(newRole)}`);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.admin.all });
       await load();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Promotion impossible');
@@ -134,6 +139,7 @@ export function AdminPage() {
       try {
         assertCanAssignRole(targetUser.email, modalRoleSelect);
         await changeUserRole(targetUser.id, modalRoleSelect, targetUser.email);
+        setMembers(prev => prev.map(m => m.id === targetUser.id ? { ...m, role: modalRoleSelect } : m));
       } catch (err) {
         setActionError(err instanceof Error ? err.message : 'Changement de rôle impossible');
         setActionLoading(false);
@@ -153,6 +159,7 @@ export function AdminPage() {
     if (error) { setActionError(error.message); setActionLoading(false); return; }
     if (modalType === 'role') {
       setSuccessMessage(`Rôle mis à jour → ${getRoleLabel(modalRoleSelect)}`);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.admin.all });
       if (targetUser.id === user?.id) {
         void refreshProfile();
       }

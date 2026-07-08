@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { WallComment } from '../../lib/wallTypes';
 import { timeAgo } from '../../lib/wallTypes';
 import { WallUserAvatar } from './WallUserAvatar';
+import { WallRoleBadge } from './WallRoleBadge';
 import { getAuthorDisplayName } from '../../lib/wallTypes';
 
 interface WallCommentThreadProps {
@@ -39,8 +40,11 @@ export function WallCommentThread({
           <WallUserAvatar author={c.author} size="sm" />
           <div className="flex-1 min-w-0">
             <div className="wall-glass rounded-xl px-3 py-2">
-              <div className="flex items-center justify-between gap-2 mb-0.5">
-                <p className="text-xs font-semibold text-white/70">{getAuthorDisplayName(c.author)}</p>
+              <div className="flex items-center justify-between gap-2 mb-0.5 flex-wrap">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <p className="text-xs font-semibold text-white/70 truncate">{getAuthorDisplayName(c.author)}</p>
+                  <WallRoleBadge role={c.author?.role} />
+                </div>
                 <span className="text-[10px] text-white/20">{timeAgo(c.created_at)}</span>
               </div>
               <p className="text-sm text-white/75 break-words">{c.content}</p>

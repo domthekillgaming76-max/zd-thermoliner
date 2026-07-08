@@ -6,6 +6,7 @@ import { FormAlert, FormSuccess } from '../../components/erp/FormAlert';
 import { RecruitmentForm } from '../../components/recruitment/RecruitmentForm';
 import { RecruitmentInfoPanel } from '../../components/recruitment/RecruitmentInfoPanel';
 import { useAuth } from '../../contexts/AuthContext';
+import { RoleBadge } from '../../components/erp/RoleBadge';
 import { useMyApplication, useSubmitApplication } from '../../hooks/useRecruitment';
 import type { RecruitmentFormInput } from '../../lib/recruitmentTypes';
 import { STATUS_LABELS } from '../../lib/recruitmentTypes';
@@ -39,6 +40,9 @@ export function RecruitmentPage() {
           subtitle="Vous souhaitez rejoindre Z&D Thermoliner ? Remplissez le questionnaire ci-dessous."
           icon={Briefcase}
         />
+        {profile?.role && (
+          <RoleBadge role={profile.role} size="sm" />
+        )}
 
         {error && <FormAlert message={error} onDismiss={() => setError(null)} />}
         {success && <FormSuccess message={success} onDismiss={() => setSuccess(null)} />}

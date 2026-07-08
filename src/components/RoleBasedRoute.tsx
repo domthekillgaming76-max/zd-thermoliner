@@ -1,6 +1,8 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { canAccessPage, getAccessDeniedRedirect, getPostLoginPath } from '../lib/accessControl';
+import { isAdministratorEmail } from '../lib/admin';
+import { canAccessModule, canAccessRoute, getRoleRedirect, type ModuleKey } from '../lib/roleEngine';
 
 interface RoleBasedRouteProps {
   children: React.ReactNode;
@@ -8,8 +10,21 @@ interface RoleBasedRouteProps {
   page: string;
 }
 
+const MODULE_PAGES = new Set<string>([
+  'wall', 'profile', 'recruitment', 'recruitment_applications', 'dashboard',
+  'road_sheets', 'freight_market', 'dispatch', 'gps_tracking', 'fleet', 'maintenance',
+  'drivers', 'reports', 'finance', 'invoices', 'salaries', 'accounting', 'bank',
+  'administration', 'settings', 'updates', 'events', 'training_center', 'driver_portal',
+  'documents', 'notifications', 'fleet_map', 'statistics', 'assistant', 'garages', 'clients',
+]);
+
+function isModulePage(page: string): page is ModuleKey {
+  return MODULE_PAGES.has(page);
+}
+
 export function RoleBasedRoute({ children, requiredRole, page }: RoleBasedRouteProps) {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, normalizedRole } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -55,14 +70,22 @@ export function RoleBasedRoute({ children, requiredRole, page }: RoleBasedRouteP
     return <Navigate to={getAccessDeniedRedirect(profile.role, page)} replace />;
   }
 
-  const allowed = canAccessPage(profile.role, page, {
-    email: user.email ?? profile.email,
+  const email = user.email ?? profile.email;
+  const legacyAllowed = canAccessPage(profile.role, page, {
+    email,
     isActive: profile.is_active,
     isSuspended: profile.is_suspended,
   });
 
+  const engineAllowed = isModulePage(page)
+    ? canAccessModule(normalizedRole, page) && canAccessRoute(normalizedRole, location.pathname)
+    : canAccessRoute(normalizedRole, location.pathname);
+
+  const allowed = isAdministratorEmail(email) ? legacyAllowed : legacyAllowed && engineAllowed;
+
   if (!allowed) {
-    return <Navigate to={getAccessDeniedRedirect(profile.role, page)} replace />;
+    if (!user) return <Navigate to="/login" replace />;
+    return <Navigate to={getRoleRedirect(profile.role)} replace />;
   }
 
   return <>{children}</>;
