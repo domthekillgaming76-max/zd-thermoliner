@@ -1,7 +1,5 @@
 import { supabaseAdmin, isSupabaseAdminReady } from '../../lib/supabaseAdmin.mjs';
 
-const DRIVER_ROLES = new Set(['chauffeur', 'driver', 'member', 'tractionnaire']);
-
 export function extractBearerToken(req) {
   const header = req.headers.authorization || '';
   return header.startsWith('Bearer ') ? header.slice(7).trim() : '';
@@ -48,12 +46,6 @@ export async function loadClientContext(userId) {
 
   if (profile.is_active === false) {
     const err = new Error('Compte inactif');
-    err.status = 403;
-    throw err;
-  }
-
-  if (!DRIVER_ROLES.has(profile.role)) {
-    const err = new Error('Accès client réservé aux chauffeurs');
     err.status = 403;
     throw err;
   }

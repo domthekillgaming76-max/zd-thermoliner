@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "start": "node server/index.mjs",
+    "start": "node --env-file=.env server/index.mjs",
     "cron:freight": "node scripts/generate-freight-cron.js",
     "cron:integrations": "node scripts/sync-integrations-cron.js",
     "lint": "eslint .",
