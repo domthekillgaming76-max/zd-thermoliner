@@ -1,7 +1,8 @@
+import { safeUuid } from '../lib/safeUuid';
+
 const TABS_KEY = 'zd_presence_tab_ids';
 const TAB_ID_KEY = 'zd_tab_id';
 const STALE_TAB_MS = 45_000;
-
 function readTabs(): Record<string, number> {
   try {
     const raw = localStorage.getItem(TABS_KEY);
@@ -27,7 +28,7 @@ function pruneStaleTabs(tabs: Record<string, number>, now = Date.now()): Record<
 export function registerPresenceTab(): string {
   let tabId = sessionStorage.getItem(TAB_ID_KEY);
   if (!tabId) {
-    tabId = crypto.randomUUID();
+    tabId = safeUuid();
     sessionStorage.setItem(TAB_ID_KEY, tabId);
   }
   const tabs = pruneStaleTabs(readTabs());

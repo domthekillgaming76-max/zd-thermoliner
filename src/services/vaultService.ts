@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { safeUuid } from '../lib/safeUuid';
 import { canApproveVaultDocuments } from '../lib/vaultPermissions';
 import type {
   VaultAlert,
@@ -271,7 +272,7 @@ export async function uploadVaultDocument(
   if (category.error) throw category.error;
   if (!category.data) throw new Error('Catégorie introuvable.');
 
-  const docId = crypto.randomUUID();
+  const docId = safeUuid();
   const ext = input.file.name.split('.').pop() ?? 'bin';
   const ownerSegment = input.ownerId ?? 'global';
   const storagePath = `${input.ownerType}/${ownerSegment}/${docId}/${Date.now()}.${ext}`;
