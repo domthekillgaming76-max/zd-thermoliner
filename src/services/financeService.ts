@@ -1,7 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { monthKey } from '../lib/format';
 import { isCreditTransaction, isDebitTransaction } from '../lib/bankUtils';
-import { insertTransactionRow } from '../lib/transactionInsert';
 import type {
   AccountingExportRow,
   DriverSalaryRow,
@@ -12,22 +11,7 @@ import type {
 } from '../lib/financeTypes';
 import { resolveFinanceInvoiceStatus } from '../lib/financeTypes';
 import { generatePayslipFromSalaryPayment } from './driverHrService';
-
-async function adjustCompanyBalance(delta: number): Promise<void> {
-  const { data: account } = await supabase.from('company_bank_account').select('*').limit(1).maybeSingle();
-  if (!account) {
-    await supabase.from('company_bank_account').insert({
-      account_name: 'Z&D Thermoliner',
-      iban_rp: 'FR76 3000 2999 0000 0000 0000 000',
-      balance: delta,
-    });
-    return;
-  }
-  await supabase.from('company_bank_account').update({
-    balance: Number(account.balance) + delta,
-    updated_at: new Date().toISOString(),
-  }).eq('id', account.id);
-}
+import { adminTransferToDriver } from './driverBankService';
 
 export async function fetchFinanceSettings(): Promise<FinanceSettings | null> {
   const { data, error } = await supabase.from('finance_settings').select('*').limit(1).maybeSingle();
@@ -180,50 +164,41 @@ export async function fetchFinanceBundle(): Promise<FinanceBundle> {
 
 export async function payDriverSalary(
   salaryId: string,
-  userId: string,
+  _userId: string,
 ): Promise<DriverSalaryRow> {
   const { data: salary, error } = await supabase
     .from('driver_salary_history')
-    .select('*, drivers(name)')
+    .select('*, drivers(name, user_id)')
     .eq('id', salaryId)
     .maybeSingle();
   if (error || !salary) throw new Error('Salaire introuvable.');
   if (salary.payment_status === 'paid') return mapSalary(salary as Record<string, unknown>);
 
   const amount = Number(salary.net_amount ?? 0);
-  const driverName = (salary.drivers as { name?: string } | null)?.name ?? 'Chauffeur';
+  const driverName = (salary.drivers as { name?: string; user_id?: string } | null)?.name ?? 'Chauffeur';
+  const driverUserId = (salary.drivers as { user_id?: string } | null)?.user_id;
+  const month = Number(salary.period_month);
+  const year = Number(salary.period_year);
   const reference = `SAL-${salaryId.slice(0, 8)}`;
+  const reason = `Salaire RP — ${month}/${year} — ${driverName}`;
 
-  await insertTransactionRow({
-    user_id: userId,
-    driver_id: salary.driver_id as string,
+  if (!driverUserId) throw new Error('Chauffeur sans profil lié.');
+
+  const transfer = await adminTransferToDriver({
+    targetProfileId: driverUserId,
     type: 'salary',
     amount,
-    description: `Salaire chauffeur — ${driverName}`,
-    category: 'Salaires',
-    date: new Date().toISOString().slice(0, 10),
-    auto_generated: true,
-    created_by: userId,
+    reason,
     reference,
-    road_sheet_id: (salary.road_sheet_id as string) ?? null,
+    salaryHistoryId: salaryId,
   });
-
-  await adjustCompanyBalance(-amount);
-
-  const { data: latestTx } = await supabase
-    .from('transactions')
-    .select('id')
-    .eq('reference', reference)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
 
   const { data: updated, error: updErr } = await supabase
     .from('driver_salary_history')
     .update({
       payment_status: 'paid',
       payment_date: new Date().toISOString().slice(0, 10),
-      transaction_id: latestTx?.id ?? null,
+      transaction_id: transfer.company_transaction_id,
     })
     .eq('id', salaryId)
     .select('*, drivers(name)')
@@ -236,8 +211,9 @@ export async function payDriverSalary(
   try {
     await generatePayslipFromSalaryPayment(
       updated as Record<string, unknown>,
-      latestTx?.id ?? null,
-      reference,
+      transfer.company_transaction_id,
+      transfer.reference,
+      transfer.driver_transaction_id,
     );
   } catch { /* non-blocking */ }
 

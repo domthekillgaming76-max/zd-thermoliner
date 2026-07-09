@@ -436,6 +436,7 @@ function AppRoutes() {
       <Route path="/settings" element={<ProtectedPage page="settings"><SettingsPage /></ProtectedPage>} />
 
       <Route path="/profile/dossier" element={<Navigate to="/profile?tab=dossier" replace />} />
+      <Route path="/profile/bank" element={<Navigate to="/profile?tab=bank" replace />} />
 
       <Route path="/profile" element={<ProtectedPage page="profile"><ProfilePage /></ProtectedPage>} />
 

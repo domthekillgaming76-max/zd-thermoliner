@@ -3,6 +3,7 @@ import { isAdministratorEmail } from '../lib/admin';
 import { normalizeRole, type AppRole } from '../lib/roleEngine';
 import { resolveDisplayStatus } from './onlinePresenceService';
 import { ensureDriverHrDossier } from './driverHrService';
+import { ensureDriverBankAccount } from './driverBankService';
 import type { DriverProfile } from '../lib/driverTypes';
 import type { NormalizedProfile } from './profileService';
 /** Raw DB roles that map to normalized driver */
@@ -95,6 +96,13 @@ async function provisionHrDossierForDriverId(
         joined_at: data.joined_at as string,
         hiring_date: (data.hiring_date as string) ?? null,
       } as DriverProfile);
+      await ensureDriverBankAccount({
+        id: driverId,
+        user_id: profile.id,
+        name: data.name as string,
+        pseudo: (data.pseudo as string) ?? profile.pseudo,
+        email: (data.email as string) ?? profile.email,
+      }, { notify: false });
     }
   } catch (e) {
     console.warn('[Z&D DriverSync] HR dossier provision skipped:', e);

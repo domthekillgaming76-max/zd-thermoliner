@@ -245,6 +245,11 @@ export async function resetRpEconomy(options: RpResetOptions): Promise<RpResetRe
     p_delete_notifications: options.deleteNotifications ?? true,
   });
   if (error) throw error;
+
+  try {
+    await supabase.rpc('reset_driver_bank_rp_data');
+  } catch { /* migration 062 may not be applied yet */ }
+
   const payload = (data ?? {}) as RpResetResult;
   return {
     success: payload.success ?? true,

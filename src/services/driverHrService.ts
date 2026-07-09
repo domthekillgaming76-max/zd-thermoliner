@@ -17,6 +17,7 @@ import {
   notifyPayslipAvailable,
   notifySalaryPaidByBank,
 } from './notificationService';
+import { ensureDriverBankAccount } from './driverBankService';
 
 function mapHrDocument(row: Record<string, unknown>): DriverHrDocument {
   return {
@@ -49,7 +50,7 @@ function mapCompanyCard(row: Record<string, unknown>): CompanyCard {
   };
 }
 
-function mapPayslip(row: Record<string, unknown>): DriverPayslip {
+export function mapPayslipFromRow(row: Record<string, unknown>): DriverPayslip {
   return {
     id: row.id as string,
     driver_id: row.driver_id as string,
@@ -66,6 +67,14 @@ function mapPayslip(row: Record<string, unknown>): DriverPayslip {
     salary_history_id: (row.salary_history_id as string) ?? null,
     generated_at: row.generated_at as string,
     created_at: row.created_at as string,
+    payment_reference: (row.payment_reference as string) ?? null,
+    bank_account_id: (row.bank_account_id as string) ?? null,
+    base_salary: Number(row.base_salary ?? 0),
+    km_bonus: Number(row.km_bonus ?? 0),
+    delivery_bonus: Number(row.delivery_bonus ?? 0),
+    extra_bonus: Number(row.extra_bonus ?? 0),
+    deductions: Number(row.deductions ?? row.deductions_amount ?? 0),
+    payment_transaction_id: (row.payment_transaction_id as string) ?? null,
   };
 }
 
@@ -180,6 +189,9 @@ export async function ensureDriverHrDossier(driver: DriverProfile): Promise<void
     ensureDriverContract(driver),
     ensureCompanyCard(driver),
   ]);
+  if (driver.user_id) {
+    await ensureDriverBankAccount(driver, { notify: false });
+  }
 }
 
 export async function regenerateDriverContract(driver: DriverProfile): Promise<DriverHrDocument | null> {
@@ -196,6 +208,7 @@ export async function generatePayslipFromSalaryPayment(
   salaryRow: Record<string, unknown>,
   transactionId: string | null,
   transactionReference: string | null,
+  driverTransactionId?: string | null,
 ): Promise<DriverPayslip | null> {
   const salaryId = salaryRow.id as string;
   const driverId = salaryRow.driver_id as string;
@@ -208,7 +221,7 @@ export async function generatePayslipFromSalaryPayment(
 
   if (existing) {
     const { data: payslip } = await supabase.from('driver_payslips').select('*').eq('id', existing.id).single();
-    return payslip ? mapPayslip(payslip as Record<string, unknown>) : null;
+    return payslip ? mapPayslipFromRow(payslip as Record<string, unknown>) : null;
   }
 
   const month = Number(salaryRow.period_month);
@@ -223,6 +236,9 @@ export async function generatePayslipFromSalaryPayment(
   const bonusAmount = Math.round((bonus + deliveryBonus) * 100) / 100;
   const deductions = Math.round(penalty * 100) / 100;
 
+  const kmRate = Number(salaryRow.km_rate ?? 0);
+  const kmBonus = Math.round(kmTotal * kmRate * 100) / 100;
+
   const deliveriesTotal = await countDeliveriesForPeriod(driverId, month, year);
 
   const { data: driver } = await supabase
@@ -231,20 +247,32 @@ export async function generatePayslipFromSalaryPayment(
     .eq('id', driverId)
     .maybeSingle();
 
+  const { data: bankAccount } = driver?.user_id
+    ? await supabase.from('driver_bank_accounts').select('id').eq('profile_id', driver.user_id).maybeSingle()
+    : { data: null };
+
   const { data: payslip, error } = await supabase
     .from('driver_payslips')
     .insert({
       driver_id: driverId,
       profile_id: driver?.user_id ?? null,
+      bank_account_id: bankAccount?.id ?? null,
       month,
       year,
       km_total: kmTotal,
       deliveries_total: deliveriesTotal,
+      base_salary: baseSalary,
+      km_bonus: kmBonus,
+      delivery_bonus: deliveryBonus,
+      extra_bonus: bonus,
+      deductions: deductions,
       bonus_amount: bonusAmount,
       gross_amount: grossAmount,
       deductions_amount: deductions,
       net_amount: netAmount,
       bank_transaction_id: transactionId,
+      payment_reference: transactionReference,
+      payment_transaction_id: driverTransactionId ?? null,
       salary_history_id: salaryId,
     })
     .select()
@@ -282,7 +310,7 @@ export async function generatePayslipFromSalaryPayment(
     await notifySalaryPaidByBank(driverUserId);
   } catch { /* non-blocking */ }
 
-  return mapPayslip(payslip as Record<string, unknown>);
+  return mapPayslipFromRow(payslip as Record<string, unknown>);
 }
 
 export async function fetchDriverHrDossier(
@@ -322,7 +350,7 @@ export async function fetchDriverHrDossier(
       : Promise.resolve({ data: [], error: null }),
   ]);
 
-  const payslips = (payslipsRes.data ?? []).map(r => mapPayslip(r as Record<string, unknown>));
+  const payslips = (payslipsRes.data ?? []).map(r => mapPayslipFromRow(r as Record<string, unknown>));
 
   const txIds = payslips.filter(p => p.bank_transaction_id).map(p => p.bank_transaction_id!);
   let txRefMap = new Map<string, string>();

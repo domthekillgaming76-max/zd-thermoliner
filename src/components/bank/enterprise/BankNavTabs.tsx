@@ -4,6 +4,7 @@ export type BankTabId =
   | 'treasury'
   | 'financing'
   | 'transfers'
+  | 'drivers'
   | 'settings';
 
 interface BankNavTabsProps {
@@ -17,6 +18,7 @@ const TABS: { id: BankTabId; label: string }[] = [
   { id: 'treasury', label: 'Trésorerie' },
   { id: 'financing', label: 'Financement flotte' },
   { id: 'transfers', label: 'Virements' },
+  { id: 'drivers', label: 'Comptes chauffeurs' },
   { id: 'settings', label: 'Paramètres' },
 ];
 

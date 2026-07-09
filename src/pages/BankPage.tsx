@@ -30,6 +30,7 @@ import { BankNotificationsPanel } from '../components/bank/enterprise/BankNotifi
 import { BankAdvisorEnterprise } from '../components/bank/enterprise/BankAdvisorEnterprise';
 import { BankSettingsPanel } from '../components/bank/enterprise/BankSettingsPanel';
 import { BankAutoSyncPanel } from '../components/bank/enterprise/BankAutoSyncPanel';
+import { AdminDriverBankPanel } from '../components/bank/admin/AdminDriverBankPanel';
 import { FormAlert, FormSuccess } from '../components/erp/FormAlert';
 import { useAuth } from '../contexts/AuthContext';
 import { computeExpenseBreakdownFromTransactions } from '../lib/transactionAnalytics';
@@ -289,6 +290,12 @@ export function BankPage() {
         {tab === 'transfers' && (
           <div className="bank-fade-in">
             <BankTransfersPanel onSubmit={handleTransfer} saving={transferMutation.isPending} />
+          </div>
+        )}
+
+        {tab === 'drivers' && (
+          <div className="bank-fade-in">
+            <AdminDriverBankPanel />
           </div>
         )}
 

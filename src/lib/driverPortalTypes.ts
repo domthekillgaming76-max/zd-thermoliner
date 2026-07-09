@@ -1,7 +1,7 @@
 import type { DriverDocument, DriverSalaryRecord } from './driverTypes';
 import type { TransportMission, MissionStatus } from './dispatchTypes';
 
-export type DriverPortalTab = 'home' | 'missions' | 'sheet' | 'docs' | 'hr_folder';
+export type DriverPortalTab = 'home' | 'missions' | 'sheet' | 'docs' | 'hr_folder' | 'bank_account';
 
 export type DriverPresenceStatus =
   | 'available'
@@ -85,6 +85,7 @@ export const DRIVER_PORTAL_TAB_LABELS: Record<DriverPortalTab, string> = {
   sheet: 'Feuille',
   docs: 'Documents',
   hr_folder: 'Dossier',
+  bank_account: 'Banque',
 };
 
 export function formatDriverCurrency(n: number): string {

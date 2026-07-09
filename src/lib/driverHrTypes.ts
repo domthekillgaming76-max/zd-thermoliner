@@ -61,6 +61,14 @@ export interface DriverPayslip {
   created_at: string;
   payment_date?: string | null;
   transaction_reference?: string | null;
+  payment_reference?: string | null;
+  bank_account_id?: string | null;
+  base_salary?: number;
+  km_bonus?: number;
+  delivery_bonus?: number;
+  extra_bonus?: number;
+  deductions?: number;
+  payment_transaction_id?: string | null;
 }
 
 export interface DriverHrDossier {

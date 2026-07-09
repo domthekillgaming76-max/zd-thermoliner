@@ -22,7 +22,8 @@ export type NotificationType =
   | 'wall_reaction'
   | 'wall_announcement'
   | 'wall_convoy'
-  | 'hr';
+  | 'hr'
+  | 'bank';
 
 export const NOTIFICATION_POLL_MS = 10_000;
 
@@ -166,11 +167,34 @@ export async function notifySalaryPaidByBank(driverUserId: string | null): Promi
   if (driverUserId) {
     await createUserNotification(
       driverUserId,
-      'Salaire versé',
-      'Votre salaire a été versé par la banque Z&D Thermoliner.',
+      'Salaire RP versé',
+      'Votre salaire RP est arrivé sur votre compte chauffeur.',
       'salary',
     );
   }
+}
+
+export async function notifyBankAccountActivated(driverUserId: string): Promise<void> {
+  await createUserNotification(
+    driverUserId,
+    'Compte bancaire activé',
+    'Votre compte bancaire Z&D Thermoliner est activé.',
+    'bank',
+  );
+}
+
+export async function notifyBankTransferReceived(
+  driverUserId: string,
+  amount: number,
+  reason?: string,
+): Promise<void> {
+  const formatted = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
+  await createUserNotification(
+    driverUserId,
+    'Virement reçu',
+    `Vous avez reçu un virement de ${formatted}${reason ? ` — ${reason}` : ''} de la banque Z&D Thermoliner.`,
+    'bank',
+  );
 }
 
 export async function notifyCompanyAnnouncement(title: string, message: string): Promise<void> {

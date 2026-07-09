@@ -5,7 +5,7 @@ import {
 
   User, Camera, Save, Palette, Truck, Globe, MessageCircle,
 
-  Layers, Loader2, RefreshCw, AlertTriangle, CheckCircle2, Upload, FolderOpen,
+  Layers, Loader2, RefreshCw, AlertTriangle, CheckCircle2, Upload, FolderOpen, CreditCard,
 
 } from 'lucide-react';
 
@@ -50,11 +50,13 @@ import {
 
 import { RoleBadge } from '../components/erp/RoleBadge';
 import { DriverHrFolderSection } from '../components/drivers/DriverHrFolderSection';
+import { DriverBankPanel } from '../components/driver-bank/DriverBankPanel';
+import { useDriverBank } from '../hooks/useDriverBank';
 import { canViewOwnHrFolderOnProfile } from '../lib/driverPermissions';
 
 
 
-type ProfilePageTab = 'settings' | 'hr_folder';
+type ProfilePageTab = 'settings' | 'hr_folder' | 'bank_account';
 
 function Section({ title, icon: Icon, children }: { title: string; icon: typeof User; children: React.ReactNode }) {
 
@@ -198,7 +200,9 @@ export function ProfilePage() {
 
   const [pageTab, setPageTab] = useState<ProfilePageTab>(() => {
     const t = new URLSearchParams(window.location.search).get('tab');
-    return t === 'dossier' || t === 'hr_folder' ? 'hr_folder' : 'settings';
+    if (t === 'dossier' || t === 'hr_folder') return 'hr_folder';
+    if (t === 'bank' || t === 'bank_account') return 'bank_account';
+    return t === 'settings' || t === 'personnalisation' ? 'settings' : 'settings';
   });
 
   const [searchParams] = useSearchParams();
@@ -206,6 +210,7 @@ export function ProfilePage() {
   useEffect(() => {
     const t = searchParams.get('tab');
     if (t === 'dossier' || t === 'hr_folder') setPageTab('hr_folder');
+    if (t === 'bank' || t === 'bank_account') setPageTab('bank_account');
     if (t === 'settings' || t === 'personnalisation') setPageTab('settings');
   }, [searchParams]);
 
@@ -427,6 +432,8 @@ export function ProfilePage() {
     isAdministrator,
   );
 
+  const { data: bankBundle, isLoading: bankLoading } = useDriverBank(user?.id);
+
   return (
 
     <Layout>
@@ -521,6 +528,30 @@ export function ProfilePage() {
 
             </button>
 
+            <button
+
+              type="button"
+
+              onClick={() => setPageTab('bank_account')}
+
+              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+
+                pageTab === 'bank_account'
+
+                  ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
+
+                  : 'text-white/35 hover:bg-white/5 border border-transparent'
+
+              }`}
+
+            >
+
+              <CreditCard className="w-3.5 h-3.5" />
+
+              Mon compte bancaire
+
+            </button>
+
           </nav>
 
         )}
@@ -530,6 +561,10 @@ export function ProfilePage() {
         {pageTab === 'hr_folder' && showHrFolder ? (
 
           <ProfileHrFolderMount />
+
+        ) : pageTab === 'bank_account' && showHrFolder ? (
+
+          <DriverBankPanel bundle={bankBundle} loading={bankLoading} />
 
         ) : (
 

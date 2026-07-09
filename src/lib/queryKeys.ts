@@ -60,6 +60,12 @@ export const queryKeys = {
     all: ['driverPortal'] as const,
     module: (userId?: string) => ['driverPortal', 'module', userId ?? 'anonymous'] as const,
   },
+  driverBank: {
+    all: ['driverBank'] as const,
+    bundle: (profileId: string) => ['driverBank', 'bundle', profileId] as const,
+    adminAccounts: () => ['driverBank', 'adminAccounts'] as const,
+    adminTransfers: () => ['driverBank', 'adminTransfers'] as const,
+  },
   vault: {
     all: ['vault'] as const,
     module: (userId?: string) => ['vault', 'module', userId ?? 'anonymous'] as const,
