@@ -3,7 +3,7 @@ import {
   APP_UPDATE_NOTIFICATION_MESSAGE,
   APP_UPDATE_NOTIFICATION_TITLE,
   APP_VERSION,
-  isUpdateNotificationVisible,
+  checkForNewVersion,
 } from '../lib/appVersion';
 import type { LiveNotification } from '../lib/liveOpsTypes';
 
@@ -97,8 +97,11 @@ export async function notifyUsersByRoles(
 }
 
 /** Ensure the current user has an in-app notification for the new APP_VERSION. */
-export async function ensureAppUpdateNotification(userId: string): Promise<void> {
-  if (!isUpdateNotificationVisible()) return;
+export async function ensureAppUpdateNotification(
+  userId: string,
+  serverVersion?: string | null,
+): Promise<void> {
+  if (!checkForNewVersion(serverVersion).hasUpdate) return;
 
   const { data } = await supabase
     .from('notifications')

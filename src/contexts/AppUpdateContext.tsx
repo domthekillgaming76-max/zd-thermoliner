@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -14,10 +15,13 @@ import {
   APP_UPDATE_NOTIFICATION_TITLE,
   APP_VERSION,
   APP_VERSION_LABEL,
-  saveSeenAppVersion,
+  CURRENT_APP_VERSION,
 } from '../lib/appVersion';
 import { applyAppUpdateAndReload } from '../lib/pwaUpdate';
-import { fetchAppUpdateStatus } from '../services/appUpdateService';
+import {
+  acknowledgeUpdateExtras,
+  fetchAppUpdateStatus,
+} from '../services/appUpdateService';
 
 interface AppUpdateContextValue {
   visible: boolean;
@@ -26,6 +30,7 @@ interface AppUpdateContextValue {
   buttonLabel: string;
   clientVersion: string;
   clientVersionLabel: string;
+  targetVersion: string | null;
   refreshNow: () => void;
   recheck: () => void;
 }
@@ -35,18 +40,25 @@ const AppUpdateContext = createContext<AppUpdateContextValue | null>(null);
 export function AppUpdateProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const [visible, setVisible] = useState(false);
+  const [targetVersion, setTargetVersion] = useState<string | null>(null);
+  const latestUpdateRef = useRef<Awaited<ReturnType<typeof fetchAppUpdateStatus>>['latestUpdate']>(null);
+  const updatingRef = useRef(false);
 
   const recheck = useCallback(() => {
-    if (!user) {
-      setVisible(false);
+    if (!user || updatingRef.current) {
+      if (!user) setVisible(false);
       return;
     }
 
     void fetchAppUpdateStatus(user.id).then((status) => {
+      latestUpdateRef.current = status.latestUpdate;
+      setTargetVersion(status.targetVersion);
       setVisible(status.visible);
       if (status.visible) {
-        console.log('[Z&D Update] showing banner', {
-          client: status.clientVersion,
+        console.log('[Z&D Update] update available', {
+          installed: status.installedVersion,
+          current: CURRENT_APP_VERSION,
+          target: status.targetVersion,
           server: status.serverVersion,
         });
       }
@@ -70,10 +82,12 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
   }, [user, recheck]);
 
   const refreshNow = useCallback(() => {
-    saveSeenAppVersion();
+    const versionToInstall = targetVersion ?? CURRENT_APP_VERSION;
+    updatingRef.current = true;
     setVisible(false);
-    void applyAppUpdateAndReload();
-  }, []);
+    void acknowledgeUpdateExtras(user?.id, latestUpdateRef.current);
+    void applyAppUpdateAndReload(versionToInstall);
+  }, [targetVersion, user?.id]);
 
   const value = useMemo<AppUpdateContextValue>(() => ({
     visible,
@@ -81,10 +95,11 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
     message: APP_UPDATE_NOTIFICATION_MESSAGE,
     buttonLabel: APP_UPDATE_BUTTON_LABEL,
     clientVersion: APP_VERSION,
-    clientVersionLabel: APP_VERSION_LABEL,
+    clientVersionLabel: targetVersion ? `v${targetVersion}` : APP_VERSION_LABEL,
+    targetVersion,
     refreshNow,
     recheck,
-  }), [visible, refreshNow, recheck]);
+  }), [visible, targetVersion, refreshNow, recheck]);
 
   return (
     <AppUpdateContext.Provider value={value}>

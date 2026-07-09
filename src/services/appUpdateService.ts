@@ -1,9 +1,8 @@
 import { supabase } from '../lib/supabase';
 import {
   APP_VERSION,
-  APP_VERSION_LABEL,
-  compareVersions,
-  isUpdateNotificationVisible,
+  checkForNewVersion,
+  formatVersionLabel,
 } from '../lib/appVersion';
 import { ensureAppUpdateNotification } from './notificationService';
 
@@ -20,6 +19,8 @@ export interface AppUpdateStatus {
   latestUpdate: PublishedAppUpdate | null;
   clientVersion: string;
   clientVersionLabel: string;
+  installedVersion: string;
+  targetVersion: string | null;
 }
 
 export async function fetchLatestPublishedUpdate(): Promise<PublishedAppUpdate | null> {
@@ -67,13 +68,11 @@ export async function acknowledgeUpdateExtras(
 export async function fetchAppUpdateStatus(userId?: string): Promise<AppUpdateStatus> {
   const latestUpdate = await fetchLatestPublishedUpdate();
   const serverVersion = latestUpdate?.version ?? null;
-  const serverAhead = serverVersion
-    ? compareVersions(serverVersion, APP_VERSION) > 0
-    : false;
-  const visible = isUpdateNotificationVisible() || serverAhead;
+  const versionCheck = checkForNewVersion(serverVersion);
+  const visible = versionCheck.hasUpdate;
 
   if (visible && userId) {
-    void ensureAppUpdateNotification(userId);
+    void ensureAppUpdateNotification(userId, serverVersion);
   }
 
   return {
@@ -81,6 +80,8 @@ export async function fetchAppUpdateStatus(userId?: string): Promise<AppUpdateSt
     serverVersion,
     latestUpdate,
     clientVersion: APP_VERSION,
-    clientVersionLabel: APP_VERSION_LABEL,
+    clientVersionLabel: formatVersionLabel(versionCheck.targetVersion ?? APP_VERSION),
+    installedVersion: versionCheck.installedVersion,
+    targetVersion: versionCheck.targetVersion,
   };
 }
