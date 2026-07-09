@@ -14,10 +14,10 @@ import {
   APP_UPDATE_NOTIFICATION_TITLE,
   APP_VERSION,
   APP_VERSION_LABEL,
-  isUpdateNotificationVisible,
   saveSeenAppVersion,
 } from '../lib/appVersion';
 import { applyAppUpdateAndReload } from '../lib/pwaUpdate';
+import { fetchAppUpdateStatus } from '../services/appUpdateService';
 
 interface AppUpdateContextValue {
   visible: boolean;
@@ -37,11 +37,20 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
   const [visible, setVisible] = useState(false);
 
   const recheck = useCallback(() => {
-    const shouldShow = !!user && isUpdateNotificationVisible();
-    setVisible(shouldShow);
-    if (shouldShow) {
-      console.log('[Z&D Update] showing banner', APP_VERSION);
+    if (!user) {
+      setVisible(false);
+      return;
     }
+
+    void fetchAppUpdateStatus(user.id).then((status) => {
+      setVisible(status.visible);
+      if (status.visible) {
+        console.log('[Z&D Update] showing banner', {
+          client: status.clientVersion,
+          server: status.serverVersion,
+        });
+      }
+    });
   }, [user]);
 
   useEffect(() => {
@@ -53,7 +62,11 @@ export function AppUpdateProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     const onFocus = () => recheck();
     window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
+    const interval = window.setInterval(() => recheck(), 120_000);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      window.clearInterval(interval);
+    };
   }, [user, recheck]);
 
   const refreshNow = useCallback(() => {

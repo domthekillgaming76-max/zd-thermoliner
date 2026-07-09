@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 import {
   APP_VERSION,
   APP_VERSION_LABEL,
+  compareVersions,
   isUpdateNotificationVisible,
 } from '../lib/appVersion';
 import { ensureAppUpdateNotification } from './notificationService';
@@ -66,7 +67,10 @@ export async function acknowledgeUpdateExtras(
 export async function fetchAppUpdateStatus(userId?: string): Promise<AppUpdateStatus> {
   const latestUpdate = await fetchLatestPublishedUpdate();
   const serverVersion = latestUpdate?.version ?? null;
-  const visible = isUpdateNotificationVisible();
+  const serverAhead = serverVersion
+    ? compareVersions(serverVersion, APP_VERSION) > 0
+    : false;
+  const visible = isUpdateNotificationVisible() || serverAhead;
 
   if (visible && userId) {
     void ensureAppUpdateNotification(userId);

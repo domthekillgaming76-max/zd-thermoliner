@@ -1,14 +1,14 @@
 /** Bump this constant on each production release. */
-export const APP_VERSION = '1.0.2';
+export const APP_VERSION = '1.0.3';
 
 export const APP_VERSION_LABEL = `v${APP_VERSION}`;
 
 export const SEEN_APP_VERSION_KEY = 'zd_seen_app_version';
 
-export const APP_UPDATE_NOTIFICATION_TITLE = 'Nouvelle mise à jour disponible';
+export const APP_UPDATE_NOTIFICATION_TITLE = 'Mise à jour v1.0.3 — Correctif important';
 
 export const APP_UPDATE_NOTIFICATION_MESSAGE =
-  'Une nouvelle version de Z&D Thermoliner ERP est disponible.';
+  'Banque RP chauffeur, dossier profil et salaires corrigés. Cliquez pour télécharger la dernière version.';
 
 export const APP_UPDATE_BUTTON_LABEL = 'Télécharger la mise à jour';
 
