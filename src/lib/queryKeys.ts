@@ -18,6 +18,11 @@ export const queryKeys = {
     module: () => ['trucks', 'module'] as const,
     detail: (id: string) => ['trucks', 'detail', id] as const,
   },
+  integrations: {
+    all: ['integrations'] as const,
+    driver: (profileId: string) => ['integrations', 'driver', profileId] as const,
+    admin: () => ['integrations', 'admin'] as const,
+  },
   userRole: (userId?: string) => ['userRole', userId ?? 'anonymous'] as const,
   bank: {
     all: ['bank'] as const,

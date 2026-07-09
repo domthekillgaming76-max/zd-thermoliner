@@ -47,7 +47,9 @@ export type ModuleKey =
   | 'garages'
   | 'clients'
   | 'join'
-  | 'salons_admin';
+  | 'salons_admin'
+  | 'driver_integrations'
+  | 'admin_integrations';
 
 const RAW_TO_APP_ROLE: Record<string, AppRole> = {
   visitor: 'visitor',
@@ -79,12 +81,13 @@ export const ALL_MODULES: ModuleKey[] = [
   'drivers', 'reports', 'finance', 'invoices', 'salaries', 'accounting', 'bank',
   'administration', 'settings', 'updates', 'events', 'training_center', 'driver_portal',
   'documents', 'notifications', 'fleet_map', 'statistics', 'assistant', 'garages', 'clients', 'join', 'salons_admin',
+  'driver_integrations', 'admin_integrations',
 ];
 
 const ROLE_MODULES: Record<AppRole, readonly ModuleKey[]> = {
   visitor: ['wall', 'profile', 'recruitment', 'recruitment_applications'],
   recruit: ['wall', 'profile', 'recruitment', 'recruitment_applications', 'join'],
-  driver: ['dashboard', 'wall', 'profile', 'road_sheets', 'freight_market', 'driver_portal'],
+  driver: ['dashboard', 'wall', 'profile', 'road_sheets', 'freight_market', 'driver_portal', 'driver_integrations'],
   dispatcher: ['dashboard', 'wall', 'profile', 'dispatch', 'freight_market', 'road_sheets', 'gps_tracking'],
   fleet_manager: [
     'dashboard', ...COMMUNITY_MODULES, 'profile', 'fleet', 'maintenance', 'gps_tracking',
@@ -196,8 +199,10 @@ export const ROUTE_MODULE_RULES: { prefix: string; module: ModuleKey }[] = [
   { prefix: '/assistant', module: 'assistant' },
   { prefix: '/statistics', module: 'statistics' },
   { prefix: '/notifications', module: 'notifications' },
+  { prefix: '/administration/integrations', module: 'admin_integrations' },
   { prefix: '/administration/salons', module: 'salons_admin' },
   { prefix: '/administration', module: 'administration' },
+  { prefix: '/integrations', module: 'driver_integrations' },
   { prefix: '/settings', module: 'settings' },
   { prefix: '/profile', module: 'profile' },
   { prefix: '/wall', module: 'wall' },
@@ -240,7 +245,7 @@ export function getAllowedModules(role: string | null | undefined): ModuleKey[] 
 export function canAccessModule(role: string | null | undefined, moduleKey: ModuleKey): boolean {
   const appRole = normalizeRole(role);
 
-  if (moduleKey === 'bank' || moduleKey === 'administration' || moduleKey === 'salons_admin') {
+  if (moduleKey === 'bank' || moduleKey === 'administration' || moduleKey === 'salons_admin' || moduleKey === 'admin_integrations') {
     return appRole === 'admin';
   }
 

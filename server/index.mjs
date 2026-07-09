@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { verifyCronAuth } from './lib/auth.mjs';
 import { handleGenerateFreight } from './cron/generateFreight.mjs';
+import { handleSyncIntegrations } from './cron/syncIntegrations.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.join(__dirname, '..', 'dist');
@@ -37,6 +38,24 @@ async function runCron(req, res) {
 
 app.get('/api/cron/generate-freight', verifyCronAuth, runCron);
 app.post('/api/cron/generate-freight', verifyCronAuth, runCron);
+
+async function runIntegrationsCron(req, res) {
+  try {
+    const result = await handleSyncIntegrations();
+    const status = result.errors.length && result.synced === 0 ? 500 : 200;
+    res.status(status).json({ ok: status === 200, ...result });
+  } catch (err) {
+    res.status(500).json({
+      ok: false,
+      synced: 0,
+      deliveriesProcessed: 0,
+      errors: [err instanceof Error ? err.message : 'Unknown error'],
+    });
+  }
+}
+
+app.get('/api/cron/sync-integrations', verifyCronAuth, runIntegrationsCron);
+app.post('/api/cron/sync-integrations', verifyCronAuth, runIntegrationsCron);
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'zd-thermoliner' });

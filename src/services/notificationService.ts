@@ -23,7 +23,8 @@ export type NotificationType =
   | 'wall_announcement'
   | 'wall_convoy'
   | 'hr'
-  | 'bank';
+  | 'bank'
+  | 'integration';
 
 export const NOTIFICATION_POLL_MS = 10_000;
 
@@ -203,5 +204,55 @@ export async function notifyCompanyAnnouncement(title: string, message: string):
     title,
     message,
     'announcement',
+  );
+}
+
+export async function notifyIntegrationConnected(profileId: string, providerLabel: string): Promise<void> {
+  await createUserNotification(
+    profileId,
+    'Compte connecté',
+    `${providerLabel} est maintenant lié à votre profil Z&D.`,
+    'integration',
+  );
+}
+
+export async function notifyIntegrationDeliveryDetected(profileId: string, route: string): Promise<void> {
+  await createUserNotification(
+    profileId,
+    'Nouvelle livraison détectée',
+    route,
+    'integration',
+  );
+}
+
+export async function notifyIntegrationRoadSheetCreated(profileId: string, route: string): Promise<void> {
+  await createUserNotification(
+    profileId,
+    'Feuille de route créée',
+    `Une feuille de route a été générée automatiquement : ${route}`,
+    'road_sheet',
+  );
+}
+
+export async function notifyIntegrationSalaryCredited(profileId: string, amount: number): Promise<void> {
+  const formatted = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
+  await createUserNotification(
+    profileId,
+    'Salaire crédité',
+    `Votre compte bancaire a été crédité de ${formatted} suite à une livraison synchronisée.`,
+    'bank',
+  );
+}
+
+export async function notifyIntegrationSyncError(
+  profileId: string,
+  providerLabel: string,
+  error: string,
+): Promise<void> {
+  await createUserNotification(
+    profileId,
+    'Erreur de synchronisation',
+    `${providerLabel} : ${error}`,
+    'error',
   );
 }

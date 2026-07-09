@@ -72,11 +72,12 @@ export const DRIVER_ALLOWED_PAGES = new Set([
   'road_sheets',
   'freight_market',
   'driver_portal',
+  'driver_integrations',
 ]);
 
 export const SUSPENDED_ALLOWED_PAGES = new Set(['profile', 'settings']);
 
-const ADMIN_ONLY_PAGES = new Set(['administration']);
+const ADMIN_ONLY_PAGES = new Set(['administration', 'admin_integrations']);
 
 /** Tableau de bord : tous les rôles internes connectés, sauf visiteur. */
 export function canAccessDashboard(

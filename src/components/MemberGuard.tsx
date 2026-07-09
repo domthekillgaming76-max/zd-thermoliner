@@ -27,6 +27,7 @@ const MODULE_PAGES = new Set<string>([
   'drivers', 'reports', 'finance', 'invoices', 'salaries', 'accounting', 'bank',
   'administration', 'settings', 'updates', 'events', 'training_center', 'driver_portal',
   'documents', 'notifications', 'fleet_map', 'statistics', 'assistant', 'garages', 'clients',
+  'driver_integrations', 'admin_integrations',
 ]);
 
 function isModulePage(page: string): page is ModuleKey {

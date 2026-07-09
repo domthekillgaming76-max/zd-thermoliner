@@ -76,6 +76,8 @@ import { MaintenancePage } from './pages/MaintenancePage';
 
 import { AdminSecurityPage } from './pages/AdminSecurityPage';
 import { SalonsManagementPage } from './pages/SalonsManagementPage';
+import { DriverIntegrationsPage } from './pages/DriverIntegrationsPage';
+import { AdminIntegrationsPage } from './pages/AdminIntegrationsPage';
 
 import { RecruitmentPage } from './pages/recruitment/RecruitmentPage';
 
@@ -423,6 +425,12 @@ function AppRoutes() {
         </ProtectedPage>
       } />
 
+      <Route path="/administration/integrations" element={
+        <ProtectedPage page="admin_integrations">
+          <AdminIntegrationsPage />
+        </ProtectedPage>
+      } />
+
       <Route path="/administration" element={
 
         <ProtectedPage page="administration">
@@ -439,6 +447,9 @@ function AppRoutes() {
       <Route path="/profile/bank" element={<Navigate to="/profile?tab=bank" replace />} />
 
       <Route path="/profile" element={<ProtectedPage page="profile"><ProfilePage /></ProtectedPage>} />
+
+      <Route path="/integrations" element={<ProtectedPage page="driver_integrations"><DriverIntegrationsPage /></ProtectedPage>} />
+      <Route path="/driver/integrations" element={<Navigate to="/integrations" replace />} />
 
 
 
