@@ -9,14 +9,17 @@ function getAdminConfig() {
 
 let warned = false;
 let cachedAdmin = null;
+let cachedAdminKey = '';
 
 function resolveAdminClient() {
   const { url, serviceKey } = getAdminConfig();
+  const cacheKey = `${url || ''}:${serviceKey || ''}`;
   if (!warned && (!url || !serviceKey)) {
     warned = true;
     console.warn('[Z&D Server] SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY required for admin API.');
   }
-  if (!cachedAdmin) {
+  if (!cachedAdmin || cachedAdminKey !== cacheKey) {
+    cachedAdminKey = cacheKey;
     cachedAdmin = createClient(url || 'https://placeholder.supabase.co', serviceKey || 'placeholder', {
       auth: { autoRefreshToken: false, persistSession: false },
     });

@@ -168,7 +168,7 @@ export async function handleClientLogin(req, res) {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
 
-    const { profile, driver } = await loadClientContext(data.session.user.id);
+    const { profile, driver } = await loadClientContext(data.session.user.id, data.session.access_token);
 
     return res.json({
       token: data.session.access_token,
@@ -199,7 +199,7 @@ export async function handleClientLogout(req, res) {
 
 export async function handleClientMe(req, res) {
   try {
-    const { profile, driver } = await loadClientContext(req.clientUser.id);
+    const { profile, driver } = await loadClientContext(req.clientUser.id, req.clientToken);
     return res.json({
       email: profile.email,
       driverName: displayDriverName(profile, driver, profile.email),
@@ -217,7 +217,7 @@ export async function handleClientMe(req, res) {
 
 export async function handleClientTelemetry(req, res) {
   try {
-    const { profile, driver } = await loadClientContext(req.clientUser.id);
+    const { profile, driver } = await loadClientContext(req.clientUser.id, req.clientToken);
     const body = req.body ?? {};
 
     const profileId = body.profile_id || profile.id;
@@ -240,7 +240,7 @@ export async function handleClientTelemetry(req, res) {
 
 export async function handleClientSync(req, res) {
   try {
-    const { profile, driver } = await loadClientContext(req.clientUser.id);
+    const { profile, driver } = await loadClientContext(req.clientUser.id, req.clientToken);
     const body = req.body ?? {};
     let telemetryStored = null;
 
