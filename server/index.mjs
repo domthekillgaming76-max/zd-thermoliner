@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { verifyCronAuth } from './lib/auth.mjs';
 import { handleGenerateFreight } from './cron/generateFreight.mjs';
 import { handleSyncIntegrations } from './cron/syncIntegrations.mjs';
+import { clientApiRouter } from './api/client/router.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.join(__dirname, '..', 'dist');
@@ -60,6 +61,8 @@ app.post('/api/cron/sync-integrations', verifyCronAuth, runIntegrationsCron);
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'zd-thermoliner' });
 });
+
+app.use('/api/client', clientApiRouter);
 
 app.use(express.static(distPath));
 
