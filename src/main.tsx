@@ -3,8 +3,10 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 import { bootstrapInstalledVersion } from './lib/appVersion';
+import { installCryptoPolyfill } from './lib/cryptoPolyfill';
 import { registerServiceWorker } from './services/updateService';
 
+installCryptoPolyfill();
 bootstrapInstalledVersion();
 
 if ('serviceWorker' in navigator) {

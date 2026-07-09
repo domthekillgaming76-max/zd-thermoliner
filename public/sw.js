@@ -1,5 +1,5 @@
 /* Keep CACHE_NAME in sync with APP_VERSION in src/lib/appVersion.ts */
-const CACHE_NAME = 'zd-thermoliner-1-0-3';
+const CACHE_NAME = 'zd-thermoliner-2-6-1';
 const PRECACHE = ['/', '/index.html', '/manifest.json', '/icons/icon-192.svg', '/icons/icon-512.svg'];
 
 self.addEventListener('install', (event) => {
@@ -36,13 +36,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.includes('/assets/')) {
+  const isAppShell =
+    request.mode === 'navigate'
+    || url.pathname.endsWith('.html')
+    || url.pathname.includes('/assets/');
+
+  if (isAppShell) {
     event.respondWith(
       fetch(request)
         .then((response) => {
           if (response.ok) {
             const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+            void caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }
           return response;
         })
@@ -56,7 +61,7 @@ self.addEventListener('fetch', (event) => {
       .then((response) => {
         if (response.ok && request.url.includes('.')) {
           const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          void caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
         }
         return response;
       })

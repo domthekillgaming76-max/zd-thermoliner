@@ -3,7 +3,14 @@ import { useAppUpdateNotification } from '../contexts/AppUpdateContext';
 
 export function AppUpdateProfileCard() {
   const {
-    visible, title, message, buttonLabel, clientVersionLabel, refreshNow,
+    visible,
+    title,
+    message,
+    buttonLabel,
+    dismissLabel,
+    clientVersionLabel,
+    refreshNow,
+    dismissLater,
   } = useAppUpdateNotification();
 
   if (!visible) return null;
@@ -23,14 +30,23 @@ export function AppUpdateProfileCard() {
           <p className="text-xs text-white/35 mt-2">Version {clientVersionLabel}</p>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={refreshNow}
-        className="btn-primary px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 mt-4 w-full sm:w-auto justify-center"
-      >
-        <Download className="w-4 h-4" />
-        {buttonLabel}
-      </button>
+      <div className="flex flex-col sm:flex-row gap-2 mt-4">
+        <button
+          type="button"
+          onClick={dismissLater}
+          className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white/70 hover:text-white hover:bg-white/10 transition-colors w-full sm:w-auto text-center"
+        >
+          {dismissLabel}
+        </button>
+        <button
+          type="button"
+          onClick={refreshNow}
+          className="btn-primary px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 w-full sm:w-auto justify-center"
+        >
+          <Download className="w-4 h-4" />
+          {buttonLabel}
+        </button>
+      </div>
     </div>
   );
 }

@@ -1,28 +1,33 @@
 /** Bump this constant on each production release. */
-export const APP_VERSION = '1.0.3';
+export const APP_VERSION = '2.6.1';
 
 /** Alias used by the PWA update system. */
 export const CURRENT_APP_VERSION = APP_VERSION;
 
 export const APP_VERSION_LABEL = `v${APP_VERSION}`;
 
-/** Last version the user installed / acknowledged via "Télécharger la mise à jour". */
+/** Last version the user installed via "Télécharger la mise à jour". */
 export const INSTALLED_APP_VERSION_KEY = 'zd_installed_app_version';
+
+/** Version dismissed via "Plus tard" for the current bundle. */
+export const DISMISSED_APP_VERSION_KEY = 'zd_dismissed_app_version';
 
 /** @deprecated Migrated to INSTALLED_APP_VERSION_KEY */
 const LEGACY_SEEN_APP_VERSION_KEY = 'zd_seen_app_version';
 
-export const APP_UPDATE_NOTIFICATION_TITLE = 'Mise à jour v1.0.3 — Correctif important';
+export const APP_UPDATE_NOTIFICATION_TITLE = 'Mise à jour v2.6.1 disponible';
 
 export const APP_UPDATE_NOTIFICATION_MESSAGE =
-  'Banque RP chauffeur, dossier profil et salaires corrigés. Cliquez pour télécharger la dernière version.';
+  'Corrections PWA, stabilité et performance. Téléchargez la dernière version pour profiter des améliorations.';
 
 export const APP_UPDATE_BUTTON_LABEL = 'Télécharger la mise à jour';
+export const APP_UPDATE_DISMISS_LABEL = 'Plus tard';
 
 export interface VersionCheckResult {
   hasUpdate: boolean;
   currentVersion: string;
   installedVersion: string;
+  dismissedVersion: string;
   targetVersion: string | null;
 }
 
@@ -45,18 +50,6 @@ export function compareVersions(a: string | null | undefined, b: string | null |
     if (diff !== 0) return diff;
   }
   return 0;
-}
-
-function pickNewestVersion(...versions: Array<string | null | undefined>): string {
-  let best = normalizeVersion(CURRENT_APP_VERSION);
-  for (const version of versions) {
-    if (!version) continue;
-    const normalized = normalizeVersion(version);
-    if (compareVersions(normalized, best) > 0) {
-      best = normalized;
-    }
-  }
-  return best;
 }
 
 export function getInstalledAppVersion(): string | null {
@@ -86,40 +79,84 @@ export function saveInstalledAppVersion(version: string = CURRENT_APP_VERSION): 
   }
 }
 
-/**
- * First launch: mark the running bundle as installed so no popup appears.
- * Re-open / reload with the same version: still no popup.
- */
-export function bootstrapInstalledVersion(): void {
-  const installed = getInstalledAppVersion();
-  if (!installed) {
-    saveInstalledAppVersion(CURRENT_APP_VERSION);
+export function getDismissedAppVersion(): string | null {
+  try {
+    const dismissed = localStorage.getItem(DISMISSED_APP_VERSION_KEY);
+    return dismissed ? normalizeVersion(dismissed) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveDismissedAppVersion(version: string = CURRENT_APP_VERSION): void {
+  try {
+    localStorage.setItem(DISMISSED_APP_VERSION_KEY, normalizeVersion(version));
+  } catch {
+    /* ignore quota errors */
+  }
+}
+
+export function clearDismissedAppVersion(): void {
+  try {
+    localStorage.removeItem(DISMISSED_APP_VERSION_KEY);
+  } catch {
+    /* ignore */
   }
 }
 
 /**
- * Compare CURRENT_APP_VERSION (bundle) and optional server version
- * against INSTALLED_APP_VERSION (localStorage).
- *
- * If installed === current (and nothing newer on server): never show the popup.
+ * First launch only: mark the running bundle as installed so no popup appears.
+ * Does not overwrite an existing installed version (preserves upgrade prompts).
  */
-export function checkForNewVersion(serverVersion?: string | null): VersionCheckResult {
+export function bootstrapInstalledVersion(): void {
+  if (getInstalledAppVersion()) return;
+  saveInstalledAppVersion(CURRENT_APP_VERSION);
+}
+
+/**
+ * Compare CURRENT_APP_VERSION against installed + dismissed localStorage keys.
+ * Never uses server version for visibility — avoids infinite loops when DB
+ * changelog versions differ from the deployed bundle.
+ */
+export function checkForNewVersion(): VersionCheckResult {
   const currentVersion = normalizeVersion(CURRENT_APP_VERSION);
-  const installedVersion = getInstalledAppVersion() ?? currentVersion;
-  const targetVersion = pickNewestVersion(currentVersion, serverVersion);
-  const hasUpdate = compareVersions(targetVersion, installedVersion) > 0;
+  const installedVersion = getInstalledAppVersion() ?? '';
+  const dismissedVersion = getDismissedAppVersion() ?? '';
+
+  if (installedVersion && compareVersions(installedVersion, currentVersion) >= 0) {
+    return {
+      hasUpdate: false,
+      currentVersion,
+      installedVersion,
+      dismissedVersion,
+      targetVersion: null,
+    };
+  }
+
+  if (dismissedVersion && compareVersions(dismissedVersion, currentVersion) >= 0) {
+    return {
+      hasUpdate: false,
+      currentVersion,
+      installedVersion,
+      dismissedVersion,
+      targetVersion: null,
+    };
+  }
+
+  const hasUpdate = compareVersions(currentVersion, installedVersion) > 0;
 
   return {
     hasUpdate,
     currentVersion,
     installedVersion,
-    targetVersion: hasUpdate ? targetVersion : null,
+    dismissedVersion,
+    targetVersion: hasUpdate ? currentVersion : null,
   };
 }
 
 /** @deprecated Use checkForNewVersion().hasUpdate */
-export function isUpdateNotificationVisible(serverVersion?: string | null): boolean {
-  return checkForNewVersion(serverVersion).hasUpdate;
+export function isUpdateNotificationVisible(): boolean {
+  return checkForNewVersion().hasUpdate;
 }
 
 /** @deprecated Use saveInstalledAppVersion */

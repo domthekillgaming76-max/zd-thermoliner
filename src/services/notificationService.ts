@@ -97,11 +97,8 @@ export async function notifyUsersByRoles(
 }
 
 /** Ensure the current user has an in-app notification for the new APP_VERSION. */
-export async function ensureAppUpdateNotification(
-  userId: string,
-  serverVersion?: string | null,
-): Promise<void> {
-  if (!checkForNewVersion(serverVersion).hasUpdate) return;
+export async function ensureAppUpdateNotification(userId: string): Promise<void> {
+  if (!checkForNewVersion().hasUpdate) return;
 
   const { data } = await supabase
     .from('notifications')

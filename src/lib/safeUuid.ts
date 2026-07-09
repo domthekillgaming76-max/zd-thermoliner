@@ -1,6 +1,5 @@
+import { safeRandomUUID } from './cryptoPolyfill';
+
 export function safeUuid(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  return `zd-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  return safeRandomUUID();
 }

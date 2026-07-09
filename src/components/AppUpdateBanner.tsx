@@ -8,7 +8,16 @@ interface AppUpdateBannerProps {
 
 export function AppUpdateBanner({ variant = 'full' }: AppUpdateBannerProps) {
   const {
-    visible, title, message, buttonLabel, clientVersionLabel, refreshNow,
+    visible,
+    title,
+    message,
+    buttonLabel,
+    dismissLabel,
+    clientVersionLabel,
+    installedVersion,
+    serverVersion,
+    refreshNow,
+    dismissLater,
   } = useAppUpdateNotification();
 
   if (!visible) return null;
@@ -40,18 +49,31 @@ export function AppUpdateBanner({ variant = 'full' }: AppUpdateBannerProps) {
             <p className="text-sm font-semibold text-white">{title}</p>
             <p className="text-xs text-white/55 mt-0.5">{message}</p>
             {variant !== 'compact' && (
-              <p className="text-[10px] text-white/30 mt-1">Version {clientVersionLabel}</p>
+              <p className="text-[10px] text-white/30 mt-1">
+                Version {clientVersionLabel}
+                {installedVersion ? ` · installée v${installedVersion}` : ''}
+                {serverVersion ? ` · serveur ${serverVersion}` : ''}
+              </p>
             )}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={refreshNow}
-          className="btn-primary px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 shrink-0 w-full sm:w-auto"
-        >
-          <Download className="w-3.5 h-3.5" />
-          {buttonLabel}
-        </button>
+        <div className="flex flex-col sm:flex-row gap-2 shrink-0 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={dismissLater}
+            className="px-4 py-2.5 rounded-lg text-xs font-semibold text-white/70 hover:text-white hover:bg-white/10 transition-colors w-full sm:w-auto"
+          >
+            {dismissLabel}
+          </button>
+          <button
+            type="button"
+            onClick={refreshNow}
+            className="btn-primary px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 w-full sm:w-auto"
+          >
+            <Download className="w-3.5 h-3.5" />
+            {buttonLabel}
+          </button>
+        </div>
       </div>
     </div>
   );
