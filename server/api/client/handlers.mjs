@@ -48,16 +48,17 @@ async function storeClientTelemetry(profile, driver, body) {
   const presenceStatus = mapPresenceStatus(gameRunning, speed, body.status);
   const now = body.timestamp || new Date().toISOString();
   const routeSummary = body.current_job
+    || (body.departure_city && body.arrival_city ? `${body.departure_city} → ${body.arrival_city}` : null)
     || (body.odometer != null ? `Odomètre ${body.odometer} km` : null);
   const truckRegistration = normalizeTruckLabel(body);
-  const city = body.city || null;
+  const city = body.city || body.departure_city || null;
   const stored = { driver_presence: false, gps_position: false };
 
-  if (!driver?.id) return stored;
+  const driverId = driver?.id ?? null;
 
   await supabaseAdmin.from('driver_presence').upsert({
     user_id: profile.id,
-    driver_id: driver.id,
+    driver_id: driverId,
     status: presenceStatus,
     current_city: city,
     current_lat: lat,
@@ -69,19 +70,36 @@ async function storeClientTelemetry(profile, driver, body) {
   stored.driver_presence = true;
 
   if (lat != null && lng != null) {
-    const { data: tracking } = await supabaseAdmin
-      .from('delivery_tracking')
-      .select('id')
-      .eq('driver_id', driver.id)
-      .eq('is_active', true)
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    let trackingId = null;
+    if (driverId) {
+      const { data: tracking } = await supabaseAdmin
+        .from('delivery_tracking')
+        .select('id')
+        .eq('driver_id', driverId)
+        .eq('is_active', true)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      trackingId = tracking?.id ?? null;
+    }
+
+    if (!trackingId && body.local_job_id) {
+      const { data: telemetryJob } = await supabaseAdmin
+        .from('telemetry_jobs')
+        .select('tracking_id')
+        .eq('profile_id', profile.id)
+        .eq('local_job_id', body.local_job_id)
+        .in('status', ['detected', 'active', 'paused'])
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      trackingId = telemetryJob?.tracking_id ?? null;
+    }
 
     await supabaseAdmin.from('gps_positions').insert({
-      tracking_id: tracking?.id ?? null,
-      driver_id: driver.id,
-      truck_id: driver.truck_id ?? null,
+      tracking_id: trackingId,
+      driver_id: driverId,
+      truck_id: driver?.truck_id ?? null,
       lat,
       lng,
       speed_kmh: speed,
@@ -92,13 +110,13 @@ async function storeClientTelemetry(profile, driver, body) {
     });
     stored.gps_position = true;
 
-    if (tracking?.id && ['paused', 'error', 'late'].includes(body.status)) {
+    if (trackingId && ['paused', 'error', 'late'].includes(body.status)) {
       const alertType = body.status === 'paused' ? 'driver_paused'
         : body.status === 'late' ? 'late_delivery'
           : 'no_status_update';
 
       await supabaseAdmin.from('tracking_alerts').insert({
-        tracking_id: tracking.id,
+        tracking_id: trackingId,
         alert_type: alertType,
         severity: body.status === 'error' ? 'danger' : 'warning',
         message: `Client ETS2/ATS — statut ${body.status} (${body.game || 'unknown'})`,
@@ -236,21 +254,35 @@ export async function handleClientTelemetry(req, res) {
     let jobResult = null;
     let jobError = null;
     const missionEvent = body.mission_event || body.event;
+    const gameRunning = isGameRunning(body);
     try {
-      if (missionEvent) {
+      if (missionEvent && missionEvent !== 'JOB_UPDATE') {
         jobResult = await processSyncJobEvent(profile, driver, {
           ...body,
           event: missionEvent,
           job: body,
         });
-      } else if (body.local_job_id && body.departure_city && body.arrival_city && body.game_running) {
+      } else if (body.local_job_id && gameRunning) {
+        const activeJob = await fetchActiveTelemetryJob(profile.id);
+        if (activeJob?.local_job_id === body.local_job_id) {
+          jobResult = await processSyncJobEvent(profile, driver, {
+            ...body,
+            event: 'JOB_UPDATE',
+          });
+        } else if (body.departure_city && body.arrival_city) {
+          jobResult = await processSyncJobEvent(profile, driver, {
+            ...body,
+            event: 'JOB_STARTED',
+          });
+        }
+      } else if (missionEvent === 'JOB_UPDATE' && body.local_job_id) {
         jobResult = await processSyncJobEvent(profile, driver, {
           ...body,
-          event: 'JOB_STARTED',
+          event: 'JOB_UPDATE',
         });
       }
     } catch (err) {
-      jobError = err.message || 'Erreur création mission';
+      jobError = err.message || 'Erreur synchronisation mission';
       console.error('[Z&D] handleClientTelemetry job:', jobError);
     }
 
