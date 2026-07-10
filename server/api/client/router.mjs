@@ -7,6 +7,7 @@ import {
   handleClientTelemetry,
   handleClientSync,
   handleClientUpdates,
+  handleClientHealth,
 } from './handlers.mjs';
 import {
   handleJobStart,
@@ -25,6 +26,7 @@ clientApiRouter.get('/auth/me', requireClientAuth, handleClientMe);
 clientApiRouter.post('/telemetry', requireClientAuth, handleClientTelemetry);
 clientApiRouter.post('/sync', requireClientAuth, handleClientSync);
 clientApiRouter.get('/updates', handleClientUpdates);
+clientApiRouter.get('/health', handleClientHealth);
 
 clientApiRouter.post('/jobs/start', requireClientAuth, handleJobStart);
 clientApiRouter.post('/jobs/update', requireClientAuth, handleJobUpdate);

@@ -88,7 +88,7 @@ export async function fetchActiveTelemetryJobs(): Promise<TelemetryJob[]> {
   const { data, error } = await supabase
     .from('telemetry_jobs')
     .select('*')
-    .in('status', ['detected', 'active', 'paused'])
+    .in('status', ['detected', 'active', 'paused', 'sync_error'])
     .order('last_sync_at', { ascending: false });
   if (error) {
     console.warn('[Z&D] fetchActiveTelemetryJobs:', error.message);

@@ -1,5 +1,6 @@
 import { supabaseAdmin, isSupabaseAdminReady } from '../../lib/supabaseAdmin.mjs';
 import { displayDriverName } from './middleware.mjs';
+import { resolveCityCoords, resolveRoutePosition } from '../../lib/trackingMapCoords.mjs';
 
 const ACTIVE_STATUSES = new Set(['detected', 'active', 'paused']);
 const VALID_GAMES = new Set(['ets2', 'ats']);
@@ -26,7 +27,7 @@ function parsePosition(position) {
 
 export function normalizeJobPayload(body = {}) {
   const localJobId = str(body.localJobId ?? body.local_job_id);
-  const game = str(body.game ?? body.metadata?.game)?.toLowerCase();
+  const game = str(body.game ?? body.metadata?.game)?.toLowerCase() || 'ets2';
   return {
     localJobId,
     game,
@@ -314,21 +315,31 @@ async function createTransportMission(profile, driver, payload, roadSheetId) {
 }
 
 async function createDeliveryTracking(driver, payload, missionId) {
-  const pos = payload.startPosition;
+  const dep = resolveCityCoords(payload.sourceCity);
+  const arr = resolveCityCoords(payload.destinationCity);
+  const pos = resolveRoutePosition(
+    payload.sourceCity,
+    payload.destinationCity,
+    payload.progressPercent ?? 5,
+    payload.startPosition,
+  );
+
   const { data, error } = await supabaseAdmin.from('delivery_tracking').insert({
     mission_id: missionId,
     driver_id: driver?.id ?? null,
     truck_id: driver?.truck_id ?? null,
     departure_city: payload.sourceCity,
     arrival_city: payload.destinationCity,
-    departure_lat: pos?.lat ?? null,
-    departure_lng: pos?.lng ?? null,
-    current_lat: pos?.lat ?? null,
-    current_lng: pos?.lng ?? null,
+    departure_lat: dep?.lat ?? pos.lat,
+    departure_lng: dep?.lng ?? pos.lng,
+    arrival_lat: arr?.lat ?? null,
+    arrival_lng: arr?.lng ?? null,
+    current_lat: pos.lat,
+    current_lng: pos.lng,
     cargo: payload.cargo,
     distance_km: payload.expectedDistanceKm ?? 0,
-    remaining_km: payload.expectedDistanceKm ?? 0,
-    progress_percent: 0,
+    remaining_km: payload.distanceRemainingKm ?? payload.expectedDistanceKm ?? 0,
+    progress_percent: payload.progressPercent ?? 5,
     status: 'on_route',
     source: 'ets2_telemetry',
     is_active: true,
@@ -337,6 +348,37 @@ async function createDeliveryTracking(driver, payload, missionId) {
 
   if (error) throw new Error(error.message);
   return data.id;
+}
+
+async function ensureJobCascade(profile, driver, job, payload) {
+  const now = new Date().toISOString();
+  let roadSheetId = job.road_sheet_id;
+  let missionId = job.mission_id;
+  let trackingId = job.tracking_id;
+
+  if (!roadSheetId) {
+    roadSheetId = await createRoadSheet(profile, driver, payload, job.id);
+  }
+  if (!missionId) {
+    const mission = await createTransportMission(profile, driver, payload, roadSheetId);
+    missionId = mission.id;
+  }
+  if (!trackingId) {
+    trackingId = await createDeliveryTracking(driver, payload, missionId);
+  }
+
+  await supabaseAdmin.from('telemetry_jobs').update({
+    road_sheet_id: roadSheetId,
+    mission_id: missionId,
+    tracking_id: trackingId,
+    status: job.status === 'sync_error' ? 'active' : job.status,
+    metadata: { ...(job.metadata || {}), cascade_error: null, cascade_repaired_at: now },
+    last_sync_at: now,
+    updated_at: now,
+  }).eq('id', job.id);
+
+  await setDriverDeliveryStatus(driver?.id, profile.id, true);
+  return findExistingJob(profile.id, payload.localJobId, payload.game);
 }
 
 function formatJobResponse(job, extras = {}) {
@@ -378,9 +420,17 @@ export async function startTelemetryJob(profile, driver, body) {
 
   const existing = await findExistingJob(profile.id, payload.localJobId, payload.game);
   if (existing) {
-    if (ACTIVE_STATUSES.has(existing.status) || existing.status === 'pending_validation') {
+    if (ACTIVE_STATUSES.has(existing.status) || existing.status === 'pending_validation' || existing.status === 'sync_error') {
+      if (!existing.road_sheet_id || !existing.tracking_id) {
+        try {
+          const repaired = await ensureJobCascade(profile, driver, existing, payload);
+          return { job: repaired ?? existing, created: false, repaired: true };
+        } catch (err) {
+          console.error('[Z&D] ensureJobCascade:', err.message);
+        }
+      }
       await supabaseAdmin.from('telemetry_jobs').update({
-        status: existing.status === 'detected' ? 'active' : existing.status,
+        status: existing.status === 'detected' || existing.status === 'sync_error' ? 'active' : existing.status,
         last_sync_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }).eq('id', existing.id);
@@ -465,18 +515,19 @@ export async function startTelemetryJob(profile, driver, body) {
     const refreshed = await findExistingJob(profile.id, payload.localJobId, payload.game);
     return { job: refreshed ?? { ...job, road_sheet_id: roadSheetId, mission_id: missionId, tracking_id: trackingId }, created: true };
   } catch (err) {
+    console.error('[Z&D] startTelemetryJob cascade:', err.message);
     await supabaseAdmin.from('telemetry_jobs').update({
-      status: 'sync_error',
-      metadata: { ...job.metadata, error: err.message },
+      status: 'active',
+      metadata: { ...(job.metadata || {}), cascade_error: err.message },
+      last_sync_at: now,
       updated_at: now,
     }).eq('id', job.id);
-    await notifyUser(
-      profile.id,
-      'Erreur synchronisation',
-      'La synchronisation de votre mission a rencontré une erreur.',
-      'error',
-    );
-    throw err;
+    const refreshed = await findExistingJob(profile.id, payload.localJobId, payload.game);
+    return {
+      job: refreshed ?? job,
+      created: true,
+      cascadeError: err.message,
+    };
   }
 }
 
@@ -552,9 +603,15 @@ export async function updateTelemetryJob(profile, driver, body) {
   await supabaseAdmin.from('telemetry_jobs').update(jobPatch).eq('id', job.id);
 
   if (job.tracking_id) {
+    const mapPos = resolveRoutePosition(
+      job.source_city,
+      job.destination_city,
+      progress ?? payload.progressPercent ?? job.metadata?.last_progress_percent ?? 5,
+      payload.position,
+    );
     const trackingPatch = {
-      current_lat: payload.position?.lat ?? undefined,
-      current_lng: payload.position?.lng ?? undefined,
+      current_lat: mapPos.lat,
+      current_lng: mapPos.lng,
       remaining_km: payload.distanceRemainingKm ?? undefined,
       progress_percent: progress ?? undefined,
       status: jobStatus === 'paused' ? 'paused' : 'on_route',

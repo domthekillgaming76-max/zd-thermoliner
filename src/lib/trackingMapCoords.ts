@@ -90,6 +90,28 @@ export function interpolatePosition(
   };
 }
 
+export function resolveRoutePosition(
+  sourceCity: string | null | undefined,
+  destinationCity: string | null | undefined,
+  progressPercent: number,
+  rawPosition?: { lat: number; lng: number } | null,
+): { lat: number; lng: number } {
+  const dep = resolveCityCoords(sourceCity ?? '');
+  const arr = resolveCityCoords(destinationCity ?? '');
+
+  if (rawPosition && rawPosition.lat >= 35 && rawPosition.lat <= 58 && rawPosition.lng >= -10 && rawPosition.lng <= 20) {
+    return rawPosition;
+  }
+
+  if (dep && arr) {
+    return interpolatePosition(dep, arr, progressPercent);
+  }
+
+  if (dep) return dep;
+  if (arr) return arr;
+  return { lat: 48.8566, lng: 2.3522 };
+}
+
 export function computeEtaMinutes(remainingKm: number, status: string): number | null {
   if (status === 'paused' || status === 'loading' || remainingKm <= 0) return null;
   const speed = status === 'on_route' || status === 'late' ? 72 : 55;

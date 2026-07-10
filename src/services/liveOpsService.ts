@@ -3,6 +3,7 @@ import { todayKey } from '../lib/format';
 import { isCreditTransaction, isDebitTransaction } from '../lib/bankUtils';
 import { fetchAllTransactions } from '../lib/transactionSchema';
 import type { FleetMapVehicle, LiveOpsMetrics, SystemHealthRow } from '../lib/liveOpsTypes';
+import { resolveRoutePosition } from '../lib/trackingMapCoords';
 import { fetchTrackingBundle } from './trackingService';
 
 async function fetchSystemHealth(): Promise<SystemHealthRow[]> {
@@ -70,6 +71,16 @@ export async function fetchFleetMapVehicles(userId: string, role?: string | null
   try {
     const bundle = await fetchTrackingBundle(userId, role, email);
     return bundle.deliveries
+      .map((d) => {
+        if (d.current_lat != null && d.current_lng != null) return d;
+        const pos = resolveRoutePosition(
+          d.departure_city,
+          d.arrival_city,
+          Number(d.progress_percent ?? 5),
+          d.current_lat != null ? { lat: Number(d.current_lat), lng: Number(d.current_lng) } : null,
+        );
+        return { ...d, current_lat: pos.lat, current_lng: pos.lng };
+      })
       .filter(d => d.current_lat != null && d.current_lng != null)
       .map(d => ({
         id: d.id,

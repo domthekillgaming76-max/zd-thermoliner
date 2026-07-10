@@ -1,5 +1,6 @@
 import { getSupabaseAuth, isSupabaseAuthReady } from '../../lib/supabaseAuth.mjs';
-import { supabaseAdmin } from '../../lib/supabaseAdmin.mjs';
+import { supabaseAdmin, isSupabaseAdminReady } from '../../lib/supabaseAdmin.mjs';
+import { resolveRoutePosition } from '../../lib/trackingMapCoords.mjs';
 import { loadClientContext, displayDriverName, displayCompany } from './middleware.mjs';
 import {
   fetchActiveTelemetryJob,
@@ -42,7 +43,15 @@ function isGameRunning(body) {
 }
 
 async function storeClientTelemetry(profile, driver, body) {
-  const { lat, lng } = parsePosition(body.position);
+  const rawPos = parsePosition(body.position);
+  const mapPos = resolveRoutePosition(
+    body.departure_city,
+    body.arrival_city,
+    Number(body.progress ?? body.progress_percent ?? 5),
+    rawPos.lat != null && rawPos.lng != null ? { lat: rawPos.lat, lng: rawPos.lng } : null,
+  );
+  const lat = mapPos.lat;
+  const lng = mapPos.lng;
   const speed = body.speed != null ? Number(body.speed) : 0;
   const gameRunning = isGameRunning(body);
   const presenceStatus = mapPresenceStatus(gameRunning, speed, body.status);
@@ -401,4 +410,33 @@ export async function handleClientUpdates(req, res) {
       error: err instanceof Error ? err.message : 'Erreur mises à jour',
     });
   }
+}
+
+export async function handleClientHealth(req, res) {
+  const health = {
+    ok: true,
+    supabaseAdmin: isSupabaseAdminReady(),
+    telemetryJobsTable: false,
+    erpVersion: ERP_VERSION,
+    timestamp: new Date().toISOString(),
+  };
+
+  if (!health.supabaseAdmin) {
+    health.ok = false;
+    health.error = 'SUPABASE_SERVICE_ROLE_KEY manquante sur le serveur ERP';
+    return res.status(503).json(health);
+  }
+
+  const { error } = await supabaseAdmin.from('telemetry_jobs').select('id').limit(1);
+  if (error) {
+    health.ok = false;
+    health.telemetryJobsError = error.message;
+    health.hint = error.code === '42P01'
+      ? 'Exécutez la migration supabase/migrations/20260710000000_066_telemetry_jobs.sql'
+      : undefined;
+    return res.status(503).json(health);
+  }
+
+  health.telemetryJobsTable = true;
+  return res.json(health);
 }
