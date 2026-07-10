@@ -24,6 +24,7 @@ import { canManageDispatch, canMarkMissionDelivered, canViewAllMissions } from '
 import { canUseDispatchAi } from '../lib/phase5Permissions';
 import { useDispatchAiSuggestion } from '../hooks/useDispatchAi';
 import { DispatchAiPanel } from '../components/dispatch/DispatchAiPanel';
+import { TelemetryDispatchPanel } from '../components/dispatch/TelemetryDispatchPanel';
 import {
   computeDispatchDashboard,
   buildMissionTimeline,
@@ -229,6 +230,7 @@ export function DispatchPage() {
         {tab === 'dashboard' && (
           <div className="space-y-4">
             <DispatchDashboard stats={stats} loading={isLoading} />
+            <TelemetryDispatchPanel />
             <div className="grid lg:grid-cols-2 gap-4">
               <DispatchAlertsPanel alerts={data?.alerts ?? []} loading={isLoading} />
               <div className="dispatch-glass rounded-xl p-4">

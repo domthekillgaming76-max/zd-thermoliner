@@ -3,7 +3,7 @@ import { useSearchParams, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, BarChart3, FileText, AlertTriangle, Euro, Link2,
   Circle, Star, MapPin, Phone, Mail, MessageCircle, Hash, Calendar,
-  Briefcase, Gauge, Shield, ArrowUpCircle, Ban, FolderOpen,
+  Briefcase, Gauge, Shield, ArrowUpCircle, Ban, FolderOpen, Radio,
 } from 'lucide-react';
 import {
   computeDriverStatistics,
@@ -25,6 +25,7 @@ import { fmtEuro } from '../../lib/format';
 import { DEFAULT_TRUCK_BANNER_URL } from '../../lib/profileDefaults';
 import { DriverAssignmentPanel, DriverDocumentsPanel } from './DriverProfilePanels';
 import { DriverHrFolder } from './DriverHrFolder';
+import { DriverTelemetryDeliveriesPanel } from './DriverTelemetryDeliveriesPanel';
 import { useUploadDriverDocument, useCreateIncident, useCreateSalaryRecord, useApproveDriverDocument, useSuspendDriver, usePromoteDriver, useRegenerateHrContract, useRegenerateHrCard } from '../../hooks/useDrivers';
 import { describeDriverPromotion } from '../../services/driverService';
 import { useAuth } from '../../contexts/AuthContext';
@@ -32,11 +33,12 @@ import { canManageDrivers, canManageDriverHr, canViewHrFolder } from '../../lib/
 import type { DriverHrDossier } from '../../lib/driverHrTypes';
 import { EMPTY_DRIVER_HR_DOSSIER } from '../../lib/driverHrTypes';
 
-type ProfileTab = 'overview' | 'statistics' | 'documents' | 'incidents' | 'salary' | 'assignments' | 'hr_dossier';
+type ProfileTab = 'overview' | 'statistics' | 'documents' | 'incidents' | 'salary' | 'assignments' | 'hr_dossier' | 'telemetry';
 
 const ALL_TABS: { id: ProfileTab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: 'Vue d\'ensemble', icon: LayoutDashboard },
   { id: 'statistics', label: 'Statistiques', icon: BarChart3 },
+  { id: 'telemetry', label: 'Livraisons automatiques', icon: Radio },
   { id: 'documents', label: 'Documents', icon: FileText },
   { id: 'hr_dossier', label: 'Dossier Chauffeur', icon: FolderOpen },
   { id: 'incidents', label: 'Incidents', icon: AlertTriangle },
@@ -355,6 +357,10 @@ export function DriverProfileView(props: DriverProfileViewProps) {
             </ul>
           </div>
         </div>
+      )}
+
+      {tab === 'telemetry' && driver.user_id && (
+        <DriverTelemetryDeliveriesPanel profileId={driver.user_id} />
       )}
     </div>
   );

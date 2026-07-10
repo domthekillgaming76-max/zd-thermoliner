@@ -8,6 +8,7 @@ export interface FinanceSettings {
   default_salary_per_km: number;
   invoice_prefix: string;
   auto_invoice_on_validation: boolean;
+  validation_automatique_livraisons: boolean;
   updated_at: string;
 }
 

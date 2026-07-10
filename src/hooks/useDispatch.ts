@@ -39,6 +39,10 @@ export function useDispatchModule() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'dispatch_alerts' }, () => {
         qc.invalidateQueries({ queryKey: queryKeys.dispatch.all });
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'telemetry_jobs' }, () => {
+        qc.invalidateQueries({ queryKey: queryKeys.dispatch.all });
+        qc.invalidateQueries({ queryKey: queryKeys.telemetryJobs.all });
+      })
       .subscribe();
     return () => { channel.unsubscribe(); };
   }, [qc]);

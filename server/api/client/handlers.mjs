@@ -1,6 +1,7 @@
 import { getSupabaseAuth, isSupabaseAuthReady } from '../../lib/supabaseAuth.mjs';
 import { supabaseAdmin } from '../../lib/supabaseAdmin.mjs';
 import { loadClientContext, displayDriverName, displayCompany } from './middleware.mjs';
+import { fetchActiveTelemetryJob, formatJobResponse } from './jobsService.mjs';
 
 const ERP_VERSION = process.env.ERP_VERSION || '2.6.1';
 
@@ -254,6 +255,7 @@ export async function handleClientSync(req, res) {
 
     const companyStatus = await resolveCompanyStatus();
     const activeMissions = await fetchActiveMissions(driver?.id);
+    const telemetryJob = await fetchActiveTelemetryJob(profile.id);
 
     return res.json({
       success: true,
@@ -270,6 +272,7 @@ export async function handleClientSync(req, res) {
       company: displayCompany(driver),
       erpVersion: ERP_VERSION,
       activeMissions,
+      telemetryJob: telemetryJob ? formatJobResponse(telemetryJob) : null,
       telemetryStored,
       message: 'Synchronisation réussie',
     });

@@ -114,4 +114,11 @@ export const queryKeys = {
   appModules: {
     all: ['appModules'] as const,
   },
+  telemetryJobs: {
+    all: ['telemetryJobs'] as const,
+    active: () => ['telemetryJobs', 'active'] as const,
+    pending: () => ['telemetryJobs', 'pending'] as const,
+    driver: (profileId: string) => ['telemetryJobs', 'driver', profileId] as const,
+    timeline: (jobId: string) => ['telemetryJobs', 'timeline', jobId] as const,
+  },
 };

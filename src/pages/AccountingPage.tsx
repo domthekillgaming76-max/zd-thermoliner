@@ -23,6 +23,7 @@ export function AccountingPage() {
   const [deliveryBonus, setDeliveryBonus] = useState('25');
   const [kmRate, setKmRate] = useState('0.35');
   const [autoInvoice, setAutoInvoice] = useState(true);
+  const [autoTelemetryValidation, setAutoTelemetryValidation] = useState(true);
   const [success, setSuccess] = useState<string | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -33,6 +34,7 @@ export function AccountingPage() {
     setDeliveryBonus(String(settings.delivery_bonus_eur));
     setKmRate(String(settings.default_salary_per_km));
     setAutoInvoice(settings.auto_invoice_on_validation);
+    setAutoTelemetryValidation(settings.validation_automatique_livraisons !== false);
   }, [settings]);
 
   if (!canAccess) {
@@ -51,6 +53,7 @@ export function AccountingPage() {
           delivery_bonus_eur: Number(deliveryBonus),
           default_salary_per_km: Number(kmRate),
           auto_invoice_on_validation: autoInvoice,
+          validation_automatique_livraisons: autoTelemetryValidation,
         },
       });
       setSuccess('Paramètres finance enregistrés.');
@@ -102,6 +105,10 @@ export function AccountingPage() {
               <label className="flex items-center gap-3 pt-6">
                 <input type="checkbox" checked={autoInvoice} onChange={e => setAutoInvoice(e.target.checked)} />
                 <span className="text-sm text-white/70">Facturation auto à la validation feuille de route</span>
+              </label>
+              <label className="flex items-center gap-3 pt-6 sm:col-span-2">
+                <input type="checkbox" checked={autoTelemetryValidation} onChange={e => setAutoTelemetryValidation(e.target.checked)} />
+                <span className="text-sm text-white/70">Validation automatique des livraisons télémétrie (ETS2/ATS)</span>
               </label>
             </div>
             <button type="submit" disabled={updateSettings.isPending}

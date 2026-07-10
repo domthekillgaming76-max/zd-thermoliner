@@ -20,7 +20,7 @@ export async function fetchFinanceSettings(): Promise<FinanceSettings | null> {
 }
 
 export async function updateFinanceSettings(
-  input: Partial<Pick<FinanceSettings, 'vat_rate' | 'delivery_bonus_eur' | 'default_salary_per_km' | 'auto_invoice_on_validation'>>,
+  input: Partial<Pick<FinanceSettings, 'vat_rate' | 'delivery_bonus_eur' | 'default_salary_per_km' | 'auto_invoice_on_validation' | 'validation_automatique_livraisons'>>,
   userId: string,
 ): Promise<FinanceSettings> {
   const existing = await fetchFinanceSettings();
