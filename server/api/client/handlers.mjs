@@ -233,9 +233,32 @@ export async function handleClientTelemetry(req, res) {
 
     const stored = await storeClientTelemetry(profile, driver, body);
 
+    let jobResult = null;
+    let jobError = null;
+    const missionEvent = body.mission_event || body.event;
+    try {
+      if (missionEvent) {
+        jobResult = await processSyncJobEvent(profile, driver, {
+          ...body,
+          event: missionEvent,
+          job: body,
+        });
+      } else if (body.local_job_id && body.departure_city && body.arrival_city && body.game_running) {
+        jobResult = await processSyncJobEvent(profile, driver, {
+          ...body,
+          event: 'JOB_STARTED',
+        });
+      }
+    } catch (err) {
+      jobError = err.message || 'Erreur création mission';
+      console.error('[Z&D] handleClientTelemetry job:', jobError);
+    }
+
     return res.json({
       ok: true,
       stored,
+      job: jobResult,
+      jobError,
       receivedAt: new Date().toISOString(),
     });
   } catch (err) {
@@ -258,7 +281,14 @@ export async function handleClientSync(req, res) {
       });
     }
 
-    await processSyncJobEvent(profile, driver, body);
+    let jobResult = null;
+    let jobError = null;
+    try {
+      jobResult = await processSyncJobEvent(profile, driver, body);
+    } catch (err) {
+      jobError = err.message || 'Erreur synchronisation mission';
+      console.error('[Z&D] handleClientSync job:', jobError);
+    }
 
     const companyStatus = await resolveCompanyStatus();
     let activeMissions = await fetchActiveMissions(driver?.id);
@@ -295,7 +325,9 @@ export async function handleClientSync(req, res) {
       telemetryJob: formattedJob,
       currentJob: formattedJob,
       telemetryStored,
-      message: 'Synchronisation réussie',
+      job: jobResult,
+      jobError,
+      message: jobError ? 'Synchronisation partielle (erreur mission)' : 'Synchronisation réussie',
     });
   } catch (err) {
     const status = err.status || 500;

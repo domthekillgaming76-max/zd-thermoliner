@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '../../lib/supabaseAdmin.mjs';
+import { supabaseAdmin, isSupabaseAdminReady } from '../../lib/supabaseAdmin.mjs';
 import { displayDriverName } from './middleware.mjs';
 
 const ACTIVE_STATUSES = new Set(['detected', 'active', 'paused']);
@@ -36,8 +36,8 @@ export function normalizeJobPayload(body = {}) {
     sourceCompany: str(body.sourceCompany ?? body.source_company ?? body.departure_company),
     destinationCity: str(body.destinationCity ?? body.destination_city ?? body.arrival_city ?? body.to_city),
     destinationCompany: str(body.destinationCompany ?? body.destination_company ?? body.arrival_company),
-    expectedIncome: num(body.expectedIncome ?? body.expected_income ?? body.income ?? body.revenue),
-    expectedDistanceKm: num(body.expectedDistanceKm ?? body.expected_distance_km ?? body.distance_km ?? body.distance),
+    expectedIncome: num(body.expectedIncome ?? body.expected_income ?? body.planned_income ?? body.income ?? body.revenue),
+    expectedDistanceKm: num(body.expectedDistanceKm ?? body.expected_distance_km ?? body.planned_distance_km ?? body.distance_km ?? body.distance),
     finalIncome: num(body.finalIncome ?? body.final_income),
     actualDistanceKm: num(body.actualDistanceKm ?? body.actual_distance_km ?? body.distance_driven_km),
     fuelStart: num(body.fuelStart ?? body.fuel_start ?? body.fuel),
@@ -63,7 +63,7 @@ export function normalizeJobPayload(body = {}) {
     cancelReason: str(body.cancelReason ?? body.cancel_reason ?? body.reason),
     startedAt: str(body.startedAt ?? body.started_at ?? body.timestamp),
     completedAt: str(body.completedAt ?? body.completed_at),
-    event: str(body.event ?? body.type)?.toUpperCase(),
+    event: str(body.event ?? body.type ?? body.mission_event)?.toUpperCase(),
     metadata: body.metadata && typeof body.metadata === 'object' ? body.metadata : {},
   };
 }
@@ -123,44 +123,40 @@ export function telemetryJobToActiveMission(job) {
 }
 
 export async function processSyncJobEvent(profile, driver, body = {}) {
-  const event = str(body.event ?? body.type ?? body.job_event ?? body.telemetry?.event)?.toUpperCase();
+  const event = str(body.event ?? body.type ?? body.job_event ?? body.mission_event ?? body.telemetry?.event ?? body.telemetry?.mission_event)?.toUpperCase();
   const payload = { ...body, ...body.job, ...body.telemetry, metadata: body.metadata };
 
-  try {
-    if (event === 'JOB_STARTED' || event === 'JOB_START') {
-      return await startTelemetryJob(profile, driver, payload);
-    }
-    if (event === 'JOB_DELIVERED' || event === 'JOB_COMPLETE' || event === 'JOB_COMPLETED') {
-      return await completeTelemetryJob(profile, driver, payload);
-    }
-    if (event === 'JOB_CANCELLED' || event === 'JOB_CANCELED') {
-      return await cancelTelemetryJob(profile, driver, payload);
-    }
-    if (event === 'JOB_UPDATE' || event === 'JOB_UPDATED') {
-      return await updateTelemetryJob(profile, driver, payload);
-    }
+  if (event === 'JOB_STARTED' || event === 'JOB_START') {
+    return await startTelemetryJob(profile, driver, payload);
+  }
+  if (event === 'JOB_DELIVERED' || event === 'JOB_COMPLETE' || event === 'JOB_COMPLETED') {
+    return await completeTelemetryJob(profile, driver, payload);
+  }
+  if (event === 'JOB_CANCELLED' || event === 'JOB_CANCELED') {
+    return await cancelTelemetryJob(profile, driver, payload);
+  }
+  if (event === 'JOB_UPDATE' || event === 'JOB_UPDATED') {
+    return await updateTelemetryJob(profile, driver, payload);
+  }
 
-    const telemetry = body.telemetry;
-    if (telemetry && typeof telemetry === 'object' && (telemetry.current_job || telemetry.currentJob)) {
-      const mapped = mapCurrentJobToPayload(telemetry, body.metadata);
-      if (!mapped?.localJobId) return null;
+  const telemetry = body.telemetry;
+  if (telemetry && typeof telemetry === 'object' && (telemetry.current_job || telemetry.currentJob)) {
+    const mapped = mapCurrentJobToPayload(telemetry, body.metadata);
+    if (!mapped?.localJobId) return null;
 
-      const resolvedGame = mapped.game && VALID_GAMES.has(mapped.game) ? mapped.game : 'ets2';
-      const existing = await findExistingJob(profile.id, mapped.localJobId, resolvedGame);
+    const resolvedGame = mapped.game && VALID_GAMES.has(mapped.game) ? mapped.game : 'ets2';
+    const existing = await findExistingJob(profile.id, mapped.localJobId, resolvedGame);
 
-      if (!existing) {
-        if (mapped.sourceCity && mapped.destinationCity) {
-          return await startTelemetryJob(profile, driver, { ...mapped, game: resolvedGame });
-        }
-        return null;
+    if (!existing) {
+      if (mapped.sourceCity && mapped.destinationCity) {
+        return await startTelemetryJob(profile, driver, { ...mapped, game: resolvedGame });
       }
-
-      if (ACTIVE_STATUSES.has(existing.status)) {
-        return await updateTelemetryJob(profile, driver, { ...mapped, localJobId: mapped.localJobId, game: resolvedGame });
-      }
+      return null;
     }
-  } catch (err) {
-    console.warn('[Z&D] processSyncJobEvent:', err.message);
+
+    if (ACTIVE_STATUSES.has(existing.status)) {
+      return await updateTelemetryJob(profile, driver, { ...mapped, localJobId: mapped.localJobId, game: resolvedGame });
+    }
   }
 
   return null;
@@ -366,6 +362,12 @@ function formatJobResponse(job, extras = {}) {
 }
 
 export async function startTelemetryJob(profile, driver, body) {
+  if (!isSupabaseAdminReady()) {
+    const err = new Error('Base de données ERP indisponible (SUPABASE_SERVICE_ROLE_KEY manquante)');
+    err.status = 503;
+    throw err;
+  }
+
   const payload = normalizeJobPayload(body);
   const validationError = validateStartPayload(payload);
   if (validationError) {
