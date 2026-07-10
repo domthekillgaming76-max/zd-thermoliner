@@ -68,6 +68,104 @@ export function normalizeJobPayload(body = {}) {
   };
 }
 
+export function mapCurrentJobToPayload(telemetry = {}, metadata = {}) {
+  const game = str(telemetry.game ?? metadata?.game)?.toLowerCase();
+  const job = telemetry.current_job ?? telemetry.currentJob;
+  if (!job) return null;
+
+  if (typeof job === 'string') {
+    const parts = job.split(/→|->|—| to /i).map((s) => s.trim()).filter(Boolean);
+    const localJobId = str(telemetry.local_job_id ?? telemetry.localJobId)
+      ?? `route-${parts.join('-').toLowerCase().replace(/\s+/g, '-')}`;
+    return {
+      ...telemetry,
+      localJobId,
+      game: game || 'ets2',
+      sourceCity: parts[0] ?? null,
+      destinationCity: parts[1] ?? null,
+      metadata,
+    };
+  }
+
+  if (typeof job === 'object') {
+    return {
+      ...telemetry,
+      ...job,
+      localJobId: str(job.local_job_id ?? job.localJobId ?? job.id ?? telemetry.local_job_id),
+      game: game || str(job.game)?.toLowerCase() || 'ets2',
+      metadata,
+    };
+  }
+
+  return null;
+}
+
+export function telemetryJobToActiveMission(job) {
+  return {
+    id: job.mission_id || job.id,
+    reference: `TLM-${String(job.local_job_id || job.id).slice(0, 12)}`,
+    client_name: job.source_company || 'Télémétrie ETS2/ATS',
+    departure_city: job.source_city,
+    arrival_city: job.destination_city,
+    delivery_date: (job.started_at || new Date().toISOString()).slice(0, 10),
+    cargo: job.cargo,
+    status: 'in_progress',
+    priority: 'normal',
+    distance_km: job.expected_distance_km ?? job.actual_distance_km ?? 0,
+    source: 'telemetry',
+    provider: job.provider || 'zd_telemetry',
+    game: job.game,
+    telemetry_job_id: job.id,
+    local_job_id: job.local_job_id,
+    progress_percent: job.metadata?.last_progress_percent ?? null,
+    last_sync_at: job.last_sync_at,
+  };
+}
+
+export async function processSyncJobEvent(profile, driver, body = {}) {
+  const event = str(body.event ?? body.type ?? body.job_event ?? body.telemetry?.event)?.toUpperCase();
+  const payload = { ...body, ...body.job, ...body.telemetry, metadata: body.metadata };
+
+  try {
+    if (event === 'JOB_STARTED' || event === 'JOB_START') {
+      return await startTelemetryJob(profile, driver, payload);
+    }
+    if (event === 'JOB_DELIVERED' || event === 'JOB_COMPLETE' || event === 'JOB_COMPLETED') {
+      return await completeTelemetryJob(profile, driver, payload);
+    }
+    if (event === 'JOB_CANCELLED' || event === 'JOB_CANCELED') {
+      return await cancelTelemetryJob(profile, driver, payload);
+    }
+    if (event === 'JOB_UPDATE' || event === 'JOB_UPDATED') {
+      return await updateTelemetryJob(profile, driver, payload);
+    }
+
+    const telemetry = body.telemetry;
+    if (telemetry && typeof telemetry === 'object' && (telemetry.current_job || telemetry.currentJob)) {
+      const mapped = mapCurrentJobToPayload(telemetry, body.metadata);
+      if (!mapped?.localJobId) return null;
+
+      const resolvedGame = mapped.game && VALID_GAMES.has(mapped.game) ? mapped.game : 'ets2';
+      const existing = await findExistingJob(profile.id, mapped.localJobId, resolvedGame);
+
+      if (!existing) {
+        if (mapped.sourceCity && mapped.destinationCity) {
+          return await startTelemetryJob(profile, driver, { ...mapped, game: resolvedGame });
+        }
+        return null;
+      }
+
+      if (ACTIVE_STATUSES.has(existing.status)) {
+        return await updateTelemetryJob(profile, driver, { ...mapped, localJobId: mapped.localJobId, game: resolvedGame });
+      }
+    }
+  } catch (err) {
+    console.warn('[Z&D] processSyncJobEvent:', err.message);
+  }
+
+  return null;
+}
+
 function validateStartPayload(payload) {
   if (!payload.localJobId) return 'local_job_id requis';
   if (!payload.game || !VALID_GAMES.has(payload.game)) return 'game doit être ets2 ou ats';
@@ -440,6 +538,8 @@ export async function updateTelemetryJob(profile, driver, body) {
       last_speed_kmh: payload.speedKmh,
       last_fuel: payload.fuelEnd ?? payload.fuelStart,
       last_sync_status: payload.status || jobStatus,
+      last_remaining_km: payload.distanceRemainingKm ?? job.metadata?.last_remaining_km,
+      eta_at: payload.etaAt ?? job.metadata?.eta_at,
     },
   };
 
@@ -563,6 +663,12 @@ export async function completeTelemetryJob(profile, driver, body) {
     completed_at: payload.completedAt || now,
     last_sync_at: now,
     updated_at: now,
+    metadata: {
+      ...(job.metadata || {}),
+      duration_minutes: job.started_at
+        ? Math.round((new Date(now).getTime() - new Date(job.started_at).getTime()) / 60000)
+        : null,
+    },
   };
 
   await supabaseAdmin.from('telemetry_jobs').update(jobPatch).eq('id', job.id);

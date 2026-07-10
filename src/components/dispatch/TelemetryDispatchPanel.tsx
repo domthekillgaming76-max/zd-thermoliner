@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Loader2, Radio, CheckCircle2, XCircle, Edit3 } from 'lucide-react';
 import { TelemetryMissionCard } from '../telemetry/TelemetryMissionCard';
+import { TelemetryJobTimeline } from '../telemetry/TelemetryJobTimeline';
 import {
   useActiveTelemetryJobs,
   usePendingTelemetryValidations,
@@ -84,6 +85,10 @@ export function TelemetryDispatchPanel() {
             <TelemetryMissionCard key={job.id} job={job} onSelect={setSelected} />
           ))}
         </div>
+      )}
+
+      {selected && (
+        <TelemetryJobTimeline job={selected} />
       )}
 
       {selected && isManager && selected.status === 'pending_validation' && (

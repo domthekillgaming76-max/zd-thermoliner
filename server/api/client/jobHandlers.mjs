@@ -7,6 +7,7 @@ import {
   fetchActiveTelemetryJob,
   fetchTelemetryJobHistory,
   formatJobResponse,
+  telemetryJobToActiveMission,
 } from './jobsService.mjs';
 
 async function withClientContext(req, res, handler) {
@@ -72,9 +73,12 @@ export async function handleJobActive(req, res) {
   try {
     const { profile } = await loadClientContext(req.clientUser.id, req.clientToken);
     const job = await fetchActiveTelemetryJob(profile.id);
+    const formatted = job ? formatJobResponse(job) : null;
     return res.json({
       success: true,
-      job: job ? formatJobResponse(job) : null,
+      job: formatted,
+      currentJob: formatted,
+      activeMission: job ? telemetryJobToActiveMission(job) : null,
     });
   } catch (err) {
     const status = err.status || 500;

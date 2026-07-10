@@ -1,5 +1,6 @@
 import { Loader2, Truck, Fuel, AlertTriangle, MapPin, Radio } from 'lucide-react';
 import { TelemetryMissionCard } from '../telemetry/TelemetryMissionCard';
+import { TelemetryJobTimeline } from '../telemetry/TelemetryJobTimeline';
 import { useDriverTelemetryJobs } from '../../hooks/useTelemetryJobs';
 import { computeTelemetryDriverStats } from '../../lib/telemetryJobTypes';
 import { fmtEuro } from '../../lib/format';
@@ -65,6 +66,7 @@ export function DriverTelemetryDeliveriesPanel({ profileId }: DriverTelemetryDel
             Mission en cours
           </h3>
           <TelemetryMissionCard job={activeJob} />
+          <TelemetryJobTimeline job={activeJob} />
         </div>
       )}
 

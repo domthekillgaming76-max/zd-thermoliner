@@ -1,7 +1,12 @@
 import { getSupabaseAuth, isSupabaseAuthReady } from '../../lib/supabaseAuth.mjs';
 import { supabaseAdmin } from '../../lib/supabaseAdmin.mjs';
 import { loadClientContext, displayDriverName, displayCompany } from './middleware.mjs';
-import { fetchActiveTelemetryJob, formatJobResponse } from './jobsService.mjs';
+import {
+  fetchActiveTelemetryJob,
+  formatJobResponse,
+  processSyncJobEvent,
+  telemetryJobToActiveMission,
+} from './jobsService.mjs';
 
 const ERP_VERSION = process.env.ERP_VERSION || '2.6.1';
 
@@ -253,9 +258,23 @@ export async function handleClientSync(req, res) {
       });
     }
 
+    await processSyncJobEvent(profile, driver, body);
+
     const companyStatus = await resolveCompanyStatus();
-    const activeMissions = await fetchActiveMissions(driver?.id);
+    let activeMissions = await fetchActiveMissions(driver?.id);
     const telemetryJob = await fetchActiveTelemetryJob(profile.id);
+
+    if (telemetryJob) {
+      const telemetryMission = telemetryJobToActiveMission(telemetryJob);
+      const alreadyListed = activeMissions.some(
+        (m) => m.id === telemetryMission.id || m.telemetry_job_id === telemetryJob.id,
+      );
+      if (!alreadyListed) {
+        activeMissions = [telemetryMission, ...activeMissions];
+      }
+    }
+
+    const formattedJob = telemetryJob ? formatJobResponse(telemetryJob) : null;
 
     return res.json({
       success: true,
@@ -272,7 +291,9 @@ export async function handleClientSync(req, res) {
       company: displayCompany(driver),
       erpVersion: ERP_VERSION,
       activeMissions,
-      telemetryJob: telemetryJob ? formatJobResponse(telemetryJob) : null,
+      activeMission: activeMissions[0] ?? null,
+      telemetryJob: formattedJob,
+      currentJob: formattedJob,
       telemetryStored,
       message: 'Synchronisation réussie',
     });
