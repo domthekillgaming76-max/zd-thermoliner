@@ -6,6 +6,7 @@ import { verifyCronAuth } from './lib/auth.mjs';
 import { handleGenerateFreight } from './cron/generateFreight.mjs';
 import { handleSyncIntegrations } from './cron/syncIntegrations.mjs';
 import { clientApiRouter } from './api/client/router.mjs';
+import { supabaseAdmin, isSupabaseAdminReady } from './lib/supabaseAdmin.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.join(__dirname, '..', 'dist');
@@ -68,8 +69,33 @@ async function runIntegrationsCron(req, res) {
 app.get('/api/cron/sync-integrations', verifyCronAuth, runIntegrationsCron);
 app.post('/api/cron/sync-integrations', verifyCronAuth, runIntegrationsCron);
 
-app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, service: 'zd-thermoliner' });
+app.get('/api/health', async (_req, res) => {
+  const health = {
+    ok: true,
+    service: 'zd-thermoliner',
+    supabaseAdmin: isSupabaseAdminReady(),
+    telemetryJobsTable: false,
+    timestamp: new Date().toISOString(),
+  };
+
+  if (!health.supabaseAdmin) {
+    health.ok = false;
+    health.error = 'SUPABASE_SERVICE_ROLE_KEY manquante';
+    return res.status(503).json(health);
+  }
+
+  const { error } = await supabaseAdmin.from('telemetry_jobs').select('id').limit(1);
+  if (error) {
+    health.ok = false;
+    health.telemetryJobsError = error.message;
+    health.hint = error.code === '42P01'
+      ? 'Exécutez supabase/migrations/20260710000000_066_telemetry_jobs.sql'
+      : undefined;
+    return res.status(503).json(health);
+  }
+
+  health.telemetryJobsTable = true;
+  return res.json(health);
 });
 
 app.use('/api/client', clientApiRouter);
