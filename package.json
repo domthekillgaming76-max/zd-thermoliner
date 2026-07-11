@@ -8,7 +8,6 @@
     "build": "vite build",
     "start": "node --env-file=.env server/index.mjs",
     "pack:release": "node scripts/prepare-release.mjs",
-    "dev:server": "node --env-file=.env server/index.mjs",
     "cron:freight": "node scripts/generate-freight-cron.js",
     "cron:integrations": "node scripts/sync-integrations-cron.js",
     "lint": "eslint .",

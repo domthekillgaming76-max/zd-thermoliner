@@ -108,7 +108,7 @@ export async function fetchTrainingBundle(
   const onboarding = (onboardRes.data ?? null) as OnboardingChecklist | null;
   const rulesAccepted = !!onboarding?.rules_accepted_at;
 
-  let lessons = ((lessonsRes.data ?? []) as TrainingLesson[])
+  const lessons = ((lessonsRes.data ?? []) as TrainingLesson[])
     .filter(l => roleCanAccess(l.required_role, role))
     .map(l => {
       const prog = progressMap.get(l.id);
@@ -119,7 +119,7 @@ export async function fetchTrainingBundle(
       };
     });
 
-  let quizzes = ((quizzesRes.data ?? []) as TrainingQuiz[])
+  const quizzes = ((quizzesRes.data ?? []) as TrainingQuiz[])
     .filter(q => roleCanAccess(q.required_role, role))
     .map(q => {
       const qa = attemptsByQuiz.get(q.id) ?? [];

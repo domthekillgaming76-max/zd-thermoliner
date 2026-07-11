@@ -333,7 +333,7 @@ export async function fetchTrackingBundle(
     await syncMissionsToTracking((missions ?? []) as TransportMission[]);
   }
 
-  let deliveriesQuery = supabase
+  const deliveriesQuery = supabase
     .from('delivery_tracking')
     .select('*')
     .order('updated_at', { ascending: false })

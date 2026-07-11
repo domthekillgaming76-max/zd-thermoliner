@@ -13,6 +13,12 @@ dist/
 # Supabase local
 supabase/.temp/
 
+# Distribution — packs générés localement
+distribution/**/*.zip
+distribution/**/node_modules/
+distribution/Z&D-Thermoliner-APP-HTTPS/
+distribution/web-app/
+
 # OS / editor
 .DS_Store
 Thumbs.db
@@ -20,3 +26,6 @@ Thumbs.db
 
 # Vite
 .vite/
+
+# Legacy / unused
+electron/
