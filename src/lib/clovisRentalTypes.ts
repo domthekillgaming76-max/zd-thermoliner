@@ -12,6 +12,7 @@ export interface ClovisCatalogItem {
   transmission: string | null;
   accent_color: string;
   badge: string | null;
+  photo_url: string | null;
   enabled: boolean;
   sort_order: number;
 }
@@ -46,6 +47,7 @@ export interface ClovisRentalBundle {
   catalog: ClovisCatalogItem[];
   activeRental: ClovisActiveRental | null;
   recentCharges: ClovisRentalCharge[];
+  companyBalance: number | null;
   migrationRequired: boolean;
 }
 

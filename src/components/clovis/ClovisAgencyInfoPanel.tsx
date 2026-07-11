@@ -40,9 +40,9 @@ export function ClovisAgencyInfoPanel() {
         </div>
         <ul className="text-[11px] text-white/45 space-y-1.5 list-disc list-inside">
           <li>1 véhicule actif par chauffeur</li>
-          <li>Prélèvement à la prise en charge + chaque jour</li>
+          <li>Prélèvement sur le compte entreprise</li>
+          <li>450 € / jour tant que le camion est loué</li>
           <li>Restitution = arrêt immédiat des charges</li>
-          <li>Compte bancaire RP requis (Profil)</li>
         </ul>
       </div>
     </aside>

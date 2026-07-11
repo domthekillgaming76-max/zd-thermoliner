@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { KeyRound, AlertTriangle, Truck } from 'lucide-react';
+import { KeyRound, AlertTriangle, Truck, Building2 } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { PageHeader } from '../components/erp/PageHeader';
 import { FormAlert, FormSuccess } from '../components/erp/FormAlert';
@@ -8,7 +8,6 @@ import { ClovisActiveRentalPanel } from '../components/clovis/ClovisActiveRental
 import { ClovisAgencyInfoPanel } from '../components/clovis/ClovisAgencyInfoPanel';
 import { useAuth } from '../contexts/AuthContext';
 import { useClovisRental } from '../hooks/useClovisRental';
-import { useDriverBank } from '../hooks/useDriverBank';
 import { fmtEuro } from '../lib/format';
 import { normalizeRole } from '../lib/roleEngine';
 
@@ -18,20 +17,22 @@ export function ClovisRentalPage() {
   const [success, setSuccess] = useState<string | null>(null);
 
   const { data, isLoading, startRental, returnRental } = useClovisRental(user?.id);
-  const bank = useDriverBank(user?.id);
 
   const catalog = data?.catalog ?? [];
   const activeRental = data?.activeRental ?? null;
+  const companyBalance = data?.companyBalance ?? null;
   const isChauffeur = normalizeRole(profile?.role) === 'chauffeur' || normalizeRole(profile?.role) === 'admin';
-  const balance = bank.data?.account?.balance ?? null;
 
   async function handleRent(catalogId: string, label: string, rate: number) {
     setError(null);
-    if (balance !== null && balance < rate) {
-      setError(`Solde insuffisant — ${fmtEuro(rate)} requis pour la première journée (solde : ${fmtEuro(balance)}).`);
+    if (companyBalance !== null && companyBalance < rate) {
+      setError(`Solde entreprise insuffisant — ${fmtEuro(rate)} requis pour la 1ère journée (disponible : ${fmtEuro(companyBalance)}).`);
       return;
     }
-    if (!confirm(`Confirmer la location du ${label} à ${fmtEuro(rate)}/jour ?\n\nUn prélèvement de ${fmtEuro(rate)} sera effectué immédiatement.`)) {
+    if (!confirm(
+      `Confirmer la location du ${label} à ${fmtEuro(rate)}/jour ?\n\n`
+      + `Le montant sera prélevé sur le compte bancaire de l'entreprise Z&D Thermoliner.`,
+    )) {
       return;
     }
     try {
@@ -46,7 +47,7 @@ export function ClovisRentalPage() {
   async function handleReturn() {
     setError(null);
     if (!activeRental) return;
-    if (!confirm('Restituer le véhicule à l\'agence Clovis ?\n\nLes prélèvements journaliers seront arrêtés.')) return;
+    if (!confirm('Restituer le véhicule à l\'agence Clovis ?\n\nLes prélèvements journaliers sur le compte entreprise seront arrêtés.')) return;
     try {
       const msg = await returnRental.mutateAsync(activeRental.id);
       setSuccess(msg);
@@ -68,14 +69,16 @@ export function ClovisRentalPage() {
               </p>
               <PageHeader
                 title="Clovis Location"
-                subtitle="Location véhicules Renault T — contrat journalier, prélèvement bancaire automatique"
+                subtitle="Location véhicules Renault T — facturation sur le compte entreprise"
                 icon={KeyRound}
               />
             </div>
-            {balance !== null && (
-              <div className="rounded-xl bg-black/40 border border-white/8 px-4 py-3 text-right shrink-0">
-                <p className="text-[10px] text-white/30 uppercase">Solde compte RP</p>
-                <p className="text-xl font-black text-emerald-400">{fmtEuro(balance)}</p>
+            {companyBalance !== null && (
+              <div className="rounded-xl bg-black/40 border border-emerald-500/15 px-4 py-3 text-right shrink-0">
+                <p className="text-[10px] text-white/30 uppercase flex items-center justify-end gap-1">
+                  <Building2 className="w-3 h-3" /> Solde entreprise
+                </p>
+                <p className="text-xl font-black text-emerald-400">{fmtEuro(companyBalance)}</p>
               </div>
             )}
           </div>
@@ -90,7 +93,7 @@ export function ClovisRentalPage() {
             <div>
               <p className="text-sm font-bold text-amber-200">Salon non installé</p>
               <p className="text-xs text-white/45 mt-1">
-                Appliquez la migration Supabase <code className="text-amber-300">079_clovis_vehicle_rental</code>
+                Appliquez les migrations Supabase <code className="text-amber-300">079</code> et <code className="text-amber-300">080</code>
               </p>
             </div>
           </div>
@@ -99,7 +102,7 @@ export function ClovisRentalPage() {
         {!isChauffeur && (
           <div className="rounded-xl px-4 py-3 text-sm text-amber-400 border border-amber-500/20 flex gap-2">
             <AlertTriangle className="w-4 h-4 shrink-0" />
-            Réservé aux chauffeurs Z&amp;D Thermoliner avec compte bancaire RP actif.
+            Réservé aux chauffeurs Z&amp;D Thermoliner actifs.
           </div>
         )}
 
@@ -125,7 +128,7 @@ export function ClovisRentalPage() {
               {isLoading ? (
                 <div className="grid sm:grid-cols-2 gap-4">
                   {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="h-64 shimmer rounded-2xl" />
+                    <div key={i} className="h-72 shimmer rounded-2xl" />
                   ))}
                 </div>
               ) : catalog.length === 0 ? (

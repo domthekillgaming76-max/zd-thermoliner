@@ -41,6 +41,13 @@ export function ClovisActiveRentalPanel({
           </div>
 
           <div>
+            {rental.catalog?.photo_url && (
+              <img
+                src={rental.catalog.photo_url}
+                alt={rental.vehicle_label}
+                className="w-full max-w-xs h-32 object-cover rounded-xl border border-white/10 mb-3"
+              />
+            )}
             <h2 className="text-xl font-black text-white">{rental.vehicle_label}</h2>
             <p className="text-sm text-white/40 mt-1">Contrat {rental.contract_ref}</p>
           </div>
@@ -61,8 +68,8 @@ export function ClovisActiveRentalPanel({
           </div>
 
           <p className="text-xs text-amber-400/80 bg-amber-500/8 border border-amber-500/15 rounded-lg px-3 py-2">
-            Prélèvement automatique de {fmtEuro(rental.daily_rate)} par jour sur votre compte bancaire RP.
-            Les charges s&apos;arrêtent dès la restitution du véhicule.
+            Prélèvement automatique de {fmtEuro(rental.daily_rate)} par jour sur le compte bancaire
+            de l&apos;entreprise Z&amp;D Thermoliner. Les charges s&apos;arrêtent dès la restitution du véhicule.
           </p>
         </div>
 

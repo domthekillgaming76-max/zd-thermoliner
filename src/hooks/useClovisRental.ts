@@ -37,7 +37,7 @@ export function useClovisRental(profileId?: string) {
 
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: queryKeys.clovisRental.all });
-    void qc.invalidateQueries({ queryKey: queryKeys.driverBank.all });
+    void qc.invalidateQueries({ queryKey: queryKeys.bank.all });
   };
 
   const startRental = useMutation({
