@@ -12,6 +12,7 @@ import { FreightDashboardPanel } from '../components/freight/FreightDashboardPan
 import { FreightFiltersBar, type FreightFilters } from '../components/freight/FreightFiltersBar';
 import { FreightOfferCard } from '../components/freight/FreightOfferCard';
 import { FreightOfferFormModal } from '../components/freight/FreightOfferFormModal';
+import { FreightMarketGallery, FreightHeroBanner } from '../components/freight/FreightMarketGallery';
 import { useAuth } from '../contexts/AuthContext';
 import { useFreight } from '../hooks/useFreight';
 import {
@@ -190,44 +191,49 @@ export function FreightMarketPage() {
   return (
     <Layout>
       <div className="freight-module space-y-6 pb-24 md:pb-8">
-        <PageHeader
-          icon={Container}
-          title="Marché Fret"
-          subtitle="Tableau dispatch — offres, rentabilité & missions automatiques"
-          actions={
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={handleRefresh}
-                disabled={isFetching}
-                className="erp-btn-secondary flex items-center gap-2 text-sm disabled:opacity-50"
-              >
-                <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
-                {isFetching ? 'Chargement…' : 'Actualiser'}
-              </button>
-              {canAdmin && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => { setEditing(null); setFormOpen(true); }}
-                    className="erp-btn-primary flex items-center gap-2 text-sm"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Nouvelle offre
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setChainFormOpen(true)}
-                    className="erp-btn-secondary flex items-center gap-2 text-sm border-cyan-500/30 text-cyan-400"
-                  >
-                    <Link2 className="w-4 h-4" />
-                    Route chaînée
-                  </button>
-                </>
-              )}
-            </div>
-          }
-        />
+        <div className="freight-hero rounded-2xl p-4 md:p-6 border border-cyan-500/10 bg-gradient-to-br from-cyan-500/5 via-transparent to-red-500/5">
+          <FreightHeroBanner />
+          <PageHeader
+            icon={Container}
+            title="Marché Fret"
+            subtitle="Tableau dispatch — offres, rentabilité & missions automatiques"
+            actions={
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleRefresh}
+                  disabled={isFetching}
+                  className="erp-btn-secondary flex items-center gap-2 text-sm disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
+                  {isFetching ? 'Chargement…' : 'Actualiser'}
+                </button>
+                {canAdmin && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => { setEditing(null); setFormOpen(true); }}
+                      className="erp-btn-primary flex items-center gap-2 text-sm"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Nouvelle offre
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setChainFormOpen(true)}
+                      className="erp-btn-secondary flex items-center gap-2 text-sm border-cyan-500/30 text-cyan-400"
+                    >
+                      <Link2 className="w-4 h-4" />
+                      Route chaînée
+                    </button>
+                  </>
+                )}
+              </div>
+            }
+          />
+        </div>
+
+        <FreightMarketGallery />
 
         {data?.migrationRequired && (
           <div className="freight-glass rounded-2xl p-4 flex items-start gap-3 border border-amber-500/20">
