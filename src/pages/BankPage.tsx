@@ -14,6 +14,7 @@ import {
   type ManualTransactionForm,
 } from '../components/bank/ManualTransactionModal';
 import { BankLoungeHeader } from '../components/bank/lounge/BankLoungeHeader';
+import { BankEnterpriseGallery, BankEnterpriseHeroBanner } from '../components/bank/BankEnterpriseGallery';
 import { BankExpenseBreakdown } from '../components/bank/lounge/BankExpenseBreakdown';
 import { BankQuickActions, type QuickActionId } from '../components/bank/lounge/BankQuickActions';
 import { BankCardsModal } from '../components/bank/lounge/BankCardsModal';
@@ -183,6 +184,8 @@ export function BankPage() {
       <div className="bank-lounge space-y-6 pb-8">
         <BankLoungeHeader userName={user?.email} />
 
+        <BankEnterpriseHeroBanner />
+
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <BankNavTabs active={tab} onChange={setTab} />
           {isFetching && !loading && (
@@ -238,6 +241,7 @@ export function BankPage() {
                 <BankTreasuryPanel chartData={data?.chartData ?? []} treasury={data?.treasury ?? { chartData: [], availableCash: 0, forecastNextMonth: 0, forecastTrend: 'flat', monthlyBalanceSeries: [] }} loading={loading} />
               </div>
             </div>
+            <BankEnterpriseGallery />
           </div>
         )}
 
