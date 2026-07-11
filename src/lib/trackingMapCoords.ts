@@ -117,3 +117,43 @@ export function computeEtaMinutes(remainingKm: number, status: string): number |
   const speed = status === 'on_route' || status === 'late' ? 72 : 55;
   return Math.round((remainingKm / speed) * 60);
 }
+
+function coordsFromDelivery(
+  lat: number | null | undefined,
+  lng: number | null | undefined,
+  city: string,
+): { lat: number; lng: number } | null {
+  if (lat != null && lng != null) return { lat, lng };
+  return resolveCityCoords(city);
+}
+
+export function getRoutePoints(d: {
+  departure_city: string;
+  arrival_city: string;
+  departure_lat?: number | null;
+  departure_lng?: number | null;
+  arrival_lat?: number | null;
+  arrival_lng?: number | null;
+  current_lat?: number | null;
+  current_lng?: number | null;
+  progress_percent: number;
+}): { lat: number; lng: number }[] {
+  const dep = coordsFromDelivery(d.departure_lat, d.departure_lng, d.departure_city);
+  const arr = coordsFromDelivery(d.arrival_lat, d.arrival_lng, d.arrival_city);
+  const current =
+    d.current_lat != null && d.current_lng != null
+      ? { lat: d.current_lat, lng: d.current_lng }
+      : dep && arr
+        ? interpolatePosition(dep, arr, d.progress_percent)
+        : null;
+
+  const points: { lat: number; lng: number }[] = [];
+  if (dep) points.push(dep);
+  if (current && (!dep || current.lat !== dep.lat || current.lng !== dep.lng)) {
+    points.push(current);
+  }
+  if (arr && (!current || arr.lat !== current.lat || arr.lng !== current.lng)) {
+    points.push(arr);
+  }
+  return points;
+}

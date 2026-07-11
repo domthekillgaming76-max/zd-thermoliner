@@ -1,9 +1,65 @@
+import { useMemo, Fragment } from 'react';
+import { MapContainer, TileLayer, Polyline, CircleMarker, Tooltip, useMapEvents } from 'react-leaflet';
+import type { LatLngExpression } from 'leaflet';
 import type { DeliveryTracking, MapMarker } from '../../lib/trackingTypes';
-import { TRACKING_STATUS_COLORS } from '../../lib/trackingTypes';
-import { projectToMap } from '../../lib/trackingMapCoords';
+import { getRoutePoints, resolveCityCoords, resolveRoutePosition } from '../../lib/trackingMapCoords';
 
-const MAP_W = 800;
-const MAP_H = 480;
+const EUROPE_CENTER: LatLngExpression = [50.5, 10.5];
+const EUROPE_BOUNDS: [[number, number], [number, number]] = [
+  [34, -15],
+  [60, 25],
+];
+
+const TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const TILE_ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+
+function statusColor(status: DeliveryTracking['status']): string {
+  switch (status) {
+    case 'on_route':
+    case 'late':
+      return '#22d3ee';
+    case 'paused':
+    case 'loading':
+      return '#fbbf24';
+    case 'delivered':
+    case 'arrived':
+      return '#34d399';
+    case 'cancelled':
+      return '#94a3b8';
+    default:
+      return '#ef4444';
+  }
+}
+
+interface MapClickHandlerProps {
+  interactive?: boolean;
+  onMapClick?: (lat: number, lng: number) => void;
+}
+
+function MapClickHandler({ interactive, onMapClick }: MapClickHandlerProps) {
+  useMapEvents({
+    click(e) {
+      if (interactive && onMapClick) {
+        onMapClick(e.latlng.lat, e.latlng.lng);
+      }
+    },
+  });
+  return null;
+}
+
+function markerColor(type: MapMarker['marker_type']): string {
+  switch (type) {
+    case 'garage':
+      return '#6366f1';
+    case 'depot':
+      return '#f97316';
+    case 'hub':
+      return '#a78bfa';
+    default:
+      return '#38bdf8';
+  }
+}
 
 interface TrackingEuropeMapProps {
   deliveries: DeliveryTracking[];
@@ -12,6 +68,7 @@ interface TrackingEuropeMapProps {
   onSelect?: (id: string) => void;
   onMapClick?: (lat: number, lng: number) => void;
   interactive?: boolean;
+  compact?: boolean;
 }
 
 export function TrackingEuropeMap({
@@ -21,125 +78,143 @@ export function TrackingEuropeMap({
   onSelect,
   onMapClick,
   interactive,
+  compact,
 }: TrackingEuropeMapProps) {
-  function handleSvgClick(e: React.MouseEvent<SVGSVGElement>) {
-    if (!onMapClick || !interactive) return;
-    const svg = e.currentTarget;
-    const rect = svg.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * MAP_W;
-    const y = ((e.clientY - rect.top) / rect.height) * MAP_H;
-    const { minLat, maxLat, minLng, maxLng } = { minLat: 35, maxLat: 58, minLng: -10, maxLng: 20 };
-    const lng = minLng + (x / MAP_W) * (maxLng - minLng);
-    const lat = maxLat - (y / MAP_H) * (maxLat - minLat);
-    onMapClick(lat, lng);
-  }
+  const activeDeliveries = useMemo(
+    () =>
+      deliveries.filter(d => {
+        if (!d.is_active) return false;
+        if (d.current_lat != null && d.current_lng != null) return true;
+        return Boolean(resolveCityCoords(d.departure_city) && resolveCityCoords(d.arrival_city));
+      }),
+    [deliveries],
+  );
+
+  const mapHeight = compact ? 220 : 480;
 
   return (
     <div className="tracking-map-card rounded-2xl overflow-hidden relative">
-      <svg
-        viewBox={`0 0 ${MAP_W} ${MAP_H}`}
-        className="w-full h-auto tracking-map-svg"
-        onClick={handleSvgClick}
-        role="img"
-        aria-label="Carte Europe tracking"
+      <MapContainer
+        center={EUROPE_CENTER}
+        zoom={compact ? 3 : 4}
+        minZoom={3}
+        maxZoom={12}
+        maxBounds={EUROPE_BOUNDS}
+        maxBoundsViscosity={0.85}
+        scrollWheelZoom={!compact}
+        dragging={!compact}
+        zoomControl={!compact}
+        className={`tracking-leaflet-map ${interactive ? 'tracking-leaflet-map--interactive' : ''}`}
+        style={{ height: mapHeight }}
       >
-        <defs>
-          <linearGradient id="trackingMapBg" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#0c1220" />
-            <stop offset="100%" stopColor="#080810" />
-          </linearGradient>
-          <filter id="truckGlow">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-        </defs>
+        <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
 
-        <rect width={MAP_W} height={MAP_H} fill="url(#trackingMapBg)" />
+        <MapClickHandler interactive={interactive} onMapClick={onMapClick} />
 
-        {/* Simplified Europe outline */}
-        <path
-          d="M 80 120 L 120 90 L 200 70 L 320 60 L 450 75 L 560 95 L 640 130 L 700 180 L 720 250 L 700 320 L 650 380 L 580 420 L 480 440 L 360 430 L 250 400 L 150 350 L 90 280 L 70 200 Z"
-          fill="rgba(255,255,255,0.03)"
-          stroke="rgba(255,255,255,0.08)"
-          strokeWidth="1.5"
-        />
-
-        {/* Grid */}
-        {Array.from({ length: 9 }).map((_, i) => (
-          <line key={`v${i}`} x1={i * 100} y1={0} x2={i * 100} y2={MAP_H} stroke="rgba(255,255,255,0.03)" />
-        ))}
-        {Array.from({ length: 6 }).map((_, i) => (
-          <line key={`h${i}`} x1={0} y1={i * 80} x2={MAP_W} y2={i * 80} stroke="rgba(255,255,255,0.03)" />
-        ))}
-
-        {/* Static markers */}
-        {markers.map(m => {
-          const p = projectToMap(m.lat, m.lng, MAP_W, MAP_H);
-          const color = m.marker_type === 'garage' ? '#f59e0b' : m.marker_type === 'client' ? '#a78bfa' : '#64748b';
-          return (
-            <g key={m.id} transform={`translate(${p.x}, ${p.y})`}>
-              <rect x={-5} y={-5} width={10} height={10} rx={2} fill={color} opacity={0.85} />
-              <title>{m.label}</title>
-            </g>
+        {activeDeliveries.map(d => {
+          const route = getRoutePoints(d);
+          const positions: LatLngExpression[] = route.map(p => [p.lat, p.lng]);
+          const truckPos = resolveRoutePosition(
+            d.departure_city,
+            d.arrival_city,
+            d.progress_percent,
+            d.current_lat != null && d.current_lng != null ? { lat: d.current_lat, lng: d.current_lng } : null,
           );
-        })}
-
-        {/* Routes */}
-        {deliveries.map(d => {
-          if (!d.departure_lat || !d.arrival_lat) return null;
-          const dep = projectToMap(d.departure_lat, d.departure_lng!, MAP_W, MAP_H);
-          const arr = projectToMap(d.arrival_lat, d.arrival_lng!, MAP_W, MAP_H);
-          const color = TRACKING_STATUS_COLORS[d.status];
           const selected = d.id === selectedId;
+          const color = statusColor(d.status);
+
           return (
-            <g key={`route-${d.id}`}>
-              <line
-                x1={dep.x} y1={dep.y} x2={arr.x} y2={arr.y}
-                stroke={color}
-                strokeWidth={selected ? 3 : 1.5}
-                strokeOpacity={selected ? 0.7 : 0.35}
-                strokeDasharray={d.status === 'planned' ? '6 4' : undefined}
-              />
-              <circle cx={dep.x} cy={dep.y} r={4} fill="#94a3b8" opacity={0.8} />
-              <circle cx={arr.x} cy={arr.y} r={4} fill={color} opacity={0.9} />
-            </g>
+            <Fragment key={d.id}>
+              {positions.length >= 2 && (
+                <Polyline
+                  positions={positions}
+                  pathOptions={{
+                    color,
+                    weight: selected ? 4 : 2,
+                    opacity: selected ? 0.95 : 0.55,
+                    dashArray: d.status === 'paused' ? '8 6' : undefined,
+                  }}
+                />
+              )}
+
+              {route[0] && (
+                <CircleMarker
+                  center={[route[0].lat, route[0].lng]}
+                  radius={selected ? 6 : 4}
+                  pathOptions={{ color: '#64748b', fillColor: '#64748b', fillOpacity: 0.9, weight: 1 }}
+                >
+                  <Tooltip direction="top" offset={[0, -4]} opacity={0.95}>
+                    Départ — {d.departure_city}
+                  </Tooltip>
+                </CircleMarker>
+              )}
+
+              {route.length > 1 && route[route.length - 1] && (
+                <CircleMarker
+                  center={[route[route.length - 1].lat, route[route.length - 1].lng]}
+                  radius={selected ? 6 : 4}
+                  pathOptions={{ color: '#94a3b8', fillColor: '#94a3b8', fillOpacity: 0.9, weight: 1 }}
+                >
+                  <Tooltip direction="top" offset={[0, -4]} opacity={0.95}>
+                    Arrivée — {d.arrival_city}
+                  </Tooltip>
+                </CircleMarker>
+              )}
+
+              <CircleMarker
+                center={[truckPos.lat, truckPos.lng]}
+                radius={selected ? 10 : 7}
+                pathOptions={{
+                  color: '#fff',
+                  fillColor: color,
+                  fillOpacity: 1,
+                  weight: selected ? 3 : 2,
+                }}
+                eventHandlers={{
+                  click: e => {
+                    e.originalEvent.stopPropagation();
+                    onSelect?.(d.id);
+                  },
+                }}
+              >
+                <Tooltip direction="top" offset={[0, -8]} opacity={0.95}>
+                  <span className="font-semibold">{d.driver_name ?? 'Chauffeur'}</span>
+                  <br />
+                  {d.departure_city} → {d.arrival_city}
+                  <br />
+                  {Math.round(d.progress_percent)}% — {d.remaining_km} km restants
+                </Tooltip>
+              </CircleMarker>
+            </Fragment>
           );
         })}
 
-        {/* Truck markers */}
-        {deliveries.map(d => {
-          const lat = d.current_lat ?? d.departure_lat;
-          const lng = d.current_lng ?? d.departure_lng;
-          if (lat == null || lng == null) return null;
-          const p = projectToMap(lat, lng, MAP_W, MAP_H);
-          const color = TRACKING_STATUS_COLORS[d.status];
-          const selected = d.id === selectedId;
-          return (
-            <g
-              key={`truck-${d.id}`}
-              transform={`translate(${p.x}, ${p.y})`}
-              className="cursor-pointer"
-              onClick={e => { e.stopPropagation(); onSelect?.(d.id); }}
-              filter={selected ? 'url(#truckGlow)' : undefined}
-            >
-              <circle r={selected ? 14 : 10} fill={color} fillOpacity={0.25} />
-              <circle r={selected ? 8 : 6} fill={color} />
-              <text y={-14} textAnchor="middle" fill="white" fontSize="9" fontWeight="bold" opacity={0.9}>
-                {d.truck_label?.split(' ').pop()?.slice(0, 6) ?? '🚛'}
-              </text>
-              <title>{`${d.driver_name ?? '—'} — ${d.departure_city} → ${d.arrival_city}`}</title>
-            </g>
-          );
-        })}
-      </svg>
-
-      <div className="absolute bottom-3 left-3 flex flex-wrap gap-2 text-[10px]">
-        {Object.entries(TRACKING_STATUS_COLORS).slice(0, 6).map(([status, color]) => (
-          <span key={status} className="flex items-center gap-1 px-2 py-1 rounded-full tracking-legend-pill">
-            <span className="w-2 h-2 rounded-full" style={{ background: color }} />
-            <span className="text-white/50 capitalize">{status.replace('_', ' ')}</span>
-          </span>
+        {markers.filter(m => m.is_active).map(m => (
+          <CircleMarker
+            key={m.id}
+            center={[m.lat, m.lng]}
+            radius={6}
+            pathOptions={{
+              color: markerColor(m.marker_type),
+              fillColor: markerColor(m.marker_type),
+              fillOpacity: 0.85,
+              weight: 2,
+            }}
+          >
+            <Tooltip direction="top" offset={[0, -6]} opacity={0.95}>
+              {m.label}
+            </Tooltip>
+          </CircleMarker>
         ))}
+      </MapContainer>
+
+      <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-2 pointer-events-none z-[1000]">
+        <span className="tracking-legend-pill text-[10px] text-white/50 px-2 py-1 rounded-full">
+          Carte Europe — OpenStreetMap
+        </span>
+        <span className="tracking-legend-pill text-[10px] text-cyan-400 px-2 py-1 rounded-full">En route</span>
+        <span className="tracking-legend-pill text-[10px] text-amber-400 px-2 py-1 rounded-full">Pause</span>
+        <span className="tracking-legend-pill text-[10px] text-emerald-400 px-2 py-1 rounded-full">Livré</span>
       </div>
     </div>
   );

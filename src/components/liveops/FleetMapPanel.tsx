@@ -66,7 +66,7 @@ export function FleetMapPanel({ vehicles, loading, compact }: FleetMapPanelProps
       {loading ? (
         <div className="h-48 rounded-xl shimmer" />
       ) : (
-        <TrackingEuropeMap deliveries={deliveries} markers={[]} />
+        <TrackingEuropeMap deliveries={deliveries} markers={[]} compact />
       )}
 
       {!loading && vehicles.length > 0 && (
