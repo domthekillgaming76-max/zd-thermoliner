@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { verifyCronAuth } from './lib/auth.mjs';
 import { handleGenerateFreight } from './cron/generateFreight.mjs';
 import { handleSyncIntegrations } from './cron/syncIntegrations.mjs';
+import { handleProcessClovisRentals } from './cron/processClovisRentals.mjs';
 import { clientApiRouter } from './api/client/router.mjs';
 import { supabaseAdmin, isSupabaseAdminReady } from './lib/supabaseAdmin.mjs';
 
@@ -69,6 +70,23 @@ async function runIntegrationsCron(req, res) {
 
 app.get('/api/cron/sync-integrations', verifyCronAuth, runIntegrationsCron);
 app.post('/api/cron/sync-integrations', verifyCronAuth, runIntegrationsCron);
+
+async function runClovisRentalsCron(req, res) {
+  try {
+    const result = await handleProcessClovisRentals();
+    const status = result.errors.length && result.charged === 0 ? 500 : 200;
+    res.status(status).json({ ok: status === 200, ...result });
+  } catch (err) {
+    res.status(500).json({
+      ok: false,
+      charged: 0,
+      errors: [err instanceof Error ? err.message : 'Unknown error'],
+    });
+  }
+}
+
+app.get('/api/cron/process-clovis-rentals', verifyCronAuth, runClovisRentalsCron);
+app.post('/api/cron/process-clovis-rentals', verifyCronAuth, runClovisRentalsCron);
 
 app.get('/api/health', async (_req, res) => {
   const health = {

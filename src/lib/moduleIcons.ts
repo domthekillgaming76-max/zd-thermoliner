@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Users, Truck, Route, BarChart3, Settings, Wrench,
   MessageSquare, Briefcase, FileText, Shield, Receipt, Bot, Smartphone,
   GraduationCap, Calculator, User, Bell, Calendar, HelpCircle, Package,
-  ClipboardList, MapPin, Map, Warehouse, TrendingUp, Landmark, Wallet, PieChart, Plug,
+  ClipboardList, MapPin, Map, Warehouse, TrendingUp,   Landmark, Wallet, PieChart, Plug, KeyRound,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -37,6 +37,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Wallet,
   PieChart,
   Plug,
+  KeyRound,
   // Legacy aliases
   Building2: Warehouse,
   Banknote: Landmark,

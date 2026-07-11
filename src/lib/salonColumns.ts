@@ -19,7 +19,7 @@ const FINANCE_MODULE_KEYS = new Set([
 ]);
 
 const DRIVER_MODULE_KEYS = new Set([
-  'drivers', 'driver_portal', 'road_sheets',
+  'drivers', 'driver_portal', 'road_sheets', 'clovis_rental',
 ]);
 
 export function resolveSalonColumn(category: string, moduleKey?: string): SalonColumn {

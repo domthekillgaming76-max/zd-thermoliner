@@ -21,6 +21,7 @@ export const DEFAULT_APP_MODULES: ModuleSeed[] = [
   mod({ key: 'garages', label: 'Garages', category: 'ERP', icon: 'Building2', route: '/garages', enabled: true, sort_order: 40 }),
   mod({ key: 'dispatch', label: 'Dispatch', category: 'ERP', icon: 'Radio', route: '/dispatch', enabled: true, sort_order: 50 }),
   mod({ key: 'freight_market', label: 'Marché Fret', category: 'ERP', icon: 'Container', route: '/freight', enabled: true, sort_order: 60 }),
+  mod({ key: 'clovis_rental', label: 'Location Clovis', category: 'ERP', icon: 'KeyRound', route: '/clovis-rental', enabled: true, sort_order: 55 }),
   mod({ key: 'gps_tracking', label: 'GPS Tracking', category: 'ERP', icon: 'Map', route: '/tracking', enabled: true, sort_order: 70 }),
   mod({ key: 'fleet_map', label: 'Carte flotte', category: 'ERP', icon: 'Map', route: '/fleet-map', enabled: true, sort_order: 80 }),
   mod({ key: 'statistics', label: 'Statistiques', category: 'ERP', icon: 'FileBarChart', route: '/statistics', enabled: true, sort_order: 90 }),

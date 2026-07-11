@@ -83,6 +83,10 @@ export const queryKeys = {
     all: ['freight'] as const,
     module: (userId?: string) => ['freight', 'module', userId ?? 'anonymous'] as const,
   },
+  clovisRental: {
+    all: ['clovisRental'] as const,
+    bundle: (profileId: string) => ['clovisRental', 'bundle', profileId] as const,
+  },
   training: {
     all: ['training'] as const,
     module: (userId?: string) => ['training', 'module', userId ?? 'anonymous'] as const,
