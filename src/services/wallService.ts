@@ -45,6 +45,59 @@ const POST_SELECT = `
   wall_events(id, post_id, event_at, location, route_label, community_event_id)
 `;
 
+const WALL_MEDIA_BUCKET = 'wall-media';
+
+export async function uploadWallMedia(file: File, userId: string): Promise<string> {
+  const ext = file.name.split('.').pop()?.toLowerCase() || 'bin';
+  const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { data, error } = await supabase.storage.from(WALL_MEDIA_BUCKET).upload(path, file, {
+    cacheControl: '3600',
+    upsert: false,
+    contentType: file.type,
+  });
+  if (error || !data) throw new Error(error?.message ?? 'Échec du téléversement du média');
+  return supabase.storage.from(WALL_MEDIA_BUCKET).getPublicUrl(data.path).data.publicUrl;
+}
+
+async function fetchWallPostById(postId: string, userId?: string): Promise<WallPost | null> {
+  const { data, error } = await supabase
+    .from('wall_posts')
+    .select(POST_SELECT)
+    .eq('id', postId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  const raw = data as unknown as RawPost;
+  const pollId = raw.wall_polls?.id;
+  const voteMap = new Map<string, string>();
+  const voteCounts = new Map<string, number>();
+  const sharedIds = new Set<string>();
+
+  if (pollId) {
+    const { data: votes } = await supabase
+      .from('wall_poll_votes')
+      .select('poll_id, option_id, user_id')
+      .eq('poll_id', pollId);
+    for (const v of votes ?? []) {
+      voteCounts.set(v.option_id, (voteCounts.get(v.option_id) ?? 0) + 1);
+      if (v.user_id === userId) voteMap.set(v.poll_id, v.option_id);
+    }
+  }
+
+  if (userId) {
+    const { data: shares } = await supabase
+      .from('wall_shares')
+      .select('post_id')
+      .eq('user_id', userId)
+      .eq('post_id', postId);
+    for (const s of shares ?? []) sharedIds.add(s.post_id);
+  }
+
+  return mapPost(raw, userId, voteMap, voteCounts, sharedIds);
+}
+
 function mapPost(
   raw: RawPost,
   userId: string | undefined,
@@ -160,13 +213,18 @@ export async function createWallPost(
   input: CreateWallPostInput,
   authorId: string,
 ): Promise<WallPost> {
+  let mediaUrl = input.media_url?.trim() || null;
+  if (input.media_file) {
+    mediaUrl = await uploadWallMedia(input.media_file, authorId);
+  }
+
   const { data: post, error } = await supabase
     .from('wall_posts')
     .insert({
       author_id: authorId,
       post_type: input.post_type,
       content: input.content.trim(),
-      media_url: input.media_url?.trim() || null,
+      media_url: mediaUrl,
       visibility: input.visibility,
       is_official: input.is_official ?? false,
     })
@@ -206,8 +264,7 @@ export async function createWallPost(
     if (evErr) throw evErr;
   }
 
-  const { posts } = await fetchWallFeed(authorId);
-  const created = posts.find(p => p.id === post.id);
+  const created = await fetchWallPostById(post.id, authorId);
   if (!created) throw new Error('Publication créée mais introuvable');
   return created;
 }

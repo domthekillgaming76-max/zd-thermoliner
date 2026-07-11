@@ -91,6 +91,7 @@ export interface CreateWallPostInput {
   post_type: WallPostType;
   content: string;
   media_url?: string;
+  media_file?: File;
   visibility: WallVisibility;
   is_official?: boolean;
   poll_options?: string[];
@@ -158,4 +159,9 @@ export function isVideoUrl(url: string | null | undefined): boolean {
 export function getYouTubeEmbedUrl(url: string): string | null {
   const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
   return match ? `https://www.youtube.com/embed/${match[1]}` : null;
+}
+
+export function isDirectVideoFile(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return /\.(mp4|webm|mov)(\?|$)/i.test(url);
 }

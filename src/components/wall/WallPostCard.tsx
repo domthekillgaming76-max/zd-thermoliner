@@ -10,6 +10,7 @@ import {
   getAuthorDisplayName,
   getYouTubeEmbedUrl,
   isVideoUrl,
+  isDirectVideoFile,
   timeAgo,
 } from '../../lib/wallTypes';
 import { WallUserAvatar } from './WallUserAvatar';
@@ -118,6 +119,13 @@ export function WallPostCard({
             <div className="mt-3 aspect-video rounded-xl overflow-hidden border border-white/5">
               <iframe src={embedUrl} title="Vidéo" className="w-full h-full" allowFullScreen />
             </div>
+          ) : isDirectVideoFile(post.media_url) ? (
+            <video
+              src={post.media_url}
+              controls
+              playsInline
+              className="mt-3 w-full max-h-80 rounded-xl border border-white/5 bg-black"
+            />
           ) : (
             <a href={post.media_url} target="_blank" rel="noreferrer"
               className="mt-3 flex items-center gap-2 text-sm text-red-400 hover:underline">
