@@ -1,12 +1,11 @@
 import { isAdministratorEmail } from './admin';
 import { canManageDrivers } from './driverPermissions';
-
-const MANAGER_ROLES = new Set(['pdg', 'patron', 'admin', 'directeur', 'manager', 'dispatcher']);
+import { normalizeRole } from './roleEngine';
 
 export function canManageClients(profileRole: string | null | undefined, email?: string | null): boolean {
   if (isAdministratorEmail(email)) return true;
   if (canManageDrivers(profileRole, email)) return true;
-  return MANAGER_ROLES.has(profileRole ?? '');
+  return normalizeRole(profileRole) === 'admin';
 }
 
 export function canViewClientInvoices(profileRole: string | null | undefined, email?: string | null): boolean {

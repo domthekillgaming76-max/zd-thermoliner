@@ -26,7 +26,9 @@ export type NotificationType =
   | 'bank'
   | 'integration';
 
-export const NOTIFICATION_POLL_MS = 10_000;
+import { PERF } from '../lib/perfConfig';
+
+export const NOTIFICATION_POLL_MS = PERF.notificationPollMs;
 
 export async function fetchUserNotifications(userId: string, limit = 50): Promise<LiveNotification[]> {
   const { data, error } = await supabase
@@ -122,7 +124,7 @@ export async function ensureAppUpdateNotification(userId: string): Promise<void>
 
 export async function notifyFreightOffer(title: string, message: string): Promise<void> {
   await notifyUsersByRoles(
-    ['pdg', 'patron', 'admin', 'directeur', 'dispatcher', 'chauffeur', 'tractionnaire'],
+    ['admin', 'chauffeur'],
     title,
     message,
     'freight',
@@ -133,7 +135,7 @@ export async function notifyRoadSheetValidated(driverUserId: string | null, rout
   if (driverUserId) {
     await createUserNotification(driverUserId, 'Feuille de route validée', route, 'road_sheet');
   }
-  await notifyUsersByRoles(['pdg', 'patron', 'admin', 'directeur', 'dispatcher'], 'Feuille validée', route, 'road_sheet');
+  await notifyUsersByRoles(['admin', 'chauffeur'], 'Feuille validée', route, 'road_sheet');
 }
 
 export async function notifyRoadSheetRejected(driverUserId: string | null, route: string): Promise<void> {
@@ -200,7 +202,7 @@ export async function notifyBankTransferReceived(
 
 export async function notifyCompanyAnnouncement(title: string, message: string): Promise<void> {
   await notifyUsersByRoles(
-    ['pdg', 'patron', 'admin', 'directeur', 'dispatcher', 'chauffeur', 'tractionnaire', 'manager', 'visitor', 'visiteur', 'candidat'],
+    ['admin', 'chauffeur', 'visiteur'],
     title,
     message,
     'announcement',

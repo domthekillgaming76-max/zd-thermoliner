@@ -1,0 +1,6 @@
+-- Réparation Reset RP — coller le contenu de :
+-- supabase/migrations/20260710020000_068_rp_reset_hardened.sql
+-- dans Supabase Dashboard → SQL Editor → Run
+--
+-- Puis redémarrer le serveur : npm run start
+-- Et réessayer depuis Administration → Sécurité

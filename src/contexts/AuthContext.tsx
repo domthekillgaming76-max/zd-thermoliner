@@ -13,13 +13,15 @@ import {
   getRoleLabel,
   dispatchRoleUpdated,
 } from '../lib/roleEngine';
-import { ensureDriverProfile, shouldEnsureDriverProfile } from '../services/driverSyncService';
+import { ensureDriverProfile, deactivateDriverProfile, shouldEnsureDriverProfile } from '../services/driverSyncService';
 import { createUserNotification } from '../services/notificationService';
 import { queryKeys } from '../lib/queryKeys';
 
 export type UserProfile = NormalizedProfile;
 
-const ROLE_POLL_INTERVAL_MS = 3000;
+import { PERF } from '../lib/perfConfig';
+
+const ROLE_POLL_INTERVAL_MS = PERF.rolePollMs;
 
 interface AuthContextType {
   user: User | null;
@@ -60,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileCustomizationAvailable, setProfileCustomizationAvailable] = useState(true);
   const [role, setRole] = useState<string | null>(null);
-  const [normalizedRole, setNormalizedRole] = useState<AppRole>('visitor');
+  const [normalizedRole, setNormalizedRole] = useState<AppRole>('visiteur');
   const [roleToast, setRoleToast] = useState<{ message: string; label?: string } | null>(null);
   const profileRoleRef = useRef<string | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -96,12 +98,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     dispatchRoleUpdated(newProfile as unknown as Record<string, unknown>);
     invalidateRoleQueries(newProfile.id);
 
-    if (nextNorm === 'driver' || shouldEnsureDriverProfile(newProfile)) {
+    if (nextNorm === 'chauffeur' || shouldEnsureDriverProfile(newProfile)) {
       void ensureDriverProfile(newProfile);
+    } else if (nextNorm === 'visiteur' && prevNorm === 'chauffeur') {
+      void deactivateDriverProfile(newProfile.id);
     }
 
     const roleLabel = getRoleLabel(nextRole);
-    if (prevNorm === 'visitor' && nextNorm === 'driver') {
+    if (prevNorm === 'visiteur' && nextNorm === 'chauffeur') {
       setRoleToast({
         message: 'Bienvenue dans l\'espace chauffeur',
         label: `Votre rôle a été mis à jour : ${roleLabel}`,
@@ -109,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       void createUserNotification(
         newProfile.id,
         `Votre rôle a été mis à jour : ${roleLabel}`,
-        'Bienvenue dans l\'espace chauffeur. Vos salons chauffeur sont maintenant disponibles.',
+        'Bienvenue dans l\'espace chauffeur. Vos salons opérationnels sont maintenant disponibles.',
         'info',
       );
     } else {
@@ -230,7 +234,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearRolePolling();
         setProfile(null);
         setRole(null);
-        setNormalizedRole('visitor');
+        setNormalizedRole('visiteur');
         profileRoleRef.current = null;
         setProfileError(null);
         setProfileCustomizationAvailable(true);
@@ -306,7 +310,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setProfile(null);
     setRole(null);
-    setNormalizedRole('visitor');
+    setNormalizedRole('visiteur');
     profileRoleRef.current = null;
     setProfileError(null);
     setSession(null);
@@ -347,7 +351,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         profileError,
         profileCustomizationAvailable,
-        isAdministrator: isAdministratorEmail(user?.email),
+        isAdministrator: isAdministratorEmail(user?.email) || normalizedRole === 'admin',
         normalizedRole,
         role,
         setProfile,

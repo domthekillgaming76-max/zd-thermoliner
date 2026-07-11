@@ -1,5 +1,6 @@
 import type { CompanyCard } from './driverHrTypes';
 import type { DriverPayslip } from './driverHrTypes';
+import { PERF } from './perfConfig';
 
 export type DriverBankAccountStatus = 'active' | 'frozen' | 'closed';
 export type DriverBankTxType =
@@ -97,7 +98,7 @@ export interface AdminTransferResult {
 }
 
 export const DRIVER_BANK_NAME = 'Crédit Agricole Z&D Thermoliner';
-export const DRIVER_BANK_POLL_MS = 5_000;
+export const DRIVER_BANK_POLL_MS = PERF.driverBankPollMs;
 
 export const TRANSFER_TYPE_LABELS: Record<CompanyTransferType, string> = {
   salary: 'Salaire',

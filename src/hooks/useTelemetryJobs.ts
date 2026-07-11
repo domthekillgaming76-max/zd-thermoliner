@@ -11,6 +11,7 @@ import {
   rejectTelemetryJob,
   validateTelemetryJob,
 } from '../services/telemetryJobService';
+import { PERF } from '../lib/perfConfig';
 import type { TelemetryJob } from '../lib/telemetryJobTypes';
 
 export function useActiveTelemetryJobs() {
@@ -18,8 +19,8 @@ export function useActiveTelemetryJobs() {
   const query = useQuery({
     queryKey: queryKeys.telemetryJobs.active(),
     queryFn: fetchActiveTelemetryJobs,
-    staleTime: 5_000,
-    refetchInterval: 15_000,
+    staleTime: PERF.queryStaleTime,
+    refetchInterval: PERF.telemetryPollMs,
   });
 
   useEffect(() => {

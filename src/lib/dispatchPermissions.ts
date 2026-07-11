@@ -1,10 +1,7 @@
-import { isAdministratorEmail } from './admin';
-
-const DISPATCH_MANAGER_ROLES = new Set(['pdg', 'patron', 'admin', 'directeur', 'dispatcher']);
+import { canUseCapability } from './accessService';
 
 export function canManageDispatch(profileRole: string | null | undefined, email?: string | null): boolean {
-  if (isAdministratorEmail(email)) return true;
-  return DISPATCH_MANAGER_ROLES.has(profileRole ?? '');
+  return canUseCapability(profileRole, email, 'manage_ops');
 }
 
 export function canViewAllMissions(profileRole: string | null | undefined, email?: string | null): boolean {

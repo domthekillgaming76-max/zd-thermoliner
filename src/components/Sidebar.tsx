@@ -8,15 +8,16 @@ import { useAppModules } from '../contexts/AppModulesContext';
 import { useAppUpdateBadge } from '../contexts/AppUpdateContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { buildDynamicSidebarSections, type NavSection } from '../lib/dynamicNavBuilder';
-import { DEFAULT_APP_MODULES } from '../lib/defaultAppModules';
-import type { AppModuleRecord } from '../services/appModuleService';
+import { DEFAULT_ROOM_PERMISSIONS } from '../lib/defaultRoomPermissions';
+import type { RoomPermission } from '../lib/roomTypes';
 import type { CategoryTheme } from '../lib/sidebarTheme';
 
-function fallbackModules(): AppModuleRecord[] {
+function fallbackRooms(): RoomPermission[] {
   const now = new Date().toISOString();
-  return DEFAULT_APP_MODULES.map(m => ({
-    ...m,
-    id: `default-${m.key}`,
+  return DEFAULT_ROOM_PERMISSIONS.map((r, i) => ({
+    ...r,
+    id: `default-${r.room_key}`,
+    sort_order: r.sort_order ?? i * 10,
     created_at: now,
     updated_at: now,
   }));
@@ -151,12 +152,12 @@ function SidebarSection({
 
 export function Sidebar() {
   const { signOut, profile, user, role, normalizedRole, isAdministrator } = useAuth();
-  const { modules } = useAppModules();
+  const { rooms } = useAppModules();
   const { collapsed, toggleCollapsed } = useSidebar();
   const hasUpdate = useAppUpdateBadge();
 
   const liveRole = role ?? normalizedRole;
-  const source = modules.length > 0 ? modules : fallbackModules();
+  const source = rooms.length > 0 ? rooms : fallbackRooms();
   const sections = buildDynamicSidebarSections(
     liveRole,
     user?.email ?? profile?.email,

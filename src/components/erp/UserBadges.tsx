@@ -1,5 +1,5 @@
-import { AdminBadge } from './AdminBadge';
 import { RoleBadge } from './RoleBadge';
+import { normalizeRole } from '../../lib/roleEngine';
 import { isDom76DualRole } from '../../services/driverSyncService';
 
 interface UserBadgesProps {
@@ -10,7 +10,7 @@ interface UserBadgesProps {
   className?: string;
 }
 
-/** Primary admin badge + optional chauffeur secondary for DOM76 dual role. */
+/** Badges unifiés — visiteur / chauffeur / admin (+ chauffeur pour DOM76 dual). */
 export function UserBadges({
   isAdministrator,
   role,
@@ -18,17 +18,15 @@ export function UserBadges({
   size = 'xs',
   className = '',
 }: UserBadgesProps) {
-  if (isAdministrator) {
-    return (
-      <span className={`inline-flex items-center gap-1.5 flex-wrap ${className}`}>
-        <AdminBadge size={size === 'md' ? 'md' : 'sm'} />
-        {isDom76DualRole(email) && (
-          <RoleBadge role="chauffeur" size={size} />
-        )}
-      </span>
-    );
-  }
+  const displayRole = isAdministrator ? 'admin' : normalizeRole(role);
+  if (!displayRole) return null;
 
-  if (!role) return null;
-  return <RoleBadge role={role} size={size} className={className} />;
+  return (
+    <span className={`inline-flex items-center gap-1.5 flex-wrap ${className}`}>
+      <RoleBadge role={displayRole} size={size} />
+      {isDom76DualRole(email) && displayRole === 'admin' && (
+        <RoleBadge role="chauffeur" size={size} />
+      )}
+    </span>
+  );
 }

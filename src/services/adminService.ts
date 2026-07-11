@@ -1,6 +1,8 @@
 import { supabase } from '../lib/supabase';
+import { invokeAuthenticatedRpc, getFreshAccessToken } from '../lib/supabaseSession';
 import { assertCanAssignRole, assertCanModifyUser } from '../lib/dom76Protection';
-import { ensureDriverProfile, isDriverProfileRole, shouldEnsureDriverProfile } from './driverSyncService';
+import { toAssignableRole } from '../lib/accessPolicy';
+import { ensureDriverProfile, deactivateDriverProfile, isDriverProfileRole, shouldEnsureDriverProfile } from './driverSyncService';
 import { createUserNotification } from './notificationService';
 import type {
   AdminAction,
@@ -13,6 +15,71 @@ const USER_BASE_COLUMNS =
   'id, email, full_name, pseudo, avatar_url, role, application_status, is_active, created_at, updated_at, last_seen_at';
 
 const USER_FULL_COLUMNS = `${USER_BASE_COLUMNS}, is_suspended`;
+
+/** Rôles stockés en base si le rôle canonique n'est pas encore accepté par la contrainte SQL */
+const ROLE_DB_VARIANTS: Record<string, string[]> = {
+  visiteur: ['visiteur', 'visitor', 'candidat'],
+  chauffeur: ['chauffeur', 'driver', 'member', 'flotte'],
+  admin: ['admin', 'patron', 'pdg'],
+};
+
+function toServiceError(err: unknown): Error {
+  if (err instanceof Error) return err;
+  if (err && typeof err === 'object' && 'message' in err) {
+    const message = String((err as { message: unknown }).message);
+    if (message) return new Error(message);
+  }
+  return new Error(typeof err === 'string' ? err : 'Erreur inconnue');
+}
+
+function isRoleConstraintError(message: string): boolean {
+  const m = message.toLowerCase();
+  return m.includes('profiles_role_check')
+    || m.includes('check constraint')
+    || m.includes('violates check');
+}
+
+async function persistRoleChange(targetUserId: string, role: string): Promise<void> {
+  const canonicalRole = toAssignableRole(role);
+  const variants = ROLE_DB_VARIANTS[canonicalRole] ?? [canonicalRole];
+
+  try {
+    await invokeAuthenticatedRpc('admin_change_user_role', {
+      p_target_user_id: targetUserId,
+      p_new_role: canonicalRole,
+    });
+    return;
+  } catch (err) {
+    const message = toServiceError(err).message;
+
+    await getFreshAccessToken();
+
+    let lastError: Error | null = toServiceError(err);
+    for (const dbRole of variants) {
+      const { data, error: directError } = await supabase
+        .from('profiles')
+        .update({
+          role: dbRole,
+          updated_at: new Date().toISOString(),
+          ...(canonicalRole === 'chauffeur' || canonicalRole === 'admin'
+            ? { application_status: 'approved', is_active: true, is_suspended: false }
+            : {}),
+        })
+        .eq('id', targetUserId)
+        .select('id, role')
+        .single();
+      if (!directError && data?.role) return;
+      if (directError) {
+        lastError = toServiceError(directError);
+        if (!isRoleConstraintError(lastError.message) && !message.toLowerCase().includes('could not find')) {
+          break;
+        }
+      }
+    }
+
+    throw lastError ?? new Error('Impossible de modifier le rôle en base de données.');
+  }
+}
 
 function isAdminSchemaError(error: { code?: string; message?: string } | null): boolean {
   if (!error) return false;
@@ -162,27 +229,13 @@ export async function changeUserRole(
   newRole: string,
   targetEmail: string,
 ): Promise<RoleChangeResult> {
-  assertCanAssignRole(targetEmail, newRole);
-  const { error } = await supabase.rpc('admin_change_user_role', {
-    p_target_user_id: targetUserId,
-    p_new_role: newRole,
-  });
-  if (error) {
-    const rpcMissing = error.code === 'PGRST202'
-      || (error.message ?? '').toLowerCase().includes('function')
-      || error.code === '42883';
-    if (rpcMissing) {
-      const { error: directError } = await supabase
-        .from('profiles')
-        .update({ role: newRole, updated_at: new Date().toISOString() })
-        .eq('id', targetUserId);
-      if (directError) throw directError;
-      await notifyRoleChanged(targetUserId);
-    } else {
-      throw error;
-    }
-  } else {
+  const canonicalRole = toAssignableRole(newRole);
+  assertCanAssignRole(targetEmail, canonicalRole);
+  try {
+    await persistRoleChange(targetUserId, canonicalRole);
     await notifyRoleChanged(targetUserId);
+  } catch (err) {
+    throw toServiceError(err);
   }
 
   let driverId: string | null = null;
@@ -194,6 +247,8 @@ export async function changeUserRole(
 
   if (profileRow && shouldEnsureDriverProfile(profileRow)) {
     driverId = await ensureDriverProfile(profileRow);
+  } else if (canonicalRole === 'visiteur') {
+    await deactivateDriverProfile(targetUserId);
   }
 
   return {
@@ -204,67 +259,31 @@ export async function changeUserRole(
 
 export async function suspendUser(targetUserId: string, targetEmail: string, reason?: string): Promise<void> {
   assertCanModifyUser(targetEmail, 'suspend');
-  const { error } = await supabase.rpc('admin_suspend_user', {
+  await invokeAuthenticatedRpc('admin_suspend_user', {
     p_target_user_id: targetUserId,
     p_reason: reason ?? null,
   });
-  if (error) throw error;
 }
 
 export async function reactivateUser(targetUserId: string): Promise<void> {
-  const { error } = await supabase.rpc('admin_reactivate_user', {
+  await invokeAuthenticatedRpc('admin_reactivate_user', {
     p_target_user_id: targetUserId,
   });
-  if (error) throw error;
 }
 
 export async function resetUserTheme(targetUserId: string, targetEmail: string): Promise<void> {
   assertCanModifyUser(targetEmail, 'reset_theme');
-  const { error } = await supabase.rpc('admin_reset_profile_theme', {
+  await invokeAuthenticatedRpc('admin_reset_profile_theme', {
     p_target_user_id: targetUserId,
   });
-  if (error) throw error;
-}
-
-export interface RpResetResult {
-  success: boolean;
-  message: string;
-  deleted?: Record<string, number>;
-}
-
-export interface RpResetOptions {
-  confirmation: string;
-  deleteWallPosts?: boolean;
-  deleteNotifications?: boolean;
-}
-
-export async function resetRpEconomy(options: RpResetOptions): Promise<RpResetResult> {
-  const { data, error } = await supabase.rpc('admin_reset_rp_economy', {
-    p_confirmation: options.confirmation,
-    p_delete_wall_posts: options.deleteWallPosts ?? false,
-    p_delete_notifications: options.deleteNotifications ?? true,
-  });
-  if (error) throw error;
-
-  try {
-    await supabase.rpc('reset_driver_bank_rp_data');
-  } catch { /* migration 062 may not be applied yet */ }
-
-  const payload = (data ?? {}) as RpResetResult;
-  return {
-    success: payload.success ?? true,
-    message: payload.message ?? 'Réinitialisation RP terminée',
-    deleted: payload.deleted as Record<string, number> | undefined,
-  };
 }
 
 export async function deleteUserProfile(targetUserId: string, targetEmail: string, reason?: string): Promise<void> {
   assertCanModifyUser(targetEmail, 'delete');
-  const { error } = await supabase.rpc('admin_delete_user_profile', {
+  await invokeAuthenticatedRpc('admin_delete_user_profile', {
     p_target_user_id: targetUserId,
     p_reason: reason ?? null,
   });
-  if (error) throw error;
 }
 
 export async function upsertUserPermission(

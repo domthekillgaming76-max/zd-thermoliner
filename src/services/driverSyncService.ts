@@ -6,8 +6,8 @@ import { ensureDriverHrDossier } from './driverHrService';
 import { ensureDriverBankAccount } from './driverBankService';
 import type { DriverProfile } from '../lib/driverTypes';
 import type { NormalizedProfile } from './profileService';
-/** Raw DB roles that map to normalized driver */
-export const DRIVER_PROFILE_ROLES = ['chauffeur', 'driver', 'member', 'tractionnaire'] as const;
+/** Raw DB roles that map to normalized chauffeur (driver profile) */
+export const DRIVER_PROFILE_ROLES = ['chauffeur', 'driver', 'member', 'flotte', 'tractionnaire'] as const;
 
 export type DriverProfileInput = Pick<
   NormalizedProfile,
@@ -16,7 +16,7 @@ export type DriverProfileInput = Pick<
 
 export function isDriverProfileRole(role: string | null | undefined): boolean {
   if (!role) return false;
-  return normalizeRole(role) === 'driver' || DRIVER_PROFILE_ROLES.includes(role as typeof DRIVER_PROFILE_ROLES[number]);
+  return normalizeRole(role) === 'chauffeur' || DRIVER_PROFILE_ROLES.includes(role as typeof DRIVER_PROFILE_ROLES[number]);
 }
 
 /** DOM76 admin keeps profile role admin but also gets a drivers row. */
@@ -117,7 +117,7 @@ async function directEnsureDriver(profile: DriverProfileInput): Promise<string |
   const presenceStatus = await fetchPresenceStatus(profile.id);
   const now = new Date().toISOString();
 
-  const memberRole = isAdministratorEmail(profile.email) ? 'admin' : 'driver';
+  const memberRole = isAdministratorEmail(profile.email) ? 'admin' : 'chauffeur';
 
   const payload = {
     user_id: profile.id,
@@ -189,4 +189,15 @@ export async function fetchDriverProfilesFromRoles(): Promise<
 
 export function profileRoleToAppRole(role: string): AppRole {
   return normalizeRole(role);
+}
+
+/** Retire l'utilisateur des listes actives sans supprimer son historique */
+export async function deactivateDriverProfile(userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('drivers')
+    .update({ is_active_driver: false, updated_at: new Date().toISOString() })
+    .eq('user_id', userId);
+  if (error) {
+    console.warn('[Z&D DriverSync] deactivate failed:', error.message);
+  }
 }

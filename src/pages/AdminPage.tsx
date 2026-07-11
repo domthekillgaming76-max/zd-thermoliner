@@ -12,11 +12,13 @@ import { supabase, Profile } from '../lib/supabase';
 import { promoteMemberRole, describePromotion } from '../services/rolePromotionService';
 import { changeUserRole } from '../services/adminService';
 import { isDriverProfileRole } from '../services/driverSyncService';
-import { getRoleLabel } from '../lib/roles';
+import { getRoleLabel, normalizeRole } from '../lib/roles';
+import { toAssignableRole } from '../lib/accessPolicy';
 import { assertCanAssignRole, filterAssignableRoles, isDom76Protected } from '../lib/dom76Protection';
+import { canAccessAdministration } from '../lib/adminPermissions';
 import { queryKeys } from '../lib/queryKeys';
 
-type UserRole = 'pdg' | 'patron' | 'directeur' | 'dispatcher' | 'chauffeur' | 'tractionnaire' | 'candidat' | 'visitor' | 'ancien_membre' | 'banni';
+type UserRole = 'admin' | 'chauffeur' | 'visiteur' | 'ancien_membre' | 'banni';
 
 type AuditLog = {
   id: string;
@@ -65,7 +67,7 @@ export function AdminPage() {
   const [modalType, setModalType] = useState<ModalType>(null);
   const [targetUser, setTargetUser] = useState<Profile | null>(null);
   const [modalReason, setModalReason] = useState('');
-  const [modalRestoreRole, setModalRestoreRole] = useState<'chauffeur' | 'tractionnaire'>('chauffeur');
+  const [modalRestoreRole, setModalRestoreRole] = useState<'chauffeur'>('chauffeur');
   const [modalRoleSelect, setModalRoleSelect] = useState<UserRole>('chauffeur');
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -73,8 +75,7 @@ export function AdminPage() {
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const isPDG = profile?.role === 'pdg';
-  const canManage = profile?.role === 'pdg' || profile?.role === 'patron';
+  const canManage = canAccessAdministration(profile?.role, user?.email ?? profile?.email);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -105,7 +106,7 @@ export function AdminPage() {
     setModalType(type);
     setModalReason('');
     setModalRestoreRole('chauffeur');
-    setModalRoleSelect(u.role as UserRole);
+    setModalRoleSelect(toAssignableRole(u.role));
     setActionError(null);
   }
 
@@ -184,15 +185,13 @@ export function AdminPage() {
         <div className="flex flex-col items-center justify-center h-64 text-center">
           <Shield className="w-16 h-16 opacity-10 mb-4" />
           <h1 className="text-2xl font-bold text-white mb-2">Accès refusé</h1>
-          <p className="text-white/30">Seuls le PDG et le Patron peuvent accéder à cette page.</p>
+          <p className="text-white/30">Seuls les administrateurs peuvent accéder à cette page.</p>
         </div>
       </Layout>
     );
   }
 
-  const activeRoles: UserRole[] = isPDG
-    ? ['pdg','patron','directeur','dispatcher','chauffeur','tractionnaire','candidat','visitor']
-    : ['patron','directeur','dispatcher','chauffeur','tractionnaire','candidat','visitor'];
+  const activeRoles: UserRole[] = ['visiteur', 'chauffeur', 'admin'];
 
   const modalAssignableRoles = targetUser
     ? filterAssignableRoles(activeRoles, targetUser.email) as UserRole[]
@@ -299,7 +298,7 @@ export function AdminPage() {
                     </div>
 
                     {/* Actions */}
-                    {u.id !== user?.id && (isPDG || (profile?.role === 'patron' && u.role !== 'pdg')) && (
+                    {u.id !== user?.id && canManage && (
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         {describePromotion(u.role) && !isDom76Protected(u.email) && (
                           <button
@@ -326,7 +325,7 @@ export function AdminPage() {
                           style={{ color: 'rgba(249,115,22,0.6)' }}>
                           <UserX className="w-3.5 h-3.5" />
                         </button>
-                        {isPDG && (
+                        {canManage && (
                           <button onClick={() => openModal('ban', u)}
                             disabled={isDom76Protected(u.email)}
                             title="Bannir"
@@ -376,7 +375,7 @@ export function AdminPage() {
                       <p className="text-xs text-white/25 truncate">{u.email}</p>
                     </div>
 
-                    {isPDG && (
+                    {canManage && (
                       <button onClick={() => openModal('restore', u)}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex-shrink-0"
                         style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', color: '#34d399' }}>
@@ -493,7 +492,9 @@ export function AdminPage() {
                       }`}>
                       <RoleBadge role={role} size="xs" showIcon={false} />
                       {getRoleLabel(role)}
-                      {targetUser.role === role && <span className="ml-auto text-xs text-red-400/70">Actuel</span>}
+                      {normalizeRole(targetUser.role) === role && (
+                        <span className="ml-auto text-xs text-red-400/70">Actuel</span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -517,14 +518,14 @@ export function AdminPage() {
                 <div>
                   <label className="block text-xs text-white/40 mb-2">Restaurer comme</label>
                   <div className="flex gap-2">
-                    {(['chauffeur', 'tractionnaire'] as const).map(r => (
+                    {(['chauffeur'] as const).map(r => (
                       <button key={r} onClick={() => setModalRestoreRole(r)}
                         className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all border ${
                           modalRestoreRole === r
                             ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
                             : 'border-white/6 bg-white/[0.02] text-white/50 hover:bg-white/5'
                         }`}>
-                        {r === 'chauffeur' ? 'Chauffeur' : 'Tractionnaire'}
+                        Flotte
                       </button>
                     ))}
                   </div>

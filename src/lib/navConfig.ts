@@ -5,9 +5,9 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ModuleKey } from './roleEngine';
-import { DEFAULT_APP_MODULES } from './defaultAppModules';
+import { DEFAULT_ROOM_PERMISSIONS } from './defaultRoomPermissions';
 import { buildDynamicSidebarSections, buildDynamicMobileNavItems } from './dynamicNavBuilder';
-import type { AppModuleRecord } from '../services/appModuleService';
+import type { RoomPermission } from './roomTypes';
 
 export interface NavItem {
   to: string;
@@ -60,11 +60,12 @@ export interface NavSection {
   items: NavItem[];
 }
 
-function fallbackModuleRecords(): AppModuleRecord[] {
+function fallbackRooms(): RoomPermission[] {
   const now = new Date().toISOString();
-  return DEFAULT_APP_MODULES.map(m => ({
-    ...m,
-    id: `default-${m.key}`,
+  return DEFAULT_ROOM_PERMISSIONS.map((r, i) => ({
+    ...r,
+    id: `default-${r.room_key}`,
+    sort_order: r.sort_order ?? i * 10,
     created_at: now,
     updated_at: now,
   }));
@@ -74,14 +75,14 @@ export function buildSidebarSections(
   role: string | null | undefined,
   email: string | null | undefined,
 ) {
-  return buildDynamicSidebarSections(role, email, fallbackModuleRecords());
+  return buildDynamicSidebarSections(role, email, fallbackRooms());
 }
 
 export function buildMobileNavItems(
   role: string | null | undefined,
   email?: string | null | undefined,
 ): NavItem[] {
-  return buildDynamicMobileNavItems(role, email, fallbackModuleRecords()).map(item => ({
+  return buildDynamicMobileNavItems(role, email, fallbackRooms()).map(item => ({
     ...item,
     module: item.module as ModuleKey,
   }));

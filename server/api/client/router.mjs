@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireClientAuth } from './middleware.mjs';
+import { requireClientAuth, requireClientRole } from './middleware.mjs';
 import {
   handleClientLogin,
   handleClientLogout,
@@ -20,17 +20,19 @@ import {
 
 export const clientApiRouter = Router();
 
+const CHAUFFEUR_ACCESS = ['chauffeur', 'admin'];
+
 clientApiRouter.post('/auth/login', handleClientLogin);
 clientApiRouter.post('/auth/logout', requireClientAuth, handleClientLogout);
 clientApiRouter.get('/auth/me', requireClientAuth, handleClientMe);
-clientApiRouter.post('/telemetry', requireClientAuth, handleClientTelemetry);
-clientApiRouter.post('/sync', requireClientAuth, handleClientSync);
+clientApiRouter.post('/telemetry', requireClientAuth, requireClientRole(CHAUFFEUR_ACCESS), handleClientTelemetry);
+clientApiRouter.post('/sync', requireClientAuth, requireClientRole(CHAUFFEUR_ACCESS), handleClientSync);
 clientApiRouter.get('/updates', handleClientUpdates);
 clientApiRouter.get('/health', handleClientHealth);
 
-clientApiRouter.post('/jobs/start', requireClientAuth, handleJobStart);
-clientApiRouter.post('/jobs/update', requireClientAuth, handleJobUpdate);
-clientApiRouter.post('/jobs/complete', requireClientAuth, handleJobComplete);
-clientApiRouter.post('/jobs/cancel', requireClientAuth, handleJobCancel);
-clientApiRouter.get('/jobs/active', requireClientAuth, handleJobActive);
-clientApiRouter.get('/jobs/history', requireClientAuth, handleJobHistory);
+clientApiRouter.post('/jobs/start', requireClientAuth, requireClientRole(CHAUFFEUR_ACCESS), handleJobStart);
+clientApiRouter.post('/jobs/update', requireClientAuth, requireClientRole(CHAUFFEUR_ACCESS), handleJobUpdate);
+clientApiRouter.post('/jobs/complete', requireClientAuth, requireClientRole(CHAUFFEUR_ACCESS), handleJobComplete);
+clientApiRouter.post('/jobs/cancel', requireClientAuth, requireClientRole(CHAUFFEUR_ACCESS), handleJobCancel);
+clientApiRouter.get('/jobs/active', requireClientAuth, requireClientRole(CHAUFFEUR_ACCESS), handleJobActive);
+clientApiRouter.get('/jobs/history', requireClientAuth, requireClientRole(CHAUFFEUR_ACCESS), handleJobHistory);

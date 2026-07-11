@@ -1,22 +1,15 @@
-import { isAdministratorEmail } from './admin';
-
-const FINANCE_ADMIN_ROLES = new Set(['pdg', 'patron', 'admin']);
+import { canUseCapability } from './accessService';
 
 export function canManageFinance(role: string | null | undefined, email?: string | null): boolean {
-  if (isAdministratorEmail(email)) return true;
-  return FINANCE_ADMIN_ROLES.has(role ?? '');
+  return canUseCapability(role, email, 'manage_finance');
 }
 
 export function canAccessFinanceModule(role: string | null | undefined, email?: string | null): boolean {
-  if (canManageFinance(role, email)) return true;
-  const managerRoles = new Set(['directeur', 'manager', 'dispatcher', 'fleet_manager']);
-  return managerRoles.has(role ?? '');
+  return canManageFinance(role, email);
 }
 
 export function canAccessSalariesPage(role: string | null | undefined, email?: string | null): boolean {
-  if (canManageFinance(role, email)) return true;
-  if (canAccessFinanceModule(role, email)) return true;
-  return role === 'chauffeur' || role === 'tractionnaire';
+  return canManageFinance(role, email);
 }
 
 export function canMarkInvoicePaid(role: string | null | undefined, email?: string | null): boolean {
@@ -36,5 +29,5 @@ export function canExportAccounting(role: string | null | undefined, email?: str
 }
 
 export function canViewAllSalaries(role: string | null | undefined, email?: string | null): boolean {
-  return canManageFinance(role, email) || canAccessFinanceModule(role, email);
+  return canManageFinance(role, email);
 }

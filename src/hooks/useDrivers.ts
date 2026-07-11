@@ -24,7 +24,9 @@ import { regenerateCompanyCard, regenerateDriverContract } from '../services/dri
 import type { DriverProfile } from '../lib/driverTypes';
 import type { DriverDocType, IncidentType } from '../lib/driverTypes';
 
-const DRIVERS_POLL_MS = 3_000;
+import { PERF } from '../lib/perfConfig';
+
+const DRIVERS_POLL_MS = PERF.driversPollMs;
 
 export function useDriversModule() {
   const qc = useQueryClient();

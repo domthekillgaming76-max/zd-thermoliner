@@ -1,12 +1,15 @@
 import { isAdministratorEmail } from './admin';
+import { canUseCapability } from './accessService';
 import type { AdminRoleCategory, PermissionKey } from './adminTypes';
 import { PERMISSION_KEYS, roleToCategory } from './adminTypes';
 
-const ADMIN_ROLES = new Set(['pdg', 'patron', 'admin']);
-
 export function canAccessAdministration(role: string | null | undefined, email?: string | null): boolean {
   if (isAdministratorEmail(email)) return true;
-  return ADMIN_ROLES.has(role ?? '');
+  return canUseCapability(role, email, 'manage_admin');
+}
+
+export function canManageRoles(role: string | null | undefined, email?: string | null): boolean {
+  return canAccessAdministration(role, email);
 }
 
 export function canManageUsers(role: string | null | undefined, email?: string | null): boolean {
@@ -14,24 +17,12 @@ export function canManageUsers(role: string | null | undefined, email?: string |
 }
 
 const DEFAULT_PERMISSIONS: Record<AdminRoleCategory, PermissionKey[]> = {
-  visitor: [],
-  recruit: [],
-  driver: [],
-  dispatcher: ['can_view_dashboard', 'can_manage_drivers'],
-  fleet_manager: [
+  visiteur: [],
+  chauffeur: [
     'can_view_dashboard',
     'can_manage_drivers',
     'can_manage_fleet',
     'can_validate_road_sheets',
-    'can_manage_reports',
-  ],
-  manager: [
-    'can_view_dashboard',
-    'can_manage_drivers',
-    'can_manage_fleet',
-    'can_manage_bank',
-    'can_validate_road_sheets',
-    'can_manage_recruitment',
     'can_manage_reports',
   ],
   admin: [
@@ -82,6 +73,5 @@ export function hasPermission(
   overrides: { permission_key: PermissionKey; granted: boolean }[] = [],
   email?: string | null,
 ): boolean {
-  const perms = resolveUserPermissions(role, overrides, email);
-  return perms[permission] ?? false;
+  return resolveUserPermissions(role, overrides, email)[permission];
 }

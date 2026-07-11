@@ -114,6 +114,9 @@ export const queryKeys = {
   appModules: {
     all: ['appModules'] as const,
   },
+  roomPermissions: {
+    all: ['roomPermissions'] as const,
+  },
   telemetryJobs: {
     all: ['telemetryJobs'] as const,
     active: () => ['telemetryJobs', 'active'] as const,

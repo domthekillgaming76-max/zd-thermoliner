@@ -1,20 +1,18 @@
 import { isAdministratorEmail } from './admin';
-import { isDriverRole, isVisitorRole } from './accessControl';
+import { canAccessSalon, canUseCapability, isFlotteRole } from './accessService';
 
 export function canAccessVault(
   role: string | null | undefined,
   email?: string | null,
 ): boolean {
-  if (isVisitorRole(role)) return false;
-  if (isAdministratorEmail(email)) return true;
-  return !isVisitorRole(role);
+  return canAccessSalon({ role, email, moduleOrPage: 'documents' });
 }
 
 export function canManageVaultDocuments(
   role: string | null | undefined,
   email?: string | null,
 ): boolean {
-  return isAdministratorEmail(email) || ['pdg', 'patron', 'admin', 'directeur'].includes(role ?? '');
+  return canUseCapability(role, email, 'manage_ops');
 }
 
 export function canApproveVaultDocuments(
@@ -29,5 +27,5 @@ export function isVaultDriverUser(
   email?: string | null,
 ): boolean {
   if (isAdministratorEmail(email)) return false;
-  return isDriverRole(role);
+  return isFlotteRole(role);
 }

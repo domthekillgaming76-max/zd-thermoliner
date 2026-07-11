@@ -11,6 +11,9 @@ CREATE TABLE IF NOT EXISTS public.client_app_releases (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
+ALTER TABLE public.client_app_releases
+  ADD COLUMN IF NOT EXISTS is_latest boolean NOT NULL DEFAULT false;
+
 CREATE UNIQUE INDEX IF NOT EXISTS idx_client_app_releases_latest
   ON public.client_app_releases (is_latest)
   WHERE is_latest = true;
@@ -49,7 +52,7 @@ SELECT
   false,
   true
 WHERE NOT EXISTS (
-  SELECT 1 FROM public.client_app_releases WHERE is_latest = true
+  SELECT 1 FROM public.client_app_releases WHERE version = '1.0.0'
 );
 
 COMMENT ON TABLE public.client_app_releases IS 'Releases du client Windows Z&D Thermoliner (.exe)';

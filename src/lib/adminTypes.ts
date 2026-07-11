@@ -33,25 +33,9 @@ export type AdminActionType =
   | 'permission_revoke'
   | 'promote';
 
-export type AdminRoleCategory =
-  | 'visitor'
-  | 'recruit'
-  | 'driver'
-  | 'dispatcher'
-  | 'fleet_manager'
-  | 'manager'
-  | 'admin';
+export type AdminRoleCategory = 'visiteur' | 'chauffeur' | 'admin';
 
-export type ErpAssignableRole =
-  | 'visitor'
-  | 'candidat'
-  | 'chauffeur'
-  | 'tractionnaire'
-  | 'dispatcher'
-  | 'directeur'
-  | 'patron'
-  | 'admin'
-  | 'pdg';
+export type ErpAssignableRole = 'visiteur' | 'chauffeur' | 'admin';
 
 export interface AdminUser {
   id: string;
@@ -116,9 +100,7 @@ export interface AccessAttempt {
 export interface AdminDashboardStats {
   totalUsers: number;
   visitors: number;
-  recruits: number;
-  drivers: number;
-  managers: number;
+  chauffeurs: number;
   admins: number;
   pendingApplications: number;
   pendingRoadSheets: number;
@@ -149,13 +131,9 @@ export const PERMISSION_LABELS: Record<PermissionKey, string> = {
 };
 
 export const ROLE_CATEGORY_LABELS: Record<AdminRoleCategory, string> = {
-  visitor: 'Visiteur',
-  recruit: 'Recrue',
-  driver: 'Chauffeur',
-  dispatcher: 'Dispatcher',
-  fleet_manager: 'Fleet Manager',
-  manager: 'Manager',
-  admin: 'Admin',
+  visiteur: 'Visiteur',
+  chauffeur: 'Chauffeur',
+  admin: 'Administrateur',
 };
 
 export const ERP_ROLE_LABELS: Record<string, string> = buildRoleLabelsMap();
@@ -176,15 +154,11 @@ export const SECURITY_EVENT_LABELS: Record<SecurityEventType, string> = {
 };
 
 export function roleToCategory(role: string): AdminRoleCategory {
-  if (role === 'banni' || role === 'ancien_membre') return 'visitor';
+  if (role === 'banni' || role === 'ancien_membre') return 'visiteur';
   const canonical = normalizeRole(role);
   if (canonical === 'admin') return 'admin';
-  if (canonical === 'manager') return 'manager';
-  if (canonical === 'fleet_manager') return 'fleet_manager';
-  if (canonical === 'dispatcher') return 'dispatcher';
-  if (canonical === 'driver') return 'driver';
-  if (canonical === 'recruit') return 'recruit';
-  return 'visitor';
+  if (canonical === 'chauffeur') return 'chauffeur';
+  return 'visiteur';
 }
 
 export function computeAdminDashboard(
@@ -197,11 +171,9 @@ export function computeAdminDashboard(
   const active = users.filter(u => !['ancien_membre', 'banni'].includes(u.role));
   return {
     totalUsers: users.length,
-    visitors: active.filter(u => ['visitor', 'visiteur'].includes(u.role)).length,
-    recruits: active.filter(u => u.role === 'candidat').length,
-    drivers: active.filter(u => ['chauffeur', 'tractionnaire'].includes(u.role)).length,
-    managers: active.filter(u => ['patron', 'directeur', 'pdg'].includes(u.role)).length,
-    admins: active.filter(u => ['pdg', 'patron', 'admin'].includes(u.role)).length,
+    visitors: active.filter(u => normalizeRole(u.role) === 'visiteur').length,
+    chauffeurs: active.filter(u => normalizeRole(u.role) === 'chauffeur').length,
+    admins: active.filter(u => normalizeRole(u.role) === 'admin').length,
     pendingApplications,
     pendingRoadSheets,
     securityAlerts,

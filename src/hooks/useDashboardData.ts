@@ -5,7 +5,9 @@ import { queryKeys } from '../lib/queryKeys';
 import { supabase } from '../lib/supabase';
 import type { DashboardData } from '../types/dashboard';
 
-const DASHBOARD_POLL_MS = 15_000;
+import { PERF } from '../lib/perfConfig';
+
+const DASHBOARD_POLL_MS = PERF.dashboardPollMs;
 
 const EMPTY: DashboardData = {
   stats: {

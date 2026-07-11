@@ -1,5 +1,6 @@
 import type { DriverProfile } from './driverTypes';
 import { getMemberRoleLabel, getPresenceLabel } from './driverTypes';
+import { normalizeRole } from './roleEngine';
 
 export type DriverFilterKey =
   | 'all'
@@ -7,9 +8,9 @@ export type DriverFilterKey =
   | 'offline'
   | 'driving'
   | 'vacation'
-  | 'administrator'
-  | 'driver'
-  | 'recruitment';
+  | 'admin'
+  | 'chauffeur'
+  | 'visiteur';
 
 export const DRIVER_FILTERS: { key: DriverFilterKey; label: string }[] = [
   { key: 'all', label: 'Tous' },
@@ -17,9 +18,9 @@ export const DRIVER_FILTERS: { key: DriverFilterKey; label: string }[] = [
   { key: 'offline', label: 'Hors ligne' },
   { key: 'driving', label: 'En route' },
   { key: 'vacation', label: 'Vacances' },
-  { key: 'driver', label: 'Chauffeurs' },
-  { key: 'recruitment', label: 'Recrutement' },
-  { key: 'administrator', label: 'Administrateurs' },
+  { key: 'chauffeur', label: 'Chauffeurs' },
+  { key: 'visiteur', label: 'Visiteurs' },
+  { key: 'admin', label: 'Administrateurs' },
 ];
 
 export function filterDrivers(
@@ -56,13 +57,12 @@ export function filterDrivers(
         return d.presence_status === 'driving' || d.driving_status === 'driving';
       case 'vacation':
         return d.presence_status === 'vacation' || d.driving_status === 'vacation';
-      case 'driver':
-        return ['chauffeur', 'driver'].includes(d.member_role ?? '') || d.role === 'chauffeur';
-      case 'recruitment':
-        return ['candidat', 'recruitment', 'visitor', 'visiteur'].includes(d.member_role ?? '');
-      case 'administrator':
-        return ['patron', 'pdg', 'admin', 'directeur', 'manager'].includes(d.member_role ?? '') ||
-          ['patron', 'pdg', 'admin', 'directeur'].includes(d.role ?? '');
+      case 'chauffeur':
+        return normalizeRole(d.role ?? d.member_role) === 'chauffeur';
+      case 'visiteur':
+        return normalizeRole(d.role ?? d.member_role) === 'visiteur';
+      case 'admin':
+        return normalizeRole(d.role ?? d.member_role) === 'admin';
       default:
         return true;
     }

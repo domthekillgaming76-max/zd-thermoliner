@@ -16,7 +16,9 @@ import {
   votePoll,
 } from '../services/wallService';
 
-const REFETCH_MS = 10_000;
+import { PERF } from '../lib/perfConfig';
+
+const REFETCH_MS = PERF.wallPollMs;
 
 export function useWall(userId?: string) {
   const qc = useQueryClient();
@@ -30,7 +32,7 @@ export function useWall(userId?: string) {
     queryFn: () => fetchWallFeed(userId),
     staleTime: 5_000,
     refetchInterval: REFETCH_MS,
-    refetchIntervalInBackground: true,
+    refetchIntervalInBackground: PERF.wallPollInBackground,
   });
 
   const markSeen = useCallback(() => {

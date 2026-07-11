@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { getFreshAccessToken } from '../lib/supabaseSession';
 import { DEFAULT_APP_MODULES } from '../lib/defaultAppModules';
 
 export interface AppModuleRecord {
@@ -66,6 +67,7 @@ export async function fetchAppModules(): Promise<AppModuleRecord[]> {
 }
 
 export async function updateAppModule(id: string, patch: Partial<AppModuleInput>): Promise<AppModuleRecord> {
+  await getFreshAccessToken();
   const { data, error } = await supabase
     .from('app_modules')
     .update({ ...patch, updated_at: new Date().toISOString() })

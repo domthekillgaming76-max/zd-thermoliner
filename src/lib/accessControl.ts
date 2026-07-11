@@ -1,263 +1,265 @@
-import { isAdministratorEmail } from './admin';
-import { canAccessAdministration } from './adminPermissions';
-import { canAccessDriverPortal } from './driverPortalPermissions';
-import { canAccessVault } from './vaultPermissions';
-import { canAccessTracking } from './trackingPermissions';
-import { canAccessFreightMarket } from './freightPermissions';
-import { canAccessTrainingCenter } from './trainingPermissions';
-import { canAccessFinanceModule, canAccessSalariesPage } from './financePermissions';
-import { canAccessBank } from './bankPermissions';
+/**
+
+ * Contrôle d'accès pages — délègue à accessService (politique unifiée).
+
+ */
+
+export {
+
+  VISITOR_RESTRICTED_MESSAGE,
+
+  SUSPENDED_MESSAGE,
+
+  isSuspendedAccount,
+
+  isVisitorRole,
+
+  isFlotteRole,
+
+  isAdminRole,
+
+  isRecruitRole,
+
+  canAccessSalon,
+
+  canAccessPath,
+
+  canUseCapability,
+
+  getDefaultLandingPath,
+
+} from './accessService';
+
+
+
 import {
-  canAccessFleetMap,
-  canAccessStatistics,
-  canAccessNotificationsPage,
-  isDispatcherOnlyRole,
-  canDispatcherAccessPage,
-} from './phase5Permissions';
-import { canAccessWall } from './wallPermissions';
-import { isCanonicalDriver, isCanonicalRecruit, isCanonicalVisitor } from './roles';
 
-export const VISITOR_RESTRICTED_MESSAGE =
-  'Accès réservé aux membres Z&D Thermoliner.';
+  canAccessSalon,
 
-export const SUSPENDED_MESSAGE =
-  'Votre compte est suspendu. Contactez l\'administration.';
+  getAccessDeniedReason as resolveDeniedReason,
+
+  getDefaultLandingPath,
+
+  isFlotteRole,
+
+  isSuspendedAccount,
+
+  SUSPENDED_MESSAGE,
+
+} from './accessService';
+
+import type { RoomPermission } from './roomTypes';
+
+
+
+/** @deprecated Utiliser isFlotteRole */
+
+export function isDriverRole(role: string | null | undefined): boolean {
+
+  return isFlotteRole(role);
+
+}
+
+
 
 export const VISITOR_ALLOWED_PAGES = new Set([
+
   'wall',
+
   'recruitment',
+
   'recruitment_applications',
-  'profile',
-]);
 
-/** Pages ERP explicitement interdites aux visiteurs */
-export const VISITOR_DENIED_PAGES = new Set([
-  'dashboard',
-  'bank',
-  'finance',
-  'invoices',
-  'accounting',
-  'economy',
-  'salaries',
-  'road_sheets',
-  'administration',
-  'dispatch',
-  'drivers',
-  'fleet',
-  'garages',
-  'clients',
-  'maintenance',
-  'reports',
-  'assistant',
-  'documents',
-  'tracking',
-  'freight_market',
-  'fleet_map',
-  'statistics',
-  'driver_portal',
-  'updates',
-  'events',
+  'profile',
+
   'settings',
-  'training_center',
+
 ]);
 
-export const RECRUIT_ALLOWED_PAGES = new Set([
-  ...VISITOR_ALLOWED_PAGES,
-]);
 
-export const DRIVER_ALLOWED_PAGES = new Set([
+
+export const VISITOR_DENIED_PAGES = new Set([
+
   'dashboard',
-  'wall',
-  'profile',
+
+  'bank',
+
+  'finance',
+
+  'invoices',
+
+  'accounting',
+
+  'economy',
+
+  'salaries',
+
   'road_sheets',
+
+  'administration',
+
+  'salons_admin',
+
+  'admin_integrations',
+
+  'dispatch',
+
+  'drivers',
+
+  'fleet',
+
+  'garages',
+
+  'clients',
+
+  'maintenance',
+
+  'reports',
+
+  'assistant',
+
+  'documents',
+
+  'tracking',
+
   'freight_market',
+
+  'fleet_map',
+
+  'statistics',
+
   'driver_portal',
-  'driver_integrations',
+
+  'updates',
+
+  'events',
+
+  'training_center',
+
+  'recruitment_admin',
+
 ]);
+
+
 
 export const SUSPENDED_ALLOWED_PAGES = new Set(['profile', 'settings']);
 
-const ADMIN_ONLY_PAGES = new Set(['administration', 'admin_integrations']);
 
-/** Tableau de bord : tous les rôles internes connectés, sauf visiteur. */
-export function canAccessDashboard(
-  role: string | null | undefined,
-  options?: AccessCheckOptions,
-): boolean {
-  if (options?.email && isAdministratorEmail(options.email)) return true;
-
-  if (isSuspendedAccount(role, options?.isActive, options?.isSuspended)) {
-    return false;
-  }
-
-  if (role === 'ancien_membre' || role === 'banni' || role === 'candidat') {
-    return false;
-  }
-
-  if (isVisitorRole(role)) return false;
-
-  return true;
-}
-
-export function getAccessDeniedRedirect(
-  role: string | null | undefined,
-  _page?: string,
-): string {
-  if (isVisitorRole(role)) return '/wall';
-  if (role === 'candidat') return '/join';
-  if (role === 'banni') return '/suspended';
-  if (role === 'ancien_membre') return '/departed';
-  return '/dashboard';
-}
-
-export function isVisitorRole(role: string | null | undefined): boolean {
-  return isCanonicalVisitor(role);
-}
-
-export function isRecruitRole(role: string | null | undefined): boolean {
-  return isCanonicalRecruit(role);
-}
-
-export function isDriverRole(role: string | null | undefined): boolean {
-  return isCanonicalDriver(role);
-}
-
-export function isSuspendedAccount(
-  role: string | null | undefined,
-  isActive?: boolean | null,
-  isSuspended?: boolean | null,
-): boolean {
-  if (role === 'banni') return true;
-  if (isSuspended) return true;
-  if (isActive === false && role !== 'ancien_membre') return true;
-  return false;
-}
 
 export interface AccessCheckOptions {
+
   email?: string | null;
+
   isActive?: boolean | null;
+
   isSuspended?: boolean | null;
+
+  rooms?: RoomPermission[];
+
 }
+
+
+
+function toInput(
+
+  role: string | null | undefined,
+
+  page: string,
+
+  options?: AccessCheckOptions,
+
+) {
+
+  return {
+
+    role,
+
+    email: options?.email,
+
+    moduleOrPage: page,
+
+    isActive: options?.isActive,
+
+    isSuspended: options?.isSuspended,
+
+    rooms: options?.rooms,
+
+  };
+
+}
+
+
+
+export function canAccessDashboard(
+
+  role: string | null | undefined,
+
+  options?: AccessCheckOptions,
+
+): boolean {
+
+  return canAccessSalon({ ...toInput(role, 'dashboard', options) });
+
+}
+
+
+
+export function getAccessDeniedRedirect(
+
+  role: string | null | undefined,
+
+  _page?: string,
+
+): string {
+
+  return getDefaultLandingPath(role);
+
+}
+
+
 
 export function canAccessPage(
+
   role: string | null | undefined,
+
   page: string,
+
   options?: AccessCheckOptions,
+
 ): boolean {
-  if (options?.email && isAdministratorEmail(options.email)) return true;
 
-  if (isSuspendedAccount(role, options?.isActive, options?.isSuspended)) {
-    return SUSPENDED_ALLOWED_PAGES.has(page);
-  }
+  return canAccessSalon(toInput(role, page, options));
 
-  if (role === 'ancien_membre') {
-    return ['profile', 'settings', 'wall'].includes(page);
-  }
-
-  if (ADMIN_ONLY_PAGES.has(page)) {
-    return canAccessAdministration(role, options?.email);
-  }
-
-  if (page === 'driver_portal') {
-    return canAccessDriverPortal(role, options?.email);
-  }
-
-  if (page === 'documents') {
-    return canAccessVault(role, options?.email);
-  }
-
-  if (page === 'tracking') {
-    return canAccessTracking(role, options?.email);
-  }
-
-  if (page === 'freight_market') {
-    return canAccessFreightMarket(role, options?.email);
-  }
-
-  if (page === 'training_center') {
-    return canAccessTrainingCenter(role, options?.email);
-  }
-
-  if (page === 'salaries') {
-    return canAccessSalariesPage(role, options?.email);
-  }
-
-  if (page === 'dashboard') {
-    return canAccessDashboard(role, options);
-  }
-
-  if (page === 'bank') {
-    return canAccessBank(role, options?.email);
-  }
-
-  if (page === 'finance' || page === 'invoices' || page === 'accounting' || page === 'economy') {
-    return canAccessFinanceModule(role, options?.email);
-  }
-
-  if (page === 'fleet_map') {
-    return canAccessFleetMap(role, options?.email);
-  }
-
-  if (page === 'statistics') {
-    return canAccessStatistics(role, options?.email);
-  }
-
-  if (page === 'notifications') {
-    return canAccessNotificationsPage(role, options?.email);
-  }
-
-  if (page === 'wall') {
-    return canAccessWall(role, {
-      isActive: options?.isActive,
-      isSuspended: options?.isSuspended,
-    });
-  }
-
-  if (isVisitorRole(role)) {
-    if (VISITOR_DENIED_PAGES.has(page)) return false;
-    return VISITOR_ALLOWED_PAGES.has(page);
-  }
-
-  if (isDispatcherOnlyRole(role) && !canDispatcherAccessPage(page)) {
-    return false;
-  }
-
-  if (isRecruitRole(role)) {
-    return RECRUIT_ALLOWED_PAGES.has(page);
-  }
-
-  if (isDriverRole(role)) {
-    return DRIVER_ALLOWED_PAGES.has(page);
-  }
-
-  return true;
 }
+
+
 
 export function getPostLoginPath(role: string | null | undefined): string {
-  if (isVisitorRole(role)) return '/wall';
-  if (role === 'candidat') return '/recruitment';
-  if (isDriverRole(role)) return '/driver';
-  return '/dashboard';
+
+  return getDefaultLandingPath(role);
+
 }
 
+
+
 export function getAccessDeniedReason(
+
   role: string | null | undefined,
+
   page: string,
+
   options?: AccessCheckOptions,
+
 ): string {
+
   if (isSuspendedAccount(role, options?.isActive, options?.isSuspended)) {
+
     return SUSPENDED_MESSAGE;
+
   }
-  if (ADMIN_ONLY_PAGES.has(page)) {
-    return 'Accès réservé aux administrateurs.';
-  }
-  if (page === 'bank') {
-    return 'Accès réservé au rôle administrateur.';
-  }
-  if (page === 'dashboard') {
-    return 'Le tableau de bord est réservé aux membres internes.';
-  }
-  if (isVisitorRole(role)) return VISITOR_RESTRICTED_MESSAGE;
-  if (isDriverRole(role)) return 'Accès réservé — chauffeurs: mur, profil, feuilles de route et missions.';
-  return VISITOR_RESTRICTED_MESSAGE;
+
+  return resolveDeniedReason(toInput(role, page, options));
+
 }
+
+

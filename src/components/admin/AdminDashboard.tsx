@@ -1,4 +1,4 @@
-import { Users, UserCheck, UserPlus, Truck, Shield, Crown, FileText, AlertTriangle, Activity } from 'lucide-react';
+import { Users, UserPlus, Truck, Shield, FileText, AlertTriangle, Activity } from 'lucide-react';
 import type { AdminDashboardStats } from '../../lib/adminTypes';
 
 interface AdminDashboardProps {
@@ -20,9 +20,7 @@ export function AdminDashboard({ stats, loading }: AdminDashboardProps) {
   const cards = [
     { label: 'Utilisateurs', value: stats.totalUsers, icon: Users, accent: 'text-white' },
     { label: 'Visiteurs', value: stats.visitors, icon: UserPlus, accent: 'text-slate-300' },
-    { label: 'Recrues', value: stats.recruits, icon: UserCheck, accent: 'text-white/50' },
-    { label: 'Chauffeurs', value: stats.drivers, icon: Truck, accent: 'text-emerald-400' },
-    { label: 'Managers', value: stats.managers, icon: Crown, accent: 'text-purple-400' },
+    { label: 'Chauffeurs', value: stats.chauffeurs, icon: Truck, accent: 'text-orange-400' },
     { label: 'Admins', value: stats.admins, icon: Shield, accent: 'text-red-400' },
     { label: 'Candidatures', value: stats.pendingApplications, icon: FileText, accent: 'text-amber-400' },
     { label: 'FDR en attente', value: stats.pendingRoadSheets, icon: FileText, accent: 'text-blue-400' },

@@ -1,20 +1,18 @@
 import { isAdministratorEmail } from './admin';
-import { isDriverRole, isVisitorRole } from './accessControl';
+import { canAccessSalon, canUseCapability, isFlotteRole } from './accessService';
 
 export function canAccessDriverPortal(
   role: string | null | undefined,
   email?: string | null,
 ): boolean {
-  if (isVisitorRole(role)) return false;
-  if (isAdministratorEmail(email)) return true;
-  return isDriverRole(role) || ['pdg', 'patron', 'directeur', 'dispatcher', 'admin'].includes(role ?? '');
+  return canAccessSalon({ role, email, moduleOrPage: 'driver_portal' });
 }
 
 export function canViewAllDriverPortalActivity(
   role: string | null | undefined,
   email?: string | null,
 ): boolean {
-  return isAdministratorEmail(email) || ['pdg', 'patron', 'admin', 'directeur'].includes(role ?? '');
+  return canUseCapability(role, email, 'manage_ops');
 }
 
 export function isDriverPortalUser(
@@ -22,5 +20,5 @@ export function isDriverPortalUser(
   email?: string | null,
 ): boolean {
   if (isAdministratorEmail(email)) return false;
-  return isDriverRole(role);
+  return isFlotteRole(role);
 }

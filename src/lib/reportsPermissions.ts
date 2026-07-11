@@ -1,9 +1,7 @@
-import { isAdministratorEmail } from './admin';
-
-const MANAGER_ROLES = new Set(['pdg', 'patron', 'admin', 'directeur', 'dispatcher']);
+import { canUseCapability } from './accessService';
 
 export function canAccessReports(role: string | null | undefined, email?: string | null): boolean {
-  return isAdministratorEmail(email) || MANAGER_ROLES.has(role ?? '');
+  return canUseCapability(role, email, 'manage_ops');
 }
 
 export function canExportReports(role: string | null | undefined, email?: string | null): boolean {

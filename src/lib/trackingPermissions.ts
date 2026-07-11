@@ -1,23 +1,18 @@
 import { isAdministratorEmail } from './admin';
-import { isDriverRole, isVisitorRole } from './accessControl';
-
-const TRACKING_MANAGER_ROLES = new Set(['pdg', 'patron', 'admin', 'directeur', 'dispatcher']);
+import { canAccessSalon, canUseCapability, isFlotteRole } from './accessService';
 
 export function canAccessTracking(
   role: string | null | undefined,
   email?: string | null,
 ): boolean {
-  if (isVisitorRole(role)) return false;
-  if (isAdministratorEmail(email)) return true;
-  return isDriverRole(role) || TRACKING_MANAGER_ROLES.has(role ?? '');
+  return canAccessSalon({ role, email, moduleOrPage: 'gps_tracking' });
 }
 
 export function canViewAllTracking(
   role: string | null | undefined,
   email?: string | null,
 ): boolean {
-  if (isAdministratorEmail(email)) return true;
-  return TRACKING_MANAGER_ROLES.has(role ?? '');
+  return canUseCapability(role, email, 'view_all_tracking');
 }
 
 export function canUpdateGpsPosition(
@@ -32,5 +27,5 @@ export function isTrackingDriverUser(
   email?: string | null,
 ): boolean {
   if (isAdministratorEmail(email)) return false;
-  return isDriverRole(role);
+  return isFlotteRole(role);
 }

@@ -32,9 +32,11 @@ export interface PresencePayload {
   last_seen_at: string;
 }
 
-export const PRESENCE_STALE_MS = 30_000;
-export const PRESENCE_HEARTBEAT_MS = 10_000;
-export const PRESENCE_LIST_POLL_MS = 5_000;
+import { PERF } from '../lib/perfConfig';
+
+export const PRESENCE_STALE_MS = 45_000;
+export const PRESENCE_HEARTBEAT_MS = 20_000;
+export const PRESENCE_LIST_POLL_MS = PERF.presenceListPollMs;
 export const PRESENCE_BOOT_GRACE_MS = 15_000;
 export const PRESENCE_FETCH_WINDOW_MS = 10 * 60_000;
 

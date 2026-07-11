@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { ModuleKey } from './roleEngine';
 import { resolveModuleIcon } from './moduleIcons';
 import { canAccessConfiguredModule } from './moduleAccess';
-import type { AppModuleRecord } from '../services/appModuleService';
+import type { RoomPermission } from './roomTypes';
 import {
   SIDEBAR_CATEGORY_ORDER,
   getCategoryTheme,
@@ -37,6 +37,7 @@ function normalizeLabel(key: string, label: string): string {
     training_center: 'Formation & Règles',
     documents: 'Coffre-fort',
     driver_portal: 'Portail chauffeur',
+    roles_salons: 'Rôles et salons',
   };
   return fixes[key] ?? label;
 }
@@ -44,15 +45,15 @@ function normalizeLabel(key: string, label: string): string {
 export function buildDynamicSidebarSections(
   role: string | null | undefined,
   email: string | null | undefined,
-  modules: AppModuleRecord[],
+  rooms: RoomPermission[],
   options?: { hasUpdate?: boolean },
 ): NavSection[] {
-  const visible = modules
-    .filter(m => m.enabled && canAccessConfiguredModule(role, email, m.key, modules))
-    .map(m => ({
-      module: m,
-      category: resolveSidebarCategory(m.key, m.category),
-      sortInCat: sortKeyInCategory(m.key, m.sort_order),
+  const visible = rooms
+    .filter(r => r.enabled && canAccessConfiguredModule(role, email, r.room_key, rooms))
+    .map(r => ({
+      room: r,
+      category: resolveSidebarCategory(r.room_key, r.category),
+      sortInCat: sortKeyInCategory(r.room_key, r.sort_order),
     }))
     .sort((a, b) => {
       const catA = SIDEBAR_CATEGORY_ORDER.indexOf(a.category);
@@ -68,12 +69,12 @@ export function buildDynamicSidebarSections(
   for (const cat of SIDEBAR_CATEGORY_ORDER) {
     const items = visible
       .filter(v => v.category === cat)
-      .map(({ module: m }) => ({
-        to: m.route,
-        icon: resolveModuleIcon(resolveSidebarIconKey(m.key, m.icon)),
-        label: normalizeLabel(m.key, m.label),
-        module: m.key as ModuleKey,
-        notifyDot: m.key === 'updates' && options?.hasUpdate,
+      .map(({ room: r }) => ({
+        to: r.route,
+        icon: resolveModuleIcon(resolveSidebarIconKey(r.room_key, r.icon)),
+        label: normalizeLabel(r.room_key, r.room_name),
+        module: r.room_key as ModuleKey,
+        notifyDot: r.room_key === 'updates' && options?.hasUpdate,
       }));
 
     if (items.length > 0) {
@@ -91,10 +92,10 @@ export function buildDynamicSidebarSections(
 export function buildDynamicMobileNavItems(
   role: string | null | undefined,
   email: string | null | undefined,
-  modules: AppModuleRecord[],
+  rooms: RoomPermission[],
   maxItems = 5,
 ): NavItem[] {
-  const sections = buildDynamicSidebarSections(role, email, modules);
+  const sections = buildDynamicSidebarSections(role, email, rooms);
   const flat = sections.flatMap(s =>
     s.items.map(item => ({ ...item, theme: s.theme })),
   );
@@ -118,9 +119,9 @@ export function buildDynamicMobileNavItems(
 export function buildMobileNavSections(
   role: string | null | undefined,
   email: string | null | undefined,
-  modules: AppModuleRecord[],
+  rooms: RoomPermission[],
 ): NavSection[] {
-  return buildDynamicSidebarSections(role, email, modules).filter(s =>
+  return buildDynamicSidebarSections(role, email, rooms).filter(s =>
     ['Accueil', 'Transport', 'Entreprise', 'Finance'].includes(s.title),
   );
 }

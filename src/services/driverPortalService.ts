@@ -227,7 +227,7 @@ export async function reportTruckIssue(
   });
   await logDriverStatus(driverId, userId, 'issue_reported', title);
 
-  const { data: admins } = await supabase.from('profiles').select('id').in('role', ['pdg', 'patron', 'admin']).limit(5);
+  const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin').limit(5);
   for (const admin of admins ?? []) {
     await supabase.from('notifications').insert({
       user_id: admin.id,
@@ -239,7 +239,7 @@ export async function reportTruckIssue(
 }
 
 export async function contactAdmin(userId: string, driverName: string, message: string): Promise<void> {
-  const { data: admins } = await supabase.from('profiles').select('id').in('role', ['pdg', 'patron', 'admin']).limit(5);
+  const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin').limit(5);
   for (const admin of admins ?? []) {
     await supabase.from('notifications').insert({
       user_id: admin.id,

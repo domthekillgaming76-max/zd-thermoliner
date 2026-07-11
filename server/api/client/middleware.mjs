@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin, isSupabaseAdminReady } from '../../lib/supabaseAdmin.mjs';
 import { getSupabaseAuth } from '../../lib/supabaseAuth.mjs';
+import { normalizeRole, requireRole, isAdministratorEmail } from '../../lib/roles.mjs';
 
 const PROFILE_SELECT = 'id, email, full_name, pseudo, role, is_suspended, is_active';
 
@@ -138,8 +139,28 @@ export async function loadClientContext(userId, accessToken) {
     }
   }
 
-  return { profile, driver };
+  return { profile: { ...profile, role: normalizeRole(profile.role) }, driver };
 }
+
+/**
+ * Middleware — exige un rôle canonique (visiteur | chauffeur | admin).
+ * Charge le profil et vérifie le rôle avant d'appeler next().
+ */
+export function requireClientRole(allowedRoles) {
+  return async (req, res, next) => {
+    try {
+      const { profile } = await loadClientContext(req.clientUser.id, req.clientToken);
+      req.clientProfile = profile;
+      requireRole(profile.role, profile.email, allowedRoles);
+      return next();
+    } catch (err) {
+      const status = err.status || 403;
+      return res.status(status).json({ error: err.message || 'Accès refusé' });
+    }
+  };
+}
+
+export { normalizeRole, requireRole, isAdministratorEmail };
 
 export function displayDriverName(profile, driver, fallbackEmail) {
   return driver?.name

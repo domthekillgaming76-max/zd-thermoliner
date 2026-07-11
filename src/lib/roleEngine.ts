@@ -1,102 +1,35 @@
-import {
-  Crown, Shield, Truck, Users, Radio, Container, Calculator, User,
-} from 'lucide-react';
+import { Crown, Eye, Shield, Truck } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-/** Canonical application roles */
-export type AppRole =
-  | 'visitor'
-  | 'recruit'
-  | 'driver'
-  | 'dispatcher'
-  | 'fleet_manager'
-  | 'manager'
-  | 'accountant'
-  | 'admin';
+/** Rôles officiels Z&D Thermoliner */
+export type AppRole = 'visiteur' | 'chauffeur' | 'admin';
 
 export type ModuleKey =
-  | 'wall'
-  | 'profile'
-  | 'recruitment'
-  | 'recruitment_applications'
-  | 'dashboard'
-  | 'road_sheets'
-  | 'freight_market'
-  | 'dispatch'
-  | 'gps_tracking'
-  | 'fleet'
-  | 'maintenance'
-  | 'drivers'
-  | 'reports'
-  | 'finance'
-  | 'invoices'
-  | 'salaries'
-  | 'accounting'
-  | 'bank'
-  | 'administration'
-  | 'settings'
-  | 'updates'
-  | 'events'
-  | 'training_center'
-  | 'driver_portal'
-  | 'documents'
-  | 'notifications'
-  | 'fleet_map'
-  | 'statistics'
-  | 'assistant'
-  | 'garages'
-  | 'clients'
-  | 'join'
-  | 'salons_admin'
-  | 'driver_integrations'
-  | 'admin_integrations';
+  | 'wall' | 'profile' | 'settings' | 'updates'
+  | 'recruitment' | 'recruitment_applications' | 'recruitment_admin'
+  | 'dashboard' | 'road_sheets' | 'freight_market' | 'dispatch'
+  | 'gps_tracking' | 'fleet' | 'maintenance' | 'drivers' | 'reports'
+  | 'finance' | 'invoices' | 'salaries' | 'accounting' | 'bank'
+  | 'administration' | 'roles_salons' | 'salons_admin' | 'admin_integrations'
+  | 'training_center' | 'driver_portal' | 'documents' | 'notifications'
+  | 'fleet_map' | 'statistics' | 'assistant' | 'garages' | 'clients'
+  | 'driver_integrations' | 'events' | 'join';
 
 const RAW_TO_APP_ROLE: Record<string, AppRole> = {
-  visitor: 'visitor',
-  visiteur: 'visitor',
-  candidat: 'recruit',
-  recruit: 'recruit',
-  recruitment: 'recruit',
-  chauffeur: 'driver',
-  driver: 'driver',
-  member: 'driver',
-  tractionnaire: 'driver',
-  dispatcher: 'dispatcher',
-  directeur: 'fleet_manager',
-  fleet_manager: 'fleet_manager',
-  patron: 'manager',
-  manager: 'manager',
-  accountant: 'accountant',
-  comptable: 'accountant',
-  pdg: 'admin',
-  admin: 'admin',
-  administrator: 'admin',
+  visiteur: 'visiteur', visitor: 'visiteur', invité: 'visiteur', invite: 'visiteur',
+  guest: 'visiteur', candidat: 'visiteur', recruit: 'visiteur', recruitment: 'visiteur',
+  recruteur: 'visiteur', recrue: 'visiteur',
+  chauffeur: 'chauffeur', driver: 'chauffeur', conducteur: 'chauffeur', member: 'chauffeur',
+  membre: 'chauffeur', flotte: 'chauffeur', dispatcher: 'chauffeur', directeur: 'chauffeur',
+  fleet_manager: 'chauffeur', manager: 'chauffeur', tractionnaire: 'chauffeur',
+  responsable: 'chauffeur', modérateur: 'chauffeur', moderateur: 'chauffeur',
+  comptable: 'chauffeur', accountant: 'chauffeur',
+  admin: 'admin', administrator: 'admin', administrateur: 'admin',
+  owner: 'admin', superadmin: 'admin', pdg: 'admin', patron: 'admin',
 };
 
-const COMMUNITY_MODULES: ModuleKey[] = ['wall', 'updates', 'events'];
-
-export const ALL_MODULES: ModuleKey[] = [
-  'wall', 'profile', 'recruitment', 'recruitment_applications', 'dashboard',
-  'road_sheets', 'freight_market', 'dispatch', 'gps_tracking', 'fleet', 'maintenance',
-  'drivers', 'reports', 'finance', 'invoices', 'salaries', 'accounting', 'bank',
-  'administration', 'settings', 'updates', 'events', 'training_center', 'driver_portal',
-  'documents', 'notifications', 'fleet_map', 'statistics', 'assistant', 'garages', 'clients', 'join', 'salons_admin',
-  'driver_integrations', 'admin_integrations',
-];
-
-const ROLE_MODULES: Record<AppRole, readonly ModuleKey[]> = {
-  visitor: ['wall', 'profile', 'recruitment', 'recruitment_applications'],
-  recruit: ['wall', 'profile', 'recruitment', 'recruitment_applications', 'join'],
-  driver: ['dashboard', 'wall', 'profile', 'road_sheets', 'freight_market', 'driver_portal', 'driver_integrations'],
-  dispatcher: ['dashboard', 'wall', 'profile', 'dispatch', 'freight_market', 'road_sheets', 'gps_tracking'],
-  fleet_manager: [
-    'dashboard', ...COMMUNITY_MODULES, 'profile', 'fleet', 'maintenance', 'gps_tracking',
-    'fleet_map', 'statistics', 'garages', 'reports', 'settings',
-  ],
-  manager: ['dashboard', 'wall', 'profile', 'drivers', 'fleet', 'reports', 'freight_market'],
-  accountant: ['dashboard', 'wall', 'profile', 'finance', 'invoices', 'salaries'],
-  admin: ALL_MODULES,
-};
+export const CANONICAL_ROLES: AppRole[] = ['visiteur', 'chauffeur', 'admin'];
+export const ASSIGNABLE_ROLES: AppRole[] = CANONICAL_ROLES;
 
 export interface RoleBadgeConfig {
   label: string;
@@ -106,52 +39,22 @@ export interface RoleBadgeConfig {
 }
 
 const BADGE: Record<AppRole, RoleBadgeConfig> = {
-  admin: {
-    label: 'Administrateur',
-    className: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
-    icon: Crown,
+  visiteur: {
+    label: 'Visiteur',
+    className: 'bg-slate-500/15 text-slate-300 border-slate-500/30',
+    icon: Eye,
     showOnWall: true,
   },
-  manager: {
-    label: 'Manager',
-    className: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
-    icon: Users,
-    showOnWall: true,
-  },
-  dispatcher: {
-    label: 'Dispatch',
-    className: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
-    icon: Radio,
-    showOnWall: true,
-  },
-  fleet_manager: {
-    label: 'Flotte',
-    className: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
-    icon: Container,
-    showOnWall: true,
-  },
-  accountant: {
-    label: 'Comptable',
-    className: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-    icon: Calculator,
-    showOnWall: true,
-  },
-  driver: {
+  chauffeur: {
     label: 'Chauffeur',
     className: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
     icon: Truck,
     showOnWall: true,
   },
-  recruit: {
-    label: 'Recrue',
-    className: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
-    icon: User,
-    showOnWall: true,
-  },
-  visitor: {
-    label: 'Visiteur',
-    className: 'bg-slate-500/10 text-slate-300 border-slate-500/20',
-    icon: User,
+  admin: {
+    label: 'Admin',
+    className: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+    icon: Crown,
     showOnWall: true,
   },
 };
@@ -160,7 +63,7 @@ const LEGACY_BADGE: Record<string, RoleBadgeConfig> = {
   ancien_membre: {
     label: 'Ancien membre',
     className: 'bg-white/5 text-white/25 border-white/8',
-    icon: User,
+    icon: Eye,
     showOnWall: false,
   },
   banni: {
@@ -171,11 +74,14 @@ const LEGACY_BADGE: Record<string, RoleBadgeConfig> = {
   },
 };
 
-/** Route prefix → module (longest match wins) */
 export const ROUTE_MODULE_RULES: { prefix: string; module: ModuleKey }[] = [
   { prefix: '/recruitment/applications', module: 'recruitment_applications' },
-  { prefix: '/recruitment/admin', module: 'recruitment' },
+  { prefix: '/recruitment/admin', module: 'recruitment_admin' },
   { prefix: '/recruitment', module: 'recruitment' },
+  { prefix: '/administration/roles-salons', module: 'roles_salons' },
+  { prefix: '/administration/salons', module: 'salons_admin' },
+  { prefix: '/administration/integrations', module: 'admin_integrations' },
+  { prefix: '/administration', module: 'administration' },
   { prefix: '/road-sheets', module: 'road_sheets' },
   { prefix: '/fleet-map', module: 'fleet_map' },
   { prefix: '/dashboard', module: 'dashboard' },
@@ -199,23 +105,24 @@ export const ROUTE_MODULE_RULES: { prefix: string; module: ModuleKey }[] = [
   { prefix: '/assistant', module: 'assistant' },
   { prefix: '/statistics', module: 'statistics' },
   { prefix: '/notifications', module: 'notifications' },
-  { prefix: '/administration/integrations', module: 'admin_integrations' },
-  { prefix: '/administration/salons', module: 'salons_admin' },
-  { prefix: '/administration', module: 'administration' },
   { prefix: '/integrations', module: 'driver_integrations' },
   { prefix: '/settings', module: 'settings' },
   { prefix: '/profile', module: 'profile' },
   { prefix: '/wall', module: 'wall' },
   { prefix: '/updates', module: 'updates' },
   { prefix: '/events', module: 'events' },
-  { prefix: '/join', module: 'join' },
 ];
 
 export const ROLE_SYNC_EVENT = 'zd:role-updated';
 
 export function normalizeRole(role: string | null | undefined): AppRole {
-  if (!role) return 'visitor';
-  return RAW_TO_APP_ROLE[role] ?? 'visitor';
+  if (!role) return 'visiteur';
+  const key = role.trim().toLowerCase();
+  return RAW_TO_APP_ROLE[key] ?? 'visiteur';
+}
+
+export function toAssignableRole(role: string | null | undefined): AppRole {
+  return normalizeRole(role);
 }
 
 export function getRoleLabel(role: string | null | undefined): string {
@@ -227,37 +134,13 @@ export function getRoleColor(role: string | null | undefined): string {
 }
 
 export function getRoleBadge(role: string | null | undefined): RoleBadgeConfig {
-  if (!role) return BADGE.visitor;
+  if (!role) return BADGE.visiteur;
   if (role in LEGACY_BADGE) return LEGACY_BADGE[role];
-  const appRole = normalizeRole(role);
-  return BADGE[appRole];
+  return BADGE[normalizeRole(role)];
 }
 
 export function shouldShowRoleOnWall(role: string | null | undefined): boolean {
   return getRoleBadge(role).showOnWall;
-}
-
-export function getAllowedModules(role: string | null | undefined): ModuleKey[] {
-  const appRole = normalizeRole(role);
-  return Array.from(new Set<ModuleKey>(ROLE_MODULES[appRole]));
-}
-
-export function canAccessModule(role: string | null | undefined, moduleKey: ModuleKey): boolean {
-  const appRole = normalizeRole(role);
-
-  if (moduleKey === 'bank' || moduleKey === 'administration' || moduleKey === 'salons_admin' || moduleKey === 'admin_integrations') {
-    return appRole === 'admin';
-  }
-
-  if (moduleKey === 'dashboard') {
-    return appRole !== 'visitor' && appRole !== 'recruit';
-  }
-
-  if (moduleKey === 'wall' || moduleKey === 'profile') {
-    return true;
-  }
-
-  return getAllowedModules(role).includes(moduleKey);
 }
 
 export function pathnameToModule(pathname: string): ModuleKey | null {
@@ -277,27 +160,27 @@ export function canAccessRoute(role: string | null | undefined, pathname: string
   return canAccessModule(role, moduleKey);
 }
 
+export function canAccessModule(role: string | null | undefined, _moduleKey: ModuleKey): boolean {
+  void _moduleKey;
+  void role;
+  return true;
+}
+
 export function getRoleRedirect(role: string | null | undefined): string {
+  if (role === 'banni') return '/suspended';
+  if (role === 'ancien_membre') return '/departed';
   const appRole = normalizeRole(role);
-  if (appRole === 'visitor') return '/wall';
-  if (appRole === 'recruit') return '/recruitment';
+  if (appRole === 'visiteur') return '/wall';
   return '/dashboard';
-}
-
-export function logRoleSync(message: string, detail?: unknown): void {
-  if (detail !== undefined) {
-    console.log(`[Z&D RoleSync] ${message}`, detail);
-  } else {
-    console.log(`[Z&D RoleSync] ${message}`);
-  }
-}
-
-export function logRoleSyncNormalized(role: string | null | undefined): void {
-  logRoleSync('normalized role', normalizeRole(role));
 }
 
 export function dispatchRoleUpdated(profile: Record<string, unknown>): void {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(ROLE_SYNC_EVENT, { detail: profile }));
   }
+}
+
+export function roleMatchesVisible(roles: string[], userRole: string | null | undefined): boolean {
+  const appRole = normalizeRole(userRole);
+  return roles.some(r => normalizeRole(r) === appRole || r === userRole);
 }

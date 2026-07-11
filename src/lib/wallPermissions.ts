@@ -1,9 +1,6 @@
 import { isAdministratorEmail } from './admin';
-import { isVisitorRole, isRecruitRole, isSuspendedAccount } from './accessControl';
+import { canUseCapability, isFlotteRole, isRecruitRole, isSuspendedAccount, isVisitorRole } from './accessService';
 
-const MANAGER_ROLES = new Set(['pdg', 'patron', 'admin', 'directeur', 'dispatcher']);
-
-/** Tous les rôles connectés actifs peuvent voir le mur. */
 export function canAccessWall(
   role: string | null | undefined,
   options?: { isActive?: boolean | null; isSuspended?: boolean | null },
@@ -35,7 +32,7 @@ export function canReactOnWall(
 }
 
 export function canModerateWall(role: string | null | undefined, email?: string | null): boolean {
-  return isAdministratorEmail(email) || MANAGER_ROLES.has(role ?? '');
+  return canUseCapability(role, email, 'moderate_wall');
 }
 
 export function canPinWallPosts(role: string | null | undefined, email?: string | null): boolean {
@@ -56,10 +53,10 @@ export function getAllowedVisibilities(
   if (isVisitorRole(role) || isRecruitRole(role)) {
     return ['public', 'visitors'];
   }
-  if (role === 'chauffeur' || role === 'tractionnaire') {
+  if (isFlotteRole(role)) {
     return ['public', 'visitors', 'members', 'drivers'];
   }
-  if (MANAGER_ROLES.has(role ?? '')) {
+  if (canModerateWall(role, email)) {
     return ['public', 'visitors', 'members', 'drivers', 'admin'];
   }
   return ['public', 'visitors', 'members'];

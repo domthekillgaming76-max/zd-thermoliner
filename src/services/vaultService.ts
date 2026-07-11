@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { safeUuid } from '../lib/safeUuid';
 import { canApproveVaultDocuments } from '../lib/vaultPermissions';
+import { normalizeRole } from '../lib/roleEngine';
 import type {
   VaultAlert,
   VaultAuditAction,
@@ -248,7 +249,7 @@ export async function fetchVaultBundle(
 
   const driver = await fetchDriverByUserId(userId);
   const isDriverOnly =
-    (role === 'chauffeur' || role === 'tractionnaire') && !canApproveVaultDocuments(role, email);
+    normalizeRole(role) === 'chauffeur' && !canApproveVaultDocuments(role, email);
   if (isDriverOnly && driver) {
     documents = documents.filter(d => d.owner_type === 'driver' && d.owner_id === driver.id);
   }

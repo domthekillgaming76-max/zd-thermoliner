@@ -1,23 +1,25 @@
 import { isAdministratorEmail } from './admin';
-import { isDriverRole, isRecruitRole, isVisitorRole } from './accessControl';
-
-const FREIGHT_MANAGER_ROLES = new Set(['pdg', 'patron', 'admin', 'directeur', 'dispatcher']);
+import { canUseCapability, isFlotteRole } from './accessService';
 
 export function canAccessFreightMarket(
   role: string | null | undefined,
   email?: string | null,
 ): boolean {
-  if (isVisitorRole(role) || isRecruitRole(role)) return false;
-  if (isAdministratorEmail(email)) return true;
-  return true;
+  return canUseCapability(role, email, 'manage_ops');
 }
 
 export function canManageFreightOffers(
   role: string | null | undefined,
   email?: string | null,
 ): boolean {
-  if (isAdministratorEmail(email)) return true;
-  return FREIGHT_MANAGER_ROLES.has(role ?? '');
+  return canUseCapability(role, email, 'manage_ops');
+}
+
+export function canAdminFreightOffers(
+  role: string | null | undefined,
+  email?: string | null,
+): boolean {
+  return canUseCapability(role, email, 'manage_admin');
 }
 
 export function isFreightDriverUser(
@@ -25,5 +27,5 @@ export function isFreightDriverUser(
   email?: string | null,
 ): boolean {
   if (isAdministratorEmail(email)) return false;
-  return isDriverRole(role);
+  return isFlotteRole(role);
 }

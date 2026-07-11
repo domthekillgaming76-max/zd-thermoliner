@@ -3,24 +3,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAppModules } from '../contexts/AppModulesContext';
 import { canAccessPage, getAccessDeniedRedirect, getPostLoginPath } from '../lib/accessControl';
 import { isAdministratorEmail } from '../lib/admin';
-import { canAccessModule, canAccessRoute, getRoleRedirect, pathnameToModule, type ModuleKey } from '../lib/roleEngine';
+import { getRoleRedirect, pathnameToModule, normalizeRole, type AppRole } from '../lib/roleEngine';
 
 interface RoleBasedRouteProps {
   children: React.ReactNode;
-  requiredRole?: 'pdg' | 'patron' | 'directeur' | 'dispatcher' | 'chauffeur' | 'tractionnaire' | 'candidat';
+  /** Rôle requis (canonique uniquement) */
+  requiredRole?: AppRole;
   page: string;
-}
-
-const MODULE_PAGES = new Set<string>([
-  'wall', 'profile', 'recruitment', 'recruitment_applications', 'dashboard',
-  'road_sheets', 'freight_market', 'dispatch', 'gps_tracking', 'fleet', 'maintenance',
-  'drivers', 'reports', 'finance', 'invoices', 'salaries', 'accounting', 'bank',
-  'administration', 'settings', 'updates', 'events', 'training_center', 'driver_portal',
-  'documents', 'notifications', 'fleet_map', 'statistics', 'assistant', 'garages', 'clients', 'salons_admin',
-]);
-
-function isModulePage(page: string): page is ModuleKey {
-  return MODULE_PAGES.has(page);
 }
 
 export function RoleBasedRoute({ children, requiredRole, page }: RoleBasedRouteProps) {
@@ -61,15 +50,15 @@ export function RoleBasedRoute({ children, requiredRole, page }: RoleBasedRouteP
     return <Navigate to="/departed" replace />;
   }
 
-  if (profile.role === 'candidat' && page !== 'join') {
+  if (normalizeRole(profile.role) === 'visiteur' && profile.application_status === 'pending' && page !== 'join') {
     return <Navigate to="/join" replace />;
   }
 
-  if (!['candidat', 'banni', 'ancien_membre'].includes(profile.role) && page === 'join') {
+  if (page === 'join' && normalizeRole(profile.role) !== 'visiteur') {
     return <Navigate to={getPostLoginPath(profile.role)} replace />;
   }
 
-  if (requiredRole && profile.role !== requiredRole) {
+  if (requiredRole && normalizeRole(profile.role) !== requiredRole) {
     return <Navigate to={getAccessDeniedRedirect(profile.role, page)} replace />;
   }
 
@@ -80,11 +69,7 @@ export function RoleBasedRoute({ children, requiredRole, page }: RoleBasedRouteP
     isSuspended: profile.is_suspended,
   });
 
-  const engineAllowed = isModulePage(page)
-    ? canAccessModule(liveRole, page) && canAccessRoute(liveRole, location.pathname)
-    : canAccessRoute(liveRole, location.pathname);
-
-  const moduleKey = isModulePage(page) ? page : pathnameToModule(location.pathname);
+  const moduleKey = pathnameToModule(location.pathname) ?? page;
   const configAllowed = moduleKey
     ? canAccessModuleKey(moduleKey) && isModuleEnabledKey(moduleKey)
     : true;
@@ -92,10 +77,9 @@ export function RoleBasedRoute({ children, requiredRole, page }: RoleBasedRouteP
 
   const allowed = isAdministratorEmail(email)
     ? legacyAllowed && routeEnabled
-    : legacyAllowed && engineAllowed && configAllowed && routeEnabled;
+    : legacyAllowed && configAllowed && routeEnabled;
 
   if (!allowed) {
-    if (!user) return <Navigate to="/login" replace />;
     return <Navigate to={getRoleRedirect(liveRole)} replace />;
   }
 

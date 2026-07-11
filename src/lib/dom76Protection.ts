@@ -31,9 +31,9 @@ export function assertCanAssignRole(
   newRole: string,
 ): void {
   if (!isDom76Protected(targetEmail)) return;
-  if (!['pdg', 'patron', 'admin'].includes(newRole)) {
+  if (newRole !== 'admin') {
     throw new Error(
-      `Impossible d'assigner le rôle « ${newRole} » au compte propriétaire DOM76 (${ADMIN_EMAIL}). Rôles administrateur uniquement.`,
+      `Impossible d'assigner le rôle « ${newRole} » au compte propriétaire DOM76 (${ADMIN_EMAIL}). Rôle administrateur uniquement.`,
     );
   }
 }
@@ -48,5 +48,5 @@ export function filterAssignableRoles(
   targetEmail: string | null | undefined,
 ): string[] {
   if (!isDom76Protected(targetEmail)) return roles;
-  return roles.filter(r => ['pdg', 'patron', 'admin'].includes(r));
+  return roles.filter(r => r === 'admin');
 }

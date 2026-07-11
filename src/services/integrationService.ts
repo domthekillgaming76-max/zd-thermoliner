@@ -182,7 +182,7 @@ export async function fetchProfilesForIntegrations(): Promise<Array<{
   const { data, error } = await supabase
     .from('profiles')
     .select('id, pseudo, full_name, email')
-    .in('role', ['chauffeur', 'member', 'tractionnaire', 'driver', 'dispatcher', 'admin', 'pdg', 'patron']);
+    .in('role', ['chauffeur', 'admin']);
   if (error) return [];
   return (data ?? []) as Array<{ id: string; pseudo: string | null; full_name: string | null; email: string | null }>;
 }

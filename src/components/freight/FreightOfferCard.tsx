@@ -14,6 +14,7 @@ import {
 interface FreightOfferCardProps {
   offer: FreightOffer;
   canManage?: boolean;
+  canAdmin?: boolean;
   isDriver?: boolean;
   busy?: boolean;
   onAccept?: () => void;
@@ -27,6 +28,7 @@ interface FreightOfferCardProps {
 export function FreightOfferCard({
   offer: o,
   canManage,
+  canAdmin,
   isDriver,
   busy,
   onAccept,
@@ -97,16 +99,16 @@ export function FreightOfferCard({
         {isDriver && isAvailable && onRequest && (
           <ActionBtn icon={UserPlus} label="Demander" onClick={onRequest} primary disabled={busy} />
         )}
-        {canManage && onEdit && (
+        {canAdmin && onEdit && (
           <ActionBtn icon={Edit3} label="Modifier" onClick={onEdit} disabled={busy} />
         )}
-        {canManage && onDuplicate && (
+        {canAdmin && onDuplicate && (
           <ActionBtn icon={Copy} label="Dupliquer" onClick={onDuplicate} disabled={busy} />
         )}
-        {canManage && isAvailable && onCancel && (
+        {canAdmin && isAvailable && onCancel && (
           <ActionBtn icon={Trash2} label="Annuler" onClick={onCancel} danger disabled={busy} />
         )}
-        {canManage && onDelete && (
+        {canAdmin && onDelete && (
           <ActionBtn icon={Trash2} label="Supprimer" onClick={onDelete} danger disabled={busy} />
         )}
       </div>

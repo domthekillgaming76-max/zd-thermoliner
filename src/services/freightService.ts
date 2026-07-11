@@ -190,6 +190,9 @@ export async function fetchFreightBundle(
     await supabase.rpc('expire_freight_offers');
   }
 
+  // Réapprovisionner le marché si vide (ex. après reset RP)
+  await topUpFreightMarketIfNeeded();
+
   const [offersRes, chainsRes, clientsRes, driversRes, trucksRes, trailersRes] = await Promise.all([
     supabase.from('freight_offers').select('*').order('created_at', { ascending: false }).limit(300),
     supabase.from('freight_chains').select('*').order('created_at', { ascending: false }).limit(50),
@@ -367,7 +370,7 @@ export async function acceptFreightOffer(
   email?: string | null,
 ): Promise<{ missionId: string; roadSheetId: string | null }> {
   if (!canManageFreightOffers(role, email)) {
-    throw new Error('Seuls admin/dispatcher peuvent accepter une offre.');
+    throw new Error('Seuls admin et chauffeur peuvent accepter une offre.');
   }
 
   const { data: offer, error: fetchErr } = await supabase
@@ -538,7 +541,7 @@ export async function acceptFreightChain(
   email?: string | null,
 ): Promise<{ missionIds: string[] }> {
   if (!canManageFreightOffers(role, email)) {
-    throw new Error('Seuls admin/dispatcher peuvent accepter une chaîne.');
+    throw new Error('Seuls admin et chauffeur peuvent accepter une chaîne.');
   }
 
   const { data: chain, error: chainErr } = await supabase
@@ -648,7 +651,7 @@ export async function completeChainLeg(
   email?: string | null,
 ): Promise<void> {
   if (!canManageFreightOffers(role, email)) {
-    throw new Error('Seuls admin/dispatcher peuvent valider une étape.');
+    throw new Error('Seuls admin et chauffeur peuvent valider une étape.');
   }
 
   const { data: chain } = await supabase.from('freight_chains').select('current_leg_order').eq('id', chainId).maybeSingle();
@@ -742,7 +745,7 @@ export async function requestFreightAssignment(
   const { data: admins } = await supabase
     .from('profiles')
     .select('id')
-    .in('role', ['pdg', 'patron', 'admin', 'dispatcher'])
+    .in('role', ['admin', 'chauffeur'])
     .limit(5);
 
   for (const admin of admins ?? []) {

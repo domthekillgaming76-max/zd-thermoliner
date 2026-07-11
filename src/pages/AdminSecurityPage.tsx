@@ -7,12 +7,13 @@ import { AdminDashboard } from '../components/admin/AdminDashboard';
 import { UserManagementTable } from '../components/admin/UserManagementTable';
 import { PermissionEditor } from '../components/admin/PermissionEditor';
 import { SalonsManagementPanel } from '../components/admin/SalonsManagementPanel';
-import { RpResetPanel } from '../components/admin/RpResetPanel';
+import { RolesSalonsPanel } from '../components/admin/RolesSalonsPanel';
 import { SecurityTimeline } from '../components/admin/SecurityTimeline';
 import { useAuth } from '../contexts/AuthContext';
 import { canAccessAdministration } from '../lib/adminPermissions';
 import { ADMIN_EMAIL } from '../lib/admin';
 import { computeAdminDashboard, ERP_ROLE_LABELS, type AdminUser } from '../lib/adminTypes';
+import { ASSIGNABLE_ROLES, toAssignableRole } from '../lib/accessPolicy';
 import { filterAssignableRoles } from '../lib/dom76Protection';
 import {
   useAdminModule,
@@ -28,9 +29,7 @@ import {
 import { fetchSecurityLogs } from '../services/securityLogService';
 import { useQuery } from '@tanstack/react-query';
 
-type TabId = 'dashboard' | 'users' | 'security' | 'salons';
-
-const ASSIGNABLE_ROLES = ['visitor', 'candidat', 'chauffeur', 'tractionnaire', 'dispatcher', 'directeur', 'patron', 'admin'];
+type TabId = 'dashboard' | 'users' | 'security' | 'salons' | 'roles_salons';
 
 export function AdminSecurityPage() {
   const { profile, user } = useAuth();
@@ -102,7 +101,12 @@ export function AdminSecurityPage() {
       setSuccessMessage(`Rôle mis à jour → ${ERP_ROLE_LABELS[selectedRole] ?? selectedRole}`);
       setRoleUser(null);
     } catch (err) {
-      setPageError(err instanceof Error ? err.message : 'Erreur changement de rôle.');
+      const message = err instanceof Error
+        ? err.message
+        : (err && typeof err === 'object' && 'message' in err)
+          ? String((err as { message: unknown }).message)
+          : 'Erreur changement de rôle.';
+      setPageError(message || 'Erreur changement de rôle.');
     }
   }
 
@@ -149,6 +153,7 @@ export function AdminSecurityPage() {
             { id: 'dashboard' as TabId, label: 'Tableau de bord' },
             { id: 'users' as TabId, label: `Utilisateurs (${filteredUsers.length})` },
             { id: 'salons' as TabId, label: 'Gestion des salons' },
+            { id: 'roles_salons' as TabId, label: 'Rôles et salons' },
             { id: 'security' as TabId, label: 'Sécurité' },
           ]).map(t => (
             <button key={t.id} type="button" onClick={() => setTab(t.id)}
@@ -161,7 +166,6 @@ export function AdminSecurityPage() {
         {tab === 'dashboard' && (
           <div className="space-y-4">
             <AdminDashboard stats={stats} loading={isLoading} />
-            <RpResetPanel />
             <SecurityTimeline
               securityLogs={securityLogs}
               adminActions={data?.adminActions ?? []}
@@ -189,7 +193,10 @@ export function AdminSecurityPage() {
               users={filteredUsers}
               currentUserId={user?.id}
               loading={isLoading}
-              onChangeRole={u => { setRoleUser(u); setSelectedRole(u.role); }}
+              onChangeRole={u => {
+                setRoleUser(u);
+                setSelectedRole(toAssignableRole(u.role));
+              }}
               onSuspend={async u => {
                 if (!confirm(`Suspendre ${u.email} ?`)) return;
                 try {
@@ -231,6 +238,8 @@ export function AdminSecurityPage() {
         )}
 
         {tab === 'salons' && <SalonsManagementPanel />}
+
+        {tab === 'roles_salons' && <RolesSalonsPanel />}
 
         {tab === 'security' && (
           <div className="grid lg:grid-cols-2 gap-4">
@@ -280,8 +289,12 @@ export function AdminSecurityPage() {
             <div className="admin-glass rounded-2xl w-full max-w-sm p-5 border border-white/10 space-y-4">
               <h2 className="font-bold text-white">Changer le rôle</h2>
               <p className="text-xs text-white/40">{roleUser.email}</p>
-              <select className="erp-select w-full" value={selectedRole} onChange={e => setSelectedRole(e.target.value)}>
-                {filterAssignableRoles(ASSIGNABLE_ROLES, roleUser.email).map(r => (
+              <select
+                className="erp-select w-full"
+                value={toAssignableRole(selectedRole)}
+                onChange={e => setSelectedRole(e.target.value)}
+              >
+                {filterAssignableRoles([...ASSIGNABLE_ROLES], roleUser.email).map(r => (
                   <option key={r} value={r}>{ERP_ROLE_LABELS[r] ?? r}</option>
                 ))}
               </select>

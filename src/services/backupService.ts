@@ -1,7 +1,9 @@
 import { supabase } from '../lib/supabase';
 
 const BACKUP_KEY = 'zd-erp-backup-latest';
-const BACKUP_INTERVAL_MS = 5 * 60_000;
+import { PERF } from '../lib/perfConfig';
+
+const BACKUP_INTERVAL_MS = PERF.backupIntervalMs;
 
 export interface ErpBackupSnapshot {
   saved_at: string;

@@ -2,14 +2,15 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { queryKeys } from '../lib/queryKeys';
 import { supabase } from '../lib/supabase';
+import { PERF } from '../lib/perfConfig';
 import { fetchFleetMapVehicles, fetchLiveOpsMetrics } from '../services/liveOpsService';
 
 export function useLiveOpsMetrics() {
   const query = useQuery({
     queryKey: queryKeys.liveOps.metrics(),
     queryFn: fetchLiveOpsMetrics,
-    staleTime: 10_000,
-    refetchInterval: 15_000,
+    staleTime: PERF.queryStaleTime,
+    refetchInterval: PERF.liveOpsPollMs,
   });
 
   useEffect(() => {
@@ -31,8 +32,8 @@ export function useFleetMap(userId?: string, role?: string | null, email?: strin
     queryKey: queryKeys.liveOps.fleetMap(userId),
     queryFn: () => fetchFleetMapVehicles(userId!, role, email),
     enabled: !!userId,
-    staleTime: 10_000,
-    refetchInterval: 20_000,
+    staleTime: PERF.queryStaleTime,
+    refetchInterval: PERF.liveOpsPollMs,
   });
 
   useEffect(() => {

@@ -12,7 +12,9 @@ import {
   type AppModuleInput,
 } from '../services/appModuleService';
 
-const MODULES_POLL_MS = 10_000;
+import { PERF } from '../lib/perfConfig';
+
+const MODULES_POLL_MS = PERF.modulesPollMs;
 
 export function useAppModulesQuery() {
   const qc = useQueryClient();

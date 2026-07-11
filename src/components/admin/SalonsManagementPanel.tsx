@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Eye, EyeOff, Layers, Save, Shield } from 'lucide-react';
+import { Eye, EyeOff, Layers, Save, Shield, X } from 'lucide-react';
 import { FormAlert, FormSuccess } from '../erp/FormAlert';
 import { SalonsDragBoard, type SalonDraftRow } from './SalonsDragBoard';
 import { MODULE_ICON_OPTIONS, resolveModuleIcon } from '../../lib/moduleIcons';
@@ -11,10 +11,9 @@ import {
   useUpdateAppModule,
 } from '../../hooks/useAppModules';
 
-const ROLE_OPTIONS = [
-  'visitor', 'recruit', 'driver', 'dispatcher', 'fleet_manager', 'manager', 'accountant', 'admin',
-  'visiteur', 'candidat', 'chauffeur', 'member', 'directeur', 'patron', 'pdg', 'comptable',
-];
+import { ASSIGNABLE_ROLES } from '../../lib/accessPolicy';
+
+const ROLE_OPTIONS: string[] = [...ASSIGNABLE_ROLES];
 
 function toDraft(m: AppModuleRecord): SalonDraftRow {
   return {
@@ -105,15 +104,23 @@ export function SalonsManagementPanel() {
     }
   }
 
-  function toggleRole(role: string) {
+  function removeRole(role: string) {
     if (!selected) return;
-    const has = selected.draftRoles.includes(role);
     patchRow(selected.id, {
-      draftRoles: has
-        ? selected.draftRoles.filter(r => r !== role)
-        : [...selected.draftRoles, role],
+      draftRoles: selected.draftRoles.filter(r => r !== role),
     });
   }
+
+  function addRole(role: string) {
+    if (!selected || selected.draftRoles.includes(role)) return;
+    patchRow(selected.id, {
+      draftRoles: [...selected.draftRoles, role],
+    });
+  }
+
+  const assignedRoles = selected?.draftRoles ?? [];
+  const availableRoles = ROLE_OPTIONS.filter(r => !assignedRoles.includes(r));
+  const orphanRoles = assignedRoles.filter(r => !ROLE_OPTIONS.includes(r));
 
   if (isLoading) {
     return (
@@ -230,23 +237,53 @@ export function SalonsManagementPanel() {
             </div>
           </div>
 
-          <div className="px-4 pb-4">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-white/30">Rôles autorisés</label>
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {ROLE_OPTIONS.map(role => (
-                <button
-                  key={role}
-                  type="button"
-                  onClick={() => toggleRole(role)}
-                  className={`text-[10px] px-2 py-1 rounded-lg font-semibold border transition-colors ${
-                    selected.draftRoles.includes(role)
-                      ? 'bg-red-500/15 text-red-300 border-red-500/30'
-                      : 'bg-white/[0.03] text-white/30 border-white/10 hover:border-white/20'
-                  }`}
-                >
-                  {role}
-                </button>
-              ))}
+          <div className="px-4 pb-4 space-y-3">
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-white/30">
+                Rôles autorisés — cliquez sur ✕ pour supprimer
+              </label>
+              {assignedRoles.length === 0 ? (
+                <p className="text-xs text-white/30 mt-2">Aucun rôle — salon visible par personne (sauf admin).</p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {assignedRoles.map(role => (
+                    <span
+                      key={role}
+                      className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg font-semibold border bg-red-500/15 text-red-300 border-red-500/30"
+                    >
+                      {role}
+                      <button
+                        type="button"
+                        title={`Supprimer le rôle ${role}`}
+                        onClick={() => removeRole(role)}
+                        className="hover:text-white transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {orphanRoles.length > 0 && (
+                <p className="text-[10px] text-amber-400/70 mt-2">
+                  Rôles personnalisés détectés — vous pouvez les retirer avec ✕.
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-white/30">Ajouter un rôle</label>
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {availableRoles.map(role => (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() => addRole(role)}
+                    className="text-[10px] px-2 py-1 rounded-lg font-semibold border bg-white/[0.03] text-white/40 border-white/10 hover:border-red-500/30 hover:text-red-300 transition-colors"
+                  >
+                    + {role}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </section>

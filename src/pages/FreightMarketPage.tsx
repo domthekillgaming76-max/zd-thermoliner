@@ -16,6 +16,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useFreight } from '../hooks/useFreight';
 import {
   canAccessFreightMarket,
+  canAdminFreightOffers,
   canManageFreightOffers,
   isFreightDriverUser,
 } from '../lib/freightPermissions';
@@ -30,6 +31,7 @@ export function FreightMarketPage() {
 
   const canAccess = canAccessFreightMarket(role, email);
   const canManage = canManageFreightOffers(role, email);
+  const canAdmin = canAdminFreightOffers(role, email);
   const isDriver = isFreightDriverUser(role, email);
 
   const [filters, setFilters] = useState<FreightFilters>({ search: '', filter: 'all', clientId: '' });
@@ -80,6 +82,11 @@ export function FreightMarketPage() {
     fetchDriverByUserId(user.id).then(d => setDriverId(d?.id ?? null));
   }, [user?.id, isDriver]);
 
+  const unfilteredOffers = useMemo(() => {
+    const offers = data?.offers ?? [];
+    return offers.filter(o => o.status === 'available' || o.status === 'reserved' || (!isDriver && o.status !== 'cancelled'));
+  }, [data?.offers, isDriver]);
+
   const filtered = useMemo(() => {
     if (filters.filter === 'chained') return [];
     const offers = data?.offers ?? [];
@@ -97,6 +104,7 @@ export function FreightMarketPage() {
 
   const showChains = filters.filter === 'chained' || filteredChains.length > 0 && filters.filter === 'all';
   const hasContent = filtered.length > 0 || (showChains && filteredChains.length > 0);
+  const filterHidesResults = !hasContent && filters.filter !== 'all' && unfilteredOffers.length > 0;
 
   if (!canAccess) {
     return (
@@ -197,7 +205,7 @@ export function FreightMarketPage() {
                 <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
                 {isFetching ? 'Chargement…' : 'Actualiser'}
               </button>
-              {canManage && (
+              {canAdmin && (
                 <>
                   <button
                     type="button"
@@ -279,7 +287,11 @@ export function FreightMarketPage() {
             <Container className="w-12 h-12 text-white/15 mx-auto mb-3" />
             <p className="text-white/50 font-semibold">Aucune offre fret</p>
             <p className="text-xs text-white/30 mt-1">
-              {canManage ? 'Créez une offre, une route chaînée ou modifiez les filtres.' : 'Revenez plus tard ou changez les filtres.'}
+              {filterHidesResults
+                ? 'Aucune offre pour ce filtre — essayez « Toutes ».'
+                : canAdmin
+                  ? 'Créez une offre, une route chaînée ou modifiez les filtres.'
+                  : 'Revenez plus tard ou changez les filtres.'}
             </p>
           </div>
         ) : (
@@ -317,12 +329,13 @@ export function FreightMarketPage() {
                 key={offer.id}
                 offer={offer}
                 canManage={canManage}
+                canAdmin={canAdmin}
                 isDriver={isDriver}
                 busy={busy}
                 onAccept={() => { setAccepting(offer); setAcceptOpen(true); }}
                 onRequest={() => handleRequest(offer.id)}
-                onEdit={() => { setEditing(offer); setFormOpen(true); }}
-                onDuplicate={async () => {
+                onEdit={canAdmin ? () => { setEditing(offer); setFormOpen(true); } : undefined}
+                onDuplicate={canAdmin ? async () => {
                   setPageError(null);
                   try {
                     await duplicate.mutateAsync(offer.id);
@@ -330,8 +343,8 @@ export function FreightMarketPage() {
                   } catch (err) {
                     setPageError(err instanceof Error ? err.message : 'Erreur duplication.');
                   }
-                }}
-                onCancel={async () => {
+                } : undefined}
+                onCancel={canAdmin ? async () => {
                   if (!confirm('Annuler cette offre ?')) return;
                   setPageError(null);
                   try {
@@ -340,8 +353,8 @@ export function FreightMarketPage() {
                   } catch (err) {
                     setPageError(err instanceof Error ? err.message : 'Erreur annulation.');
                   }
-                }}
-                onDelete={async () => {
+                } : undefined}
+                onDelete={canAdmin ? async () => {
                   if (!confirm('Supprimer définitivement cette offre ?')) return;
                   setPageError(null);
                   try {
@@ -350,7 +363,7 @@ export function FreightMarketPage() {
                   } catch (err) {
                     setPageError(err instanceof Error ? err.message : 'Erreur suppression.');
                   }
-                }}
+                } : undefined}
               />
             ))}
           </div>

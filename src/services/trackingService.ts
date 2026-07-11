@@ -449,7 +449,7 @@ export async function updateGpsPosition(
   source: TrackingSource = 'manual',
 ): Promise<void> {
   if (!canViewAllTracking(role, email)) {
-    throw new Error('Seuls admin/dispatcher peuvent mettre à jour la position GPS.');
+    throw new Error('Seuls admin et chauffeur peuvent mettre à jour la position GPS.');
   }
 
   const { data: row, error: fetchErr } = await supabase

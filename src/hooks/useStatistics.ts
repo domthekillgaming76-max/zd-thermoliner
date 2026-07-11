@@ -2,14 +2,15 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { queryKeys } from '../lib/queryKeys';
 import { supabase } from '../lib/supabase';
+import { PERF } from '../lib/perfConfig';
 import { fetchStatisticsBundle } from '../services/statisticsService';
 
 export function useStatistics() {
   const query = useQuery({
     queryKey: queryKeys.statistics.bundle(),
     queryFn: fetchStatisticsBundle,
-    staleTime: 30_000,
-    refetchInterval: 30_000,
+    staleTime: PERF.statisticsPollMs,
+    refetchInterval: PERF.statisticsPollMs,
   });
 
   useEffect(() => {

@@ -1,23 +1,21 @@
 import { isAdministratorEmail } from './admin';
-import { isDriverRole } from './accessControl';
-
-const MANAGER_ROLES = new Set(['pdg', 'patron', 'admin', 'directeur', 'dispatcher']);
+import { canUseCapability, isFlotteRole } from './accessService';
 
 export function canAskGlobalQuestions(role: string | null | undefined, email?: string | null): boolean {
-  return isAdministratorEmail(email) || MANAGER_ROLES.has(role ?? '');
+  return canUseCapability(role, email, 'manage_ops');
 }
 
 export function canViewFinancialSummaries(role: string | null | undefined, email?: string | null): boolean {
-  return canAskGlobalQuestions(role, email);
+  return canUseCapability(role, email, 'manage_finance');
 }
 
 export function canTriggerAutomations(role: string | null | undefined, email?: string | null): boolean {
-  return isAdministratorEmail(email) || ['pdg', 'patron', 'admin', 'directeur'].includes(role ?? '');
+  return canUseCapability(role, email, 'manage_ops');
 }
 
 export function isDriverAssistantMode(role: string | null | undefined, email?: string | null): boolean {
   if (isAdministratorEmail(email)) return false;
-  return isDriverRole(role);
+  return isFlotteRole(role);
 }
 
 export function getAssistantGreeting(role: string | null | undefined, email?: string | null): string {

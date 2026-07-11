@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
+import { PERF } from '../lib/perfConfig';
 import { queryKeys } from '../lib/queryKeys';
 import { supabase } from '../lib/supabase';
 import type { AcceptFreightChainInput, AcceptFreightInput, FreightChainInput, FreightOfferInput } from '../lib/freightTypes';
@@ -29,8 +30,8 @@ export function useFreight(
     queryKey: queryKeys.freight.module(userId),
     queryFn: () => fetchFreightBundle(userId!, role, email),
     enabled: !!userId,
-    staleTime: 10_000,
-    refetchInterval: 15_000,
+    staleTime: PERF.queryStaleTime,
+    refetchInterval: PERF.freightPollMs,
   });
 
   useEffect(() => {

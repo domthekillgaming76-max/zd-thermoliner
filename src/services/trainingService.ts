@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { normalizeRole } from '../lib/roleEngine';
 import { canManageTraining } from '../lib/trainingPermissions';
 import type {
   DriverCertification,
@@ -24,10 +25,12 @@ function isTrainingSchemaError(error: { code?: string; message?: string } | null
 function roleCanAccess(requiredRole: string, userRole?: string | null): boolean {
   if (!requiredRole || requiredRole === 'all') return true;
   if (!userRole) return false;
-  if (requiredRole === userRole) return true;
-  if (['pdg', 'patron', 'admin', 'directeur'].includes(userRole)) return true;
-  if (requiredRole === 'chauffeur' && (userRole === 'chauffeur' || userRole === 'tractionnaire')) return true;
-  if (requiredRole === 'dispatcher' && ['dispatcher', 'directeur', 'pdg', 'patron', 'admin'].includes(userRole)) return true;
+  const norm = normalizeRole(userRole);
+  if (requiredRole === userRole || normalizeRole(requiredRole) === norm) return true;
+  if (norm === 'admin') return true;
+  if (requiredRole === 'chauffeur' && norm === 'chauffeur') return true;
+  if (requiredRole === 'dispatcher' && norm === 'chauffeur') return true;
+  if (requiredRole === 'flotte' && norm === 'chauffeur') return true;
   return false;
 }
 

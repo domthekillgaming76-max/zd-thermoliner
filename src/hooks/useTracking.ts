@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../lib/queryKeys';
 import type { TrackingStatus } from '../lib/trackingTypes';
+import { PERF } from '../lib/perfConfig';
 import {
   acknowledgeTrackingAlert,
   fetchTrackingBundle,
@@ -20,8 +21,8 @@ export function useTracking(
     queryKey: queryKeys.tracking.module(userId),
     queryFn: () => fetchTrackingBundle(userId!, role, email),
     enabled: !!userId,
-    staleTime: 10_000,
-    refetchInterval: 20_000,
+    staleTime: PERF.queryStaleTime,
+    refetchInterval: PERF.trackingPollMs,
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: queryKeys.tracking.all });
