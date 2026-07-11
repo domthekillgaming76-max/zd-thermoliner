@@ -5,7 +5,7 @@ import {
 
   User, Camera, Save, Palette, Truck, Globe, MessageCircle,
 
-  Layers, Loader2, RefreshCw, AlertTriangle, CheckCircle2, Upload, FolderOpen, CreditCard,
+  Layers, Loader2, RefreshCw, AlertTriangle, CheckCircle2, Upload, FolderOpen, CreditCard, LayoutGrid,
 
 } from 'lucide-react';
 
@@ -19,8 +19,8 @@ import { UserBadges } from '../components/erp/UserBadges';
 import { AppUpdateProfileCard } from '../components/AppUpdateProfileCard';
 
 import { ProfilePreview } from '../components/profile/ProfilePreview';
-
-import { ProfileCard } from '../components/profile/ProfileCard';
+import { ProfileOverviewTab } from '../components/profile/ProfileOverviewTab';
+import { useProfilePosts } from '../hooks/useProfilePosts';
 
 import { useAuth } from '../contexts/AuthContext';
 
@@ -56,7 +56,7 @@ import { canViewOwnHrFolderOnProfile } from '../lib/driverPermissions';
 
 
 
-type ProfilePageTab = 'settings' | 'hr_folder' | 'bank_account';
+type ProfilePageTab = 'overview' | 'settings' | 'hr_folder' | 'bank_account';
 
 function Section({ title, icon: Icon, children }: { title: string; icon: typeof User; children: React.ReactNode }) {
 
@@ -202,7 +202,8 @@ export function ProfilePage() {
     const t = new URLSearchParams(window.location.search).get('tab');
     if (t === 'dossier' || t === 'hr_folder') return 'hr_folder';
     if (t === 'bank' || t === 'bank_account') return 'bank_account';
-    return t === 'settings' || t === 'personnalisation' ? 'settings' : 'settings';
+    if (t === 'settings' || t === 'personnalisation') return 'settings';
+    return 'overview';
   });
 
   const [searchParams] = useSearchParams();
@@ -210,22 +211,18 @@ export function ProfilePage() {
   useEffect(() => {
     const t = searchParams.get('tab');
     if (t === 'dossier' || t === 'hr_folder') setPageTab('hr_folder');
-    if (t === 'bank' || t === 'bank_account') setPageTab('bank_account');
-    if (t === 'settings' || t === 'personnalisation') setPageTab('settings');
+    else if (t === 'bank' || t === 'bank_account') setPageTab('bank_account');
+    else if (t === 'settings' || t === 'personnalisation') setPageTab('settings');
+    else if (t === 'overview' || t === 'feed') setPageTab('overview');
   }, [searchParams]);
 
-  useEffect(() => {
-    if (!profile || loading) return;
-    const t = searchParams.get('tab');
-    if (t === 'settings' || t === 'personnalisation') return;
-    const eligible = canViewOwnHrFolderOnProfile(
-      profile.role,
-      profile.email ?? user?.email,
-      stats.hasDriverRecord,
-      isAdministrator,
-    );
-    if (eligible) setPageTab('hr_folder');
-  }, [profile, loading, searchParams, user?.email, isAdministrator, stats.hasDriverRecord]);
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+  const {
+    data: postsBundle,
+    isLoading: postsLoading,
+    create: createPost,
+    remove: removePost,
+  } = useProfilePosts(user?.id);
 
 
 
@@ -438,7 +435,7 @@ export function ProfilePage() {
 
     <Layout>
 
-      <div className="space-y-6 max-w-6xl mx-auto">
+      <div className="space-y-6 max-w-6xl mx-auto profile-module">
 
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
 
@@ -446,7 +443,7 @@ export function ProfilePage() {
 
             title="Mon profil"
 
-            subtitle="Personnalisez votre identité Z&D Thermoliner"
+            subtitle="Fil d'actualité, widgets et identité Z&D Thermoliner"
 
             icon={User}
 
@@ -472,38 +469,36 @@ export function ProfilePage() {
 
 
 
-        <ProfileCard profile={profile} stats={stats} isOnline isAdmin={isAdministrator} />
+        <nav className="flex gap-1 overflow-x-auto pb-1 profile-tab-nav">
 
+          <button
+            type="button"
+            onClick={() => setPageTab('overview')}
+            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+              pageTab === 'overview'
+                ? 'bg-red-500/15 text-red-400 border border-red-500/25'
+                : 'text-white/35 hover:bg-white/5 border border-transparent'
+            }`}
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            Vue d&apos;ensemble
+          </button>
 
+          <button
+            type="button"
+            onClick={() => setPageTab('settings')}
+            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+              pageTab === 'settings'
+                ? 'bg-red-500/15 text-red-400 border border-red-500/25'
+                : 'text-white/35 hover:bg-white/5 border border-transparent'
+            }`}
+          >
+            <User className="w-3.5 h-3.5" />
+            Personnalisation
+          </button>
 
-        {showHrFolder && (
-
-          <nav className="flex gap-1 overflow-x-auto pb-1">
-
-            <button
-
-              type="button"
-
-              onClick={() => setPageTab('settings')}
-
-              className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-
-                pageTab === 'settings'
-
-                  ? 'bg-red-500/15 text-red-400 border border-red-500/25'
-
-                  : 'text-white/35 hover:bg-white/5 border border-transparent'
-
-              }`}
-
-            >
-
-              <User className="w-3.5 h-3.5" />
-
-              Personnalisation
-
-            </button>
-
+          {showHrFolder && (
+            <>
             <button
 
               type="button"
@@ -551,9 +546,47 @@ export function ProfilePage() {
               Mon compte bancaire
 
             </button>
+            </>
+          )}
 
-          </nav>
+        </nav>
 
+
+
+        {pageTab === 'overview' && (
+          <ProfileOverviewTab
+            profile={profile}
+            stats={stats}
+            form={form}
+            isAdmin={isAdministrator}
+            userId={user?.id}
+            posts={postsBundle?.posts ?? []}
+            postsLoading={postsLoading}
+            postsMigrationRequired={postsBundle?.migrationRequired}
+            posting={createPost.isPending}
+            deletingPostId={deletingPostId}
+            onCreatePost={async input => {
+              setManualError(null);
+              try {
+                await createPost.mutateAsync(input);
+                setFlashSuccess('Publication ajoutée à votre fil.');
+              } catch (err) {
+                setManualError(err instanceof Error ? err.message : 'Impossible de publier.');
+              }
+            }}
+            onDeletePost={async id => {
+              setDeletingPostId(id);
+              setManualError(null);
+              try {
+                await removePost.mutateAsync(id);
+                setFlashSuccess('Publication supprimée.');
+              } catch (err) {
+                setManualError(err instanceof Error ? err.message : 'Suppression impossible.');
+              } finally {
+                setDeletingPostId(null);
+              }
+            }}
+          />
         )}
 
 
@@ -566,7 +599,7 @@ export function ProfilePage() {
 
           <DriverBankPanel bundle={bankBundle} loading={bankLoading} />
 
-        ) : (
+        ) : pageTab === 'settings' ? (
 
         <>
 
@@ -831,7 +864,7 @@ export function ProfilePage() {
 
         </>
 
-        )}
+        ) : null}
 
 
 

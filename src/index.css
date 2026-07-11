@@ -1006,6 +1006,70 @@ select:focus {
   }
 }
 
+.profile-module {
+  --profile-accent: #ef4444;
+}
+
+.profile-overview-enter {
+  animation: profilePreviewIn 0.4s ease-out;
+}
+
+.profile-widget-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  padding: 1rem;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.profile-widget-card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--widget-accent, #ef4444) 35%, transparent);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35), 0 0 24px color-mix(in srgb, var(--widget-accent, #ef4444) 12%, transparent);
+}
+
+.profile-widget-glow {
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--widget-accent, #ef4444) 25%, transparent), transparent 70%);
+  pointer-events: none;
+}
+
+.profile-feed-compose {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(8, 8, 8, 0.95) 100%);
+  backdrop-filter: blur(12px);
+}
+
+.profile-feed-card {
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: border-color 0.2s ease;
+}
+
+.profile-feed-card:hover {
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.profile-feed-empty {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.profile-tab-nav button {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.profile-tab-nav button:hover {
+  transform: translateY(-1px);
+}
+
 /* Driver Management module */
 .driver-glass {
   background: rgba(255, 255, 255, 0.03);

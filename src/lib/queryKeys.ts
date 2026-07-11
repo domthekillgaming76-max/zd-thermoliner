@@ -71,6 +71,9 @@ export const queryKeys = {
     adminAccounts: () => ['driverBank', 'adminAccounts'] as const,
     adminTransfers: () => ['driverBank', 'adminTransfers'] as const,
   },
+  profile: {
+    posts: (userId?: string) => ['profile', 'posts', userId ?? 'anonymous'] as const,
+  },
   vault: {
     all: ['vault'] as const,
     module: (userId?: string) => ['vault', 'module', userId ?? 'anonymous'] as const,
