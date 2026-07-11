@@ -1,5 +1,5 @@
 /* Keep CACHE_NAME in sync with APP_VERSION in src/lib/appVersion.ts */
-const CACHE_NAME = 'zd-thermoliner-2-6-1';
+const CACHE_NAME = 'zd-thermoliner-2-6-5-fix';
 const PRECACHE = ['/', '/index.html', '/manifest.json', '/icons/icon-192.svg', '/icons/icon-512.svg'];
 
 self.addEventListener('install', (event) => {

@@ -13,6 +13,7 @@ const distPath = path.join(__dirname, '..', 'dist');
 const port = Number(process.env.PORT) || 3000;
 
 const app = express();
+app.set('trust proxy', 1);
 
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -104,13 +105,23 @@ app.use(express.static(distPath, {
   maxAge: '7d',
   setHeaders(res, filePath) {
     if (filePath.endsWith('index.html')) {
-      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+    if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     }
   },
 }));
 
-app.get(/^(?!\/api\/).*/, (_req, res) => {
-  res.sendFile(path.join(distPath, 'index.html'));
+app.get(/^(?!\/api\/).*/, (req, res, next) => {
+  const p = req.path.split('?')[0];
+  const looksLikeAsset = /\.[a-z0-9]+$/i.test(p) && !p.endsWith('.html');
+  if (looksLikeAsset) {
+    return res.status(404).type('text/plain').send('Asset not found — rechargez (Ctrl+F5).');
+  }
+  return res.sendFile(path.join(distPath, 'index.html'), (err) => {
+    if (err) next(err);
+  });
 });
 
 app.listen(port, () => {

@@ -3,6 +3,9 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
@@ -15,12 +18,21 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (!id.includes('node_modules')) return;
-          if (id.includes('recharts')) return 'charts';
-          if (id.includes('@supabase')) return 'supabase';
-          if (id.includes('@tanstack')) return 'query';
-          if (id.includes('react-router')) return 'router';
-          if (id.includes('lucide-react')) return 'icons';
-          if (id.includes('react-dom') || id.includes('/react/')) return 'react';
+          const norm = id.replace(/\\/g, '/');
+          if (norm.includes('recharts')) return 'charts';
+          if (norm.includes('@supabase')) return 'supabase';
+          if (norm.includes('@tanstack')) return 'query';
+          if (norm.includes('react-router')) return 'router';
+          if (norm.includes('lucide-react')) return 'icons';
+          // React + scheduler même chunk — évite écran noir (react ↔ vendor)
+          if (
+            norm.includes('/react-dom/')
+            || norm.includes('/react/')
+            || norm.includes('/scheduler/')
+            || norm.includes('/use-sync-external-store/')
+          ) {
+            return 'react';
+          }
           return 'vendor';
         },
       },
