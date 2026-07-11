@@ -19,6 +19,7 @@ import {
 } from '../lib/trackingPermissions';
 import type { TrackingStatus } from '../lib/trackingTypes';
 import { TrackingProvidersBar } from '../components/tracking/TrackingProvidersBar';
+import { TrackingGallery, TrackingHeroBanner } from '../components/tracking/TrackingGallery';
 
 export function TrackingPage() {
   const { user, profile } = useAuth();
@@ -112,6 +113,8 @@ export function TrackingPage() {
           icon={Map}
         />
 
+        <TrackingHeroBanner />
+
         {data?.migrationRequired && (
           <div className="tracking-glass rounded-xl p-4 flex items-start gap-3 border border-amber-500/25">
             <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
@@ -196,6 +199,8 @@ export function TrackingPage() {
                 />
               ))}
             </div>
+
+            <TrackingGallery />
           </>
         )}
       </div>
