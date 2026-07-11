@@ -1,5 +1,5 @@
 /** Bump this constant on each production release. */
-export const APP_VERSION = '2.6.1';
+export const APP_VERSION = '2.6.2';
 
 /** Alias used by the PWA update system. */
 export const CURRENT_APP_VERSION = APP_VERSION;
@@ -15,13 +15,16 @@ export const DISMISSED_APP_VERSION_KEY = 'zd_dismissed_app_version';
 /** @deprecated Migrated to INSTALLED_APP_VERSION_KEY */
 const LEGACY_SEEN_APP_VERSION_KEY = 'zd_seen_app_version';
 
-export const APP_UPDATE_NOTIFICATION_TITLE = 'Mise à jour v2.6.1 disponible';
+export const APP_UPDATE_NOTIFICATION_TITLE = 'Mise à jour disponible';
 
 export const APP_UPDATE_NOTIFICATION_MESSAGE =
-  'Corrections PWA, stabilité et performance. Téléchargez la dernière version pour profiter des améliorations.';
+  'Une nouvelle version de l’ERP est disponible. Téléchargez-la pour profiter des dernières fonctionnalités.';
 
 export const APP_UPDATE_BUTTON_LABEL = 'Télécharger la mise à jour';
 export const APP_UPDATE_DISMISS_LABEL = 'Plus tard';
+
+/** Poll interval for remote version check (ms). */
+export const REMOTE_VERSION_POLL_MS = 3 * 60 * 1000;
 
 export interface VersionCheckResult {
   hasUpdate: boolean;
@@ -167,6 +170,25 @@ export function saveSeenAppVersion(version?: string): void {
 /** @deprecated Use getInstalledAppVersion */
 export function getSeenAppVersion(): string | null {
   return getInstalledAppVersion();
+}
+
+export async function fetchRemoteAppVersion(): Promise<string | null> {
+  try {
+    const res = await fetch(`/version.json?t=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { version?: string };
+    return data.version ? normalizeVersion(data.version) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function buildUpdateTitle(targetVersion: string | null | undefined): string {
+  const v = targetVersion ? formatVersionLabel(targetVersion) : APP_VERSION_LABEL;
+  return `Mise à jour ${v} disponible`;
 }
 
 /** SW cache bucket — keep in sync with APP_VERSION. */

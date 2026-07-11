@@ -4,17 +4,35 @@ import {
   saveDismissedAppVersion,
   saveInstalledAppVersion,
 } from './appVersion';
+import {
+  activateWaitingServiceWorker,
+  cleanOldCaches,
+  clearServiceWorkerUpdateReady,
+  getServiceWorkerRegistration,
+} from '../services/updateService';
 
-/** Full cache purge + SW unregister + reload. Marks bundle as installed. */
-export async function applyAppUpdateAndReload(): Promise<void> {
-  saveInstalledAppVersion(APP_VERSION);
+/** Full cache purge + optional SW activation + reload. Marks bundle as installed. */
+export async function applyAppUpdateAndReload(targetVersion?: string): Promise<void> {
+  saveInstalledAppVersion(targetVersion ?? APP_VERSION);
   clearDismissedAppVersion();
+  clearServiceWorkerUpdateReady();
 
   if ('serviceWorker' in navigator) {
-    const registrations = await navigator.serviceWorker.getRegistrations();
-    await Promise.all(registrations.map((reg) => reg.unregister()));
+    try {
+      await activateWaitingServiceWorker();
+    } catch {
+      /* waiting worker may not exist */
+    }
+    const reg = getServiceWorkerRegistration();
+    if (reg) {
+      await reg.update();
+    } else {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((r) => r.unregister()));
+    }
   }
 
+  await cleanOldCaches();
   if ('caches' in window) {
     const keys = await caches.keys();
     await Promise.all(keys.map((key) => caches.delete(key)));
@@ -23,7 +41,8 @@ export async function applyAppUpdateAndReload(): Promise<void> {
   window.location.reload();
 }
 
-/** Hide banner for this bundle version until a newer one is deployed. */
-export function dismissAppUpdateForNow(): void {
-  saveDismissedAppVersion(APP_VERSION);
+/** Hide banner for this version until a newer one is deployed. */
+export function dismissAppUpdateForNow(version: string = APP_VERSION): void {
+  saveDismissedAppVersion(version);
+  clearServiceWorkerUpdateReady();
 }

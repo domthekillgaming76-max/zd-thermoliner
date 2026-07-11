@@ -15,7 +15,8 @@ export function AppUpdateBanner({ variant = 'full' }: AppUpdateBannerProps) {
     dismissLabel,
     clientVersionLabel,
     installedVersion,
-    serverVersion,
+    remoteVersion,
+    targetVersion,
     refreshNow,
     dismissLater,
   } = useAppUpdateNotification();
@@ -52,7 +53,8 @@ export function AppUpdateBanner({ variant = 'full' }: AppUpdateBannerProps) {
               <p className="text-[10px] text-white/30 mt-1">
                 Version {clientVersionLabel}
                 {installedVersion ? ` · installée v${installedVersion}` : ''}
-                {serverVersion ? ` · serveur ${serverVersion}` : ''}
+                {remoteVersion ? ` · serveur v${remoteVersion}` : ''}
+                {targetVersion && targetVersion !== remoteVersion ? ` · cible v${targetVersion}` : ''}
               </p>
             )}
           </div>

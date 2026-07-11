@@ -2,8 +2,13 @@ import { supabase } from '../lib/supabase';
 import {
   APP_VERSION,
   APP_VERSION_LABEL,
-  checkForNewVersion,
+  fetchRemoteAppVersion,
+  getDismissedAppVersion,
+  getInstalledAppVersion,
+  normalizeVersion,
+  compareVersions,
 } from '../lib/appVersion';
+
 import { ensureAppUpdateNotification } from './notificationService';
 
 export interface PublishedAppUpdate {
@@ -16,12 +21,14 @@ export interface PublishedAppUpdate {
 export interface AppUpdateStatus {
   visible: boolean;
   serverVersion: string | null;
+  remoteVersion: string | null;
   latestUpdate: PublishedAppUpdate | null;
   clientVersion: string;
   clientVersionLabel: string;
   installedVersion: string;
   dismissedVersion: string;
   targetVersion: string | null;
+  swUpdateReady: boolean;
 }
 
 export async function fetchLatestPublishedUpdate(): Promise<PublishedAppUpdate | null> {
@@ -66,24 +73,71 @@ export async function acknowledgeUpdateExtras(
   }
 }
 
-export async function fetchAppUpdateStatus(userId?: string): Promise<AppUpdateStatus> {
-  const latestUpdate = await fetchLatestPublishedUpdate();
-  const serverVersion = latestUpdate?.version ?? null;
-  const versionCheck = checkForNewVersion();
-  const visible = versionCheck.hasUpdate;
+function isDismissedForVersion(targetVersion: string | null): boolean {
+  if (!targetVersion) return false;
+  const dismissed = getDismissedAppVersion();
+  return !!dismissed && compareVersions(dismissed, targetVersion) >= 0;
+}
 
-  if (visible && userId) {
-    void ensureAppUpdateNotification(userId);
+export function resolveUpdateVisibility(
+  remoteVersion: string | null,
+  swUpdateReady = false,
+): {
+  visible: boolean;
+  targetVersion: string | null;
+  reason: 'remote' | 'local' | 'sw' | null;
+} {
+  const runningVersion = normalizeVersion(APP_VERSION);
+  const installedVersion = getInstalledAppVersion() ?? '';
+
+  if (remoteVersion && compareVersions(remoteVersion, runningVersion) > 0) {
+    if (!isDismissedForVersion(remoteVersion)) {
+      return { visible: true, targetVersion: remoteVersion, reason: 'remote' };
+    }
+  }
+
+  if (installedVersion && compareVersions(installedVersion, runningVersion) < 0) {
+    if (!isDismissedForVersion(runningVersion)) {
+      return { visible: true, targetVersion: runningVersion, reason: 'local' };
+    }
+  }
+
+  if (swUpdateReady && !isDismissedForVersion(runningVersion)) {
+    return { visible: true, targetVersion: runningVersion, reason: 'sw' };
+  }
+
+  return { visible: false, targetVersion: null, reason: null };
+}
+
+export async function fetchAppUpdateStatus(
+  userId?: string,
+  swUpdateReady = false,
+): Promise<AppUpdateStatus> {
+  const [latestUpdate, remoteVersion] = await Promise.all([
+    fetchLatestPublishedUpdate(),
+    fetchRemoteAppVersion(),
+  ]);
+
+  const changelogVersion = latestUpdate?.version ? normalizeVersion(latestUpdate.version) : null;
+  const effectiveRemote = remoteVersion ?? changelogVersion;
+  const visibility = resolveUpdateVisibility(effectiveRemote, swUpdateReady);
+  const installedVersion = getInstalledAppVersion() ?? '';
+  const dismissedVersion = getDismissedAppVersion() ?? '';
+
+  if (visibility.visible && userId) {
+    void ensureAppUpdateNotification(userId, visibility.targetVersion);
   }
 
   return {
-    visible,
-    serverVersion,
+    visible: visibility.visible,
+    serverVersion: changelogVersion,
+    remoteVersion: effectiveRemote,
     latestUpdate,
     clientVersion: APP_VERSION,
     clientVersionLabel: APP_VERSION_LABEL,
-    installedVersion: versionCheck.installedVersion,
-    dismissedVersion: versionCheck.dismissedVersion,
-    targetVersion: versionCheck.targetVersion,
+    installedVersion,
+    dismissedVersion,
+    targetVersion: visibility.targetVersion,
+    swUpdateReady,
   };
 }

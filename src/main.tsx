@@ -10,8 +10,7 @@ import { registerServiceWorker } from './services/updateService';
 installCryptoPolyfill();
 bootstrapInstalledVersion();
 
-/* SW désactivé temporairement — évite cache PWA et écran noir après déploiement */
-if (false && 'serviceWorker' in navigator) {
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     void registerServiceWorker();
   });

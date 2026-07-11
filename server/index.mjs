@@ -122,7 +122,8 @@ app.use('/api/client', clientApiRouter);
 app.use(express.static(distPath, {
   maxAge: '7d',
   setHeaders(res, filePath) {
-    if (filePath.endsWith('index.html')) {
+    const base = path.basename(filePath);
+    if (base === 'index.html' || base === 'version.json' || base === 'sw.js') {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     }
     if (filePath.includes(`${path.sep}assets${path.sep}`)) {

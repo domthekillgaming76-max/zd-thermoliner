@@ -1,9 +1,11 @@
 import { supabase } from '../lib/supabase';
 import {
   APP_UPDATE_NOTIFICATION_MESSAGE,
-  APP_UPDATE_NOTIFICATION_TITLE,
   APP_VERSION,
+  buildUpdateTitle,
   checkForNewVersion,
+  compareVersions,
+  normalizeVersion,
 } from '../lib/appVersion';
 import type { LiveNotification } from '../lib/liveOpsTypes';
 
@@ -99,16 +101,23 @@ export async function notifyUsersByRoles(
   return Number(data ?? 0);
 }
 
-/** Ensure the current user has an in-app notification for the new APP_VERSION. */
-export async function ensureAppUpdateNotification(userId: string): Promise<void> {
-  if (!checkForNewVersion().hasUpdate) return;
+/** Ensure the current user has an in-app notification for a pending app update. */
+export async function ensureAppUpdateNotification(
+  userId: string,
+  targetVersion?: string | null,
+): Promise<void> {
+  const version = normalizeVersion(targetVersion ?? APP_VERSION);
+  const running = normalizeVersion(APP_VERSION);
+  if (compareVersions(version, running) <= 0 && !checkForNewVersion().hasUpdate) return;
+
+  const title = buildUpdateTitle(version);
 
   const { data } = await supabase
     .from('notifications')
     .select('id')
     .eq('user_id', userId)
     .eq('type', 'app_update')
-    .eq('title', APP_UPDATE_NOTIFICATION_TITLE)
+    .eq('title', title)
     .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
     .limit(1);
 
@@ -116,8 +125,8 @@ export async function ensureAppUpdateNotification(userId: string): Promise<void>
 
   await createUserNotification(
     userId,
-    APP_UPDATE_NOTIFICATION_TITLE,
-    `${APP_UPDATE_NOTIFICATION_MESSAGE} (v${APP_VERSION})`,
+    title,
+    APP_UPDATE_NOTIFICATION_MESSAGE,
     'app_update',
   );
 }
