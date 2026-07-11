@@ -10,8 +10,16 @@ export function ClovisAgencyInfoPanel() {
         <h2 className="text-2xl font-black text-white mt-1">Clovis Location</h2>
         <p className="text-xs text-white/40 mt-2 leading-relaxed">
           Agence de location poids lourds RP. Flotte Renault T entretenue, contrats journaliers,
-          prélèvement automatique sur votre compte Z&amp;D Thermoliner.
+          prélèvement automatique sur le compte entreprise Z&amp;D Thermoliner.
         </p>
+      </div>
+
+      <div className="rounded-xl overflow-hidden border border-white/8">
+        <img
+          src="/clovis/agency-handshake.png"
+          alt="Accueil agence Clovis"
+          className="w-full h-28 object-cover"
+        />
       </div>
 
       <div className="space-y-3">

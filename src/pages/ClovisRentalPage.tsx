@@ -6,6 +6,7 @@ import { FormAlert, FormSuccess } from '../components/erp/FormAlert';
 import { ClovisTruckCard } from '../components/clovis/ClovisTruckCard';
 import { ClovisActiveRentalPanel } from '../components/clovis/ClovisActiveRentalPanel';
 import { ClovisAgencyInfoPanel } from '../components/clovis/ClovisAgencyInfoPanel';
+import { ClovisAgencyGallery, ClovisHeroBanner } from '../components/clovis/ClovisAgencyGallery';
 import { useAuth } from '../contexts/AuthContext';
 import { useClovisRental } from '../hooks/useClovisRental';
 import { fmtEuro } from '../lib/format';
@@ -62,27 +63,32 @@ export function ClovisRentalPage() {
       <div className="space-y-6 max-w-6xl">
         <div className="clovis-hero rounded-2xl p-6 md:p-8 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-red-500/5 pointer-events-none" />
-          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-amber-400/80 mb-2">
-                Agence partenaire Z&amp;D Thermoliner
-              </p>
-              <PageHeader
-                title="Clovis Location"
-                subtitle="Location véhicules Renault T — facturation sur le compte entreprise"
-                icon={KeyRound}
-              />
-            </div>
-            {companyBalance !== null && (
-              <div className="rounded-xl bg-black/40 border border-emerald-500/15 px-4 py-3 text-right shrink-0">
-                <p className="text-[10px] text-white/30 uppercase flex items-center justify-end gap-1">
-                  <Building2 className="w-3 h-3" /> Solde entreprise
+          <div className="relative">
+            <ClovisHeroBanner />
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-amber-400/80 mb-2">
+                  Agence partenaire Z&amp;D Thermoliner
                 </p>
-                <p className="text-xl font-black text-emerald-400">{fmtEuro(companyBalance)}</p>
+                <PageHeader
+                  title="Clovis Location"
+                  subtitle="Location véhicules Renault T — facturation sur le compte entreprise"
+                  icon={KeyRound}
+                />
               </div>
-            )}
+              {companyBalance !== null && (
+                <div className="rounded-xl bg-black/40 border border-emerald-500/15 px-4 py-3 text-right shrink-0">
+                  <p className="text-[10px] text-white/30 uppercase flex items-center justify-end gap-1">
+                    <Building2 className="w-3 h-3" /> Solde entreprise
+                  </p>
+                  <p className="text-xl font-black text-emerald-400">{fmtEuro(companyBalance)}</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
+
+        <ClovisAgencyGallery />
 
         {error && <FormAlert message={error} onDismiss={() => setError(null)} />}
         {success && <FormSuccess message={success} onDismiss={() => setSuccess(null)} />}
