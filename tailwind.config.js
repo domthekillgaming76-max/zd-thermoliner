@@ -91,6 +91,14 @@ export default {
           '0%': { opacity: '0', transform: 'translateY(10px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        'dashboard-in': {
+          '0%': { opacity: '0', transform: 'translateY(16px) scale(0.98)' },
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
+        'value-pop': {
+          '0%': { opacity: '0', transform: 'translateY(6px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
       },
       animation: {
         'slide-up': 'slide-up 0.5s ease-out',
@@ -99,6 +107,8 @@ export default {
         'truck-drive': 'truck-drive 1.2s ease-out',
         'shimmer': 'shimmer 2.5s infinite linear',
         'counter-up': 'counter-up 0.6s ease-out',
+        'dashboard-in': 'dashboard-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+        'value-pop': 'value-pop 0.45s ease-out forwards',
       },
     },
   },

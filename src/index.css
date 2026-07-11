@@ -636,6 +636,35 @@ select:focus {
   box-shadow: 0 4px 16px rgba(239, 68, 68, 0.08);
 }
 
+.dashboard-section-line {
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.35), transparent);
+}
+
+.premium-hero-shine {
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.03) 50%,
+    transparent 60%
+  );
+  animation: dashboard-shine 8s ease-in-out infinite;
+}
+
+@keyframes dashboard-shine {
+  0%, 100% { opacity: 0; transform: translateX(-30%); }
+  50% { opacity: 1; transform: translateX(30%); }
+}
+
+.dashboard-value-pop {
+  opacity: 0;
+  animation: value-pop 0.45s ease-out forwards;
+}
+
+@keyframes value-pop {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* Bank Lounge — Z&D Thermoliner personal banking space */
 .bank-lounge {
   background: linear-gradient(180deg, #061810 0%, #080808 28%, #080808 100%);

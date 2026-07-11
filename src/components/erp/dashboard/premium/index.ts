@@ -1,6 +1,7 @@
 export { PremiumDashboardHero } from './PremiumDashboardHero';
 export { ExecutiveSummary } from './ExecutiveSummary';
 export { MetricTile, MetricsGrid } from './MetricTile';
+export { DashboardSection, DashboardWidget } from './DashboardSection';
 export { FinanceAnalytics } from './FinanceAnalytics';
 export { ExpenseBreakdownPanel } from './ExpenseBreakdownPanel';
 export { OperationsHub } from './OperationsHub';

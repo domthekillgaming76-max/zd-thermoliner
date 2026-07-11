@@ -38,14 +38,15 @@ export function ModuleShortcuts() {
         <p className="text-[11px] text-white/30 mt-0.5">Modules ERP</p>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {modules.map(mod => {
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
+        {modules.map((mod, i) => {
           const Icon = mod.icon;
           return (
             <Link
               key={mod.label}
               to={mod.to}
-              className="premium-module-link group flex flex-col items-center gap-2.5 p-4 rounded-xl transition-all hover:-translate-y-0.5"
+              className="premium-module-link group flex flex-col items-center gap-2.5 p-4 rounded-xl transition-all hover:-translate-y-1 opacity-0 animate-dashboard-in"
+              style={{ animationDelay: `${i * 50}ms`, animationFillMode: 'forwards' }}
             >
               <div
                 className="w-11 h-11 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110"
@@ -58,10 +59,10 @@ export function ModuleShortcuts() {
                 <Icon className="w-5 h-5" style={{ color: mod.color }} />
               </div>
               <div className="text-center">
-                <p className="text-[11px] font-bold text-white group-hover:text-red-300 transition-colors">
+                <p className="text-xs font-bold text-white group-hover:text-red-300 transition-colors">
                   {mod.label}
                 </p>
-                <p className="text-[9px] text-white/25 mt-0.5 hidden sm:block">{mod.description}</p>
+                <p className="text-[10px] text-white/35 mt-0.5 hidden sm:block">{mod.description}</p>
               </div>
             </Link>
           );
