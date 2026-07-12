@@ -5,7 +5,6 @@ Application **WebView2** légère — l'ERP s'affiche dans une fenêtre dédiée
 ## Prérequis
 
 - Windows 10/11 x64
-- [.NET 8 Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) (souvent déjà installé)
 - [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) (présent sur la plupart des PC Windows 11)
 
 ## Build
@@ -14,7 +13,7 @@ Application **WebView2** légère — l'ERP s'affiche dans une fenêtre dédiée
 npm run build:erp-launcher
 ```
 
-Sortie : `desktop/erp-launcher/publish/ZD-Thermoliner-ERP.exe`
+Sortie : `desktop/erp-launcher/publish/ZD-Thermoliner-ERP.exe` (autonome, .NET inclus)
 
 ## Distribution ERP
 

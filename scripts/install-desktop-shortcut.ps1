@@ -13,7 +13,7 @@ $batPath = Join-Path $ProjectRoot 'LANCER-ERP.bat'
 
 $nativeLauncher = Join-Path $env:LOCALAPPDATA 'Programs\ZD-Thermoliner-ERP\ZD-Thermoliner-ERP.exe'
 $localLauncher = Join-Path $ProjectRoot 'desktop\erp-launcher\publish\ZD-Thermoliner-ERP.exe'
-$downloadLauncher = Join-Path $env:USERPROFILE 'Downloads\ZD-Thermoliner-ERP-Windows-1.0.2.exe'
+$downloadLauncher = Join-Path $env:USERPROFILE 'Downloads\ZD-Thermoliner-ERP-Windows-1.0.3.exe'
 
 $targetExe = $null
 if (Test-Path $nativeLauncher) { $targetExe = $nativeLauncher }
@@ -33,7 +33,7 @@ if ($targetExe) {
   Write-Host "[OK] Raccourci vers launcher : $targetExe"
 } else {
   if (-not (Test-Path $batPath)) {
-    Write-Host "[ERREUR] Launcher introuvable. Telechargez ZD-Thermoliner-ERP-Windows-1.0.2.exe"
+    Write-Host "[ERREUR] Launcher introuvable. Telechargez ZD-Thermoliner-ERP-Windows-1.0.3.exe"
     exit 1
   }
   $shortcut.TargetPath = $batPath

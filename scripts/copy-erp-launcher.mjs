@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '..');
-const version = process.env.ERP_LAUNCHER_VERSION || '1.0.2';
+const version = process.env.ERP_LAUNCHER_VERSION || '1.0.3';
 const fileName = `ZD-Thermoliner-ERP-Windows-${version}.exe`;
 
 const candidates = [
