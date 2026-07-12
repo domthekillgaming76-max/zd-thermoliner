@@ -53,7 +53,7 @@ const githubRawUrl = `https://github.com/${githubRepo}/raw/${githubBranch}/publi
 const erpDownloadUrl = `${erpBase}/downloads/${fileName}`;
 const changelog =
   process.env.CLIENT_CHANGELOG ||
-  `Client Windows Z&D Thermoliner v${version} — overlay in-game HUD (widgets + tachygraphe), optimisé basse consommation.`;
+  `Client Windows Z&D Thermoliner v${version} — correctif voix livraison + sélection voix F/M immédiate.`;
 
 if (!fs.existsSync(exePath)) {
   console.error(`[publish] Fichier introuvable: ${exePath}`);
