@@ -15,13 +15,14 @@ interface ProfileOverviewTabProps {
   form: ProfileCustomizationForm;
   isAdmin?: boolean;
   userId?: string;
+  canEdit?: boolean;
   posts: ProfilePost[];
   postsLoading?: boolean;
   postsMigrationRequired?: boolean;
   posting?: boolean;
   deletingPostId?: string | null;
-  onCreatePost: (input: { content: string; media_file?: File }) => void;
-  onDeletePost: (id: string) => void;
+  onCreatePost?: (input: { content: string; media_file?: File }) => void;
+  onDeletePost?: (id: string) => void;
 }
 
 export function ProfileOverviewTab({
@@ -30,6 +31,7 @@ export function ProfileOverviewTab({
   form,
   isAdmin,
   userId,
+  canEdit = true,
   posts,
   postsLoading,
   postsMigrationRequired,
@@ -44,14 +46,16 @@ export function ProfileOverviewTab({
 
       <ProfileWidgetGrid profile={profile} stats={stats} />
 
-      <div className="grid xl:grid-cols-[1fr_300px] gap-6 items-start">
+      <div className={`grid gap-6 items-start ${canEdit ? 'xl:grid-cols-[1fr_300px]' : ''}`}>
         <div className="space-y-5">
-          <ProfileFeedCompose
-            profile={profile}
-            posting={posting}
-            migrationRequired={postsMigrationRequired}
-            onSubmit={onCreatePost}
-          />
+          {canEdit && onCreatePost && (
+            <ProfileFeedCompose
+              profile={profile}
+              posting={posting}
+              migrationRequired={postsMigrationRequired}
+              onSubmit={onCreatePost}
+            />
+          )}
 
           <section>
             <div className="flex items-center gap-2 mb-3">
@@ -63,18 +67,21 @@ export function ProfileOverviewTab({
               loading={postsLoading}
               currentUserId={userId}
               deletingId={deletingPostId}
-              onDelete={onDeletePost}
+              onDelete={canEdit ? onDeletePost : undefined}
+              readOnly={!canEdit}
             />
           </section>
         </div>
 
-        <aside className="xl:sticky xl:top-4 space-y-4">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white/30">
-            <Sparkles className="w-3.5 h-3.5" />
-            Aperçu live
-          </div>
-          <ProfilePreview form={form} role={profile.role} email={profile.email} isAdmin={isAdmin} />
-        </aside>
+        {canEdit && (
+          <aside className="xl:sticky xl:top-4 space-y-4">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white/30">
+              <Sparkles className="w-3.5 h-3.5" />
+              Aperçu live
+            </div>
+            <ProfilePreview form={form} role={profile.role} email={profile.email} isAdmin={isAdmin} />
+          </aside>
+        )}
       </div>
     </div>
   );

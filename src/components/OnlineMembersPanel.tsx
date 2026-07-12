@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Users, Circle } from 'lucide-react';
 import { useOnlinePresence } from '../hooks/useOnlinePresence';
 import { RoleBadge } from './erp/RoleBadge';
@@ -69,8 +70,10 @@ export function OnlineMembersPanel() {
             members.map(member => {
               const display = member.displayStatus;
               return (
-                <div
+                <Link
                   key={member.user_id}
+                  to={`/profile/${member.user_id}`}
+                  onClick={() => setMobileOpen(false)}
                   className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/[0.03] transition-colors"
                 >
                   <div className="relative">
@@ -91,7 +94,7 @@ export function OnlineMembersPanel() {
                       </span>
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })
           )}

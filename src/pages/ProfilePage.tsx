@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import {
 
   User, Camera, Save, Palette, Truck, Globe, MessageCircle,
 
-  Layers, Loader2, RefreshCw, AlertTriangle, CheckCircle2, Upload, FolderOpen, CreditCard, LayoutGrid,
+  Layers, Loader2, RefreshCw, AlertTriangle, CheckCircle2, Upload, FolderOpen, CreditCard, LayoutGrid, ArrowLeft,
 
 } from 'lucide-react';
 
@@ -25,6 +25,7 @@ import { useProfilePosts } from '../hooks/useProfilePosts';
 import { useAuth } from '../contexts/AuthContext';
 
 import type { NormalizedProfile } from '../services/profileService';
+import { fetchUserProfile } from '../services/profileService';
 
 import { fetchProfileCardStats, type ProfileCardStats } from '../services/profileStatsService';
 
@@ -158,6 +159,8 @@ function SaveStatus({ state, error }: { state: string; error: string | null }) {
 
 
 export function ProfilePage() {
+  const { userId: routeUserId } = useParams<{ userId?: string }>();
+
   const {
 
     profile,
@@ -177,6 +180,17 @@ export function ProfilePage() {
     isAdministrator,
 
   } = useAuth();
+
+  const isViewingOther = Boolean(
+    routeUserId && routeUserId !== 'me' && routeUserId !== user?.id,
+  );
+  const targetUserId = isViewingOther ? routeUserId! : user?.id;
+
+  const [viewedProfile, setViewedProfile] = useState<NormalizedProfile | null>(null);
+  const [viewedProfileError, setViewedProfileError] = useState<string | null>(null);
+  const [viewedProfileLoading, setViewedProfileLoading] = useState(false);
+
+  const activeProfile = isViewingOther ? viewedProfile : profile;
 
   const [form, setForm] = useState<ProfileCustomizationForm>(() => profileToForm(profile));
 
@@ -222,7 +236,42 @@ export function ProfilePage() {
     isLoading: postsLoading,
     create: createPost,
     remove: removePost,
-  } = useProfilePosts(user?.id);
+  } = useProfilePosts(targetUserId);
+
+  useEffect(() => {
+    if (!isViewingOther || !routeUserId) {
+      setViewedProfile(null);
+      setViewedProfileError(null);
+      setViewedProfileLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setViewedProfileLoading(true);
+    setViewedProfileError(null);
+
+    void fetchUserProfile(routeUserId).then(result => {
+      if (cancelled) return;
+      if (result.profile) {
+        setViewedProfile(result.profile);
+        setForm(profileToForm(result.profile));
+      } else {
+        setViewedProfile(null);
+        setViewedProfileError(result.error ?? 'Profil introuvable.');
+      }
+      setViewedProfileLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isViewingOther, routeUserId]);
+
+  useEffect(() => {
+    if (isViewingOther && pageTab !== 'overview') {
+      setPageTab('overview');
+    }
+  }, [isViewingOther, pageTab]);
 
 
 
@@ -254,7 +303,7 @@ export function ProfilePage() {
 
     customizationAvailable: profileCustomizationAvailable,
 
-    enabled: Boolean(profile && user),
+    enabled: Boolean(!isViewingOther && profile && user),
 
     onSaved: onProfileSaved,
 
@@ -264,7 +313,7 @@ export function ProfilePage() {
 
   useEffect(() => {
 
-    if (profile) {
+    if (profile && !isViewingOther) {
 
       resetSkip();
 
@@ -272,19 +321,19 @@ export function ProfilePage() {
 
     }
 
-  }, [profile?.id, profile?.updated_at, resetSkip]);
+  }, [profile?.id, profile?.updated_at, resetSkip, isViewingOther]);
 
 
 
   useEffect(() => {
 
-    if (!user?.id) return;
+    if (!targetUserId) return;
 
-    void fetchProfileCardStats(user.id).then(setStats);
+    void fetchProfileCardStats(targetUserId).then(setStats);
 
-  }, [user?.id, profile?.updated_at]);
+  }, [targetUserId, profile?.updated_at, viewedProfile?.updated_at]);
 
-
+  const { data: bankBundle, isLoading: bankLoading } = useDriverBank(isViewingOther ? undefined : user?.id);
 
   function setField<K extends keyof ProfileCustomizationForm>(key: K, value: ProfileCustomizationForm[K]) {
 
@@ -346,7 +395,7 @@ export function ProfilePage() {
 
 
 
-  if (loading) {
+  if (loading || (isViewingOther && viewedProfileLoading)) {
 
     return (
 
@@ -368,7 +417,9 @@ export function ProfilePage() {
 
 
 
-  if (!profile) {
+  if (!activeProfile) {
+
+    const loadError = isViewingOther ? viewedProfileError : profileError;
 
     return (
 
@@ -376,7 +427,21 @@ export function ProfilePage() {
 
         <div className="space-y-6 max-w-2xl mx-auto">
 
-          <PageHeader title="Mon profil" subtitle="Personnalisez votre identité Z&D Thermoliner" icon={User} />
+          <PageHeader
+            title={isViewingOther ? 'Profil membre' : 'Mon profil'}
+            subtitle={isViewingOther ? 'Consultation du profil' : 'Personnalisez votre identité Z&D Thermoliner'}
+            icon={User}
+          />
+
+          {isViewingOther && (
+            <Link
+              to="/profile"
+              className="inline-flex items-center gap-2 text-xs font-semibold text-white/45 hover:text-red-400 transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Retour à mon profil
+            </Link>
+          )}
 
           <div className="erp-card rounded-2xl p-6 space-y-4 border border-red-500/20">
 
@@ -390,7 +455,7 @@ export function ProfilePage() {
 
                 <p className="text-sm text-white/50 mt-1">
 
-                  {profileError ?? 'Une erreur inconnue est survenue.'}
+                  {loadError ?? 'Une erreur inconnue est survenue.'}
 
                 </p>
 
@@ -398,15 +463,16 @@ export function ProfilePage() {
 
             </div>
 
-            <button type="button" onClick={handleRetryLoad} disabled={refreshing}
+            {!isViewingOther && (
+              <button type="button" onClick={handleRetryLoad} disabled={refreshing}
+                className="btn-primary px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-50">
 
-              className="btn-primary px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 disabled:opacity-50">
+                {refreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
 
-              {refreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                Réessayer
 
-              Réessayer
-
-            </button>
+              </button>
+            )}
 
           </div>
 
@@ -421,15 +487,13 @@ export function ProfilePage() {
 
 
   const displayError = manualError ?? (saveState === 'error' ? saveError : null);
-
-  const showHrFolder = canViewOwnHrFolderOnProfile(
-    profile.role,
-    profile.email ?? user?.email,
+  const memberDisplayName = activeProfile.pseudo || activeProfile.full_name || 'Membre';
+  const showHrFolder = !isViewingOther && canViewOwnHrFolderOnProfile(
+    activeProfile.role,
+    activeProfile.email ?? user?.email,
     stats.hasDriverRecord,
     isAdministrator,
   );
-
-  const { data: bankBundle, isLoading: bankLoading } = useDriverBank(user?.id);
 
   return (
 
@@ -439,17 +503,32 @@ export function ProfilePage() {
 
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
 
-          <PageHeader
+          <div className="space-y-2">
+            {isViewingOther && (
+              <Link
+                to="/profile"
+                className="inline-flex items-center gap-2 text-xs font-semibold text-white/45 hover:text-red-400 transition-colors"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Retour à mon profil
+              </Link>
+            )}
+            <PageHeader
 
-            title="Mon profil"
+              title={isViewingOther ? `Profil de ${memberDisplayName}` : 'Mon profil'}
 
-            subtitle="Fil d'actualité, widgets et identité Z&D Thermoliner"
+              subtitle={
+                isViewingOther
+                  ? 'Fil photo et identité du membre'
+                  : "Fil d'actualité, widgets et identité Z&D Thermoliner"
+              }
 
-            icon={User}
+              icon={User}
 
-          />
+            />
+          </div>
 
-          <SaveStatus state={saveState} error={saveError} />
+          {!isViewingOther && <SaveStatus state={saveState} error={saveError} />}
 
         </div>
 
@@ -459,9 +538,9 @@ export function ProfilePage() {
 
         {flashSuccess && <FormSuccess message={flashSuccess} onDismiss={() => setFlashSuccess(null)} />}
 
-        <AppUpdateProfileCard />
+        {!isViewingOther && <AppUpdateProfileCard />}
 
-        {!profileCustomizationAvailable && (
+        {!isViewingOther && !profileCustomizationAvailable && (
 
           <FormAlert message="Champs de personnalisation non disponibles — exécutez npx supabase db push (migration 026) pour activer bio, thème et bannière." />
 
@@ -484,6 +563,8 @@ export function ProfilePage() {
             Vue d&apos;ensemble
           </button>
 
+          {!isViewingOther && (
+            <>
           <button
             type="button"
             onClick={() => setPageTab('settings')}
@@ -548,6 +629,8 @@ export function ProfilePage() {
             </button>
             </>
           )}
+            </>
+          )}
 
         </nav>
 
@@ -555,17 +638,18 @@ export function ProfilePage() {
 
         {pageTab === 'overview' && (
           <ProfileOverviewTab
-            profile={profile}
+            profile={activeProfile}
             stats={stats}
             form={form}
             isAdmin={isAdministrator}
             userId={user?.id}
+            canEdit={!isViewingOther}
             posts={postsBundle?.posts ?? []}
             postsLoading={postsLoading}
             postsMigrationRequired={postsBundle?.migrationRequired}
             posting={createPost.isPending}
             deletingPostId={deletingPostId}
-            onCreatePost={async input => {
+            onCreatePost={!isViewingOther ? async input => {
               setManualError(null);
               try {
                 await createPost.mutateAsync(input);
@@ -573,8 +657,8 @@ export function ProfilePage() {
               } catch (err) {
                 setManualError(err instanceof Error ? err.message : 'Impossible de publier.');
               }
-            }}
-            onDeletePost={async id => {
+            } : undefined}
+            onDeletePost={!isViewingOther ? async id => {
               setDeletingPostId(id);
               setManualError(null);
               try {
@@ -585,7 +669,7 @@ export function ProfilePage() {
               } finally {
                 setDeletingPostId(null);
               }
-            }}
+            } : undefined}
           />
         )}
 
@@ -599,7 +683,7 @@ export function ProfilePage() {
 
           <DriverBankPanel bundle={bankBundle} loading={bankLoading} />
 
-        ) : pageTab === 'settings' ? (
+        ) : pageTab === 'settings' && !isViewingOther ? (
 
         <>
 
@@ -642,12 +726,12 @@ export function ProfilePage() {
                     {isAdministrator ? (
                       <UserBadges
                         isAdministrator={isAdministrator}
-                        role={profile.role}
-                        email={profile.email}
+                        role={activeProfile.role}
+                        email={activeProfile.email}
                         size="sm"
                       />
                     ) : (
-                      <RoleBadge role={profile.role} size="sm" />
+                      <RoleBadge role={activeProfile.role} size="sm" />
                     )}
 
                   </div>
@@ -832,7 +916,7 @@ export function ProfilePage() {
 
             </div>
 
-            <ProfilePreview form={form} role={profile.role} email={profile.email} isAdmin={isAdministrator} />
+            <ProfilePreview form={form} role={activeProfile.role} email={activeProfile.email} isAdmin={isAdministrator} />
 
           </div>
 
@@ -850,7 +934,7 @@ export function ProfilePage() {
 
           </h2>
 
-          <p className="text-sm text-white/40 mb-4">{profile.email}</p>
+          <p className="text-sm text-white/40 mb-4">{activeProfile.email}</p>
 
           <button type="button" onClick={signOut}
 

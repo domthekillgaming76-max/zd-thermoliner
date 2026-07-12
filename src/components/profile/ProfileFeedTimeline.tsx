@@ -7,6 +7,7 @@ interface ProfileFeedTimelineProps {
   currentUserId?: string;
   deletingId?: string | null;
   onDelete?: (id: string) => void;
+  readOnly?: boolean;
 }
 
 function formatWhen(iso: string): string {
@@ -28,6 +29,7 @@ export function ProfileFeedTimeline({
   currentUserId,
   deletingId,
   onDelete,
+  readOnly = false,
 }: ProfileFeedTimelineProps) {
   if (loading) {
     return (
@@ -41,7 +43,9 @@ export function ProfileFeedTimeline({
     return (
       <div className="profile-feed-empty rounded-2xl p-8 text-center border border-dashed border-white/10">
         <p className="text-sm text-white/50">Aucune publication pour l&apos;instant.</p>
-        <p className="text-xs text-white/30 mt-1">Publiez votre première photo ci-dessus.</p>
+        {!readOnly && (
+          <p className="text-xs text-white/30 mt-1">Publiez votre première photo ci-dessus.</p>
+        )}
       </div>
     );
   }

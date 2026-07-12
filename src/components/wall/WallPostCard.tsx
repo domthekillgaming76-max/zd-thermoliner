@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import {
   MessageSquare, Share2, Trash2, Pin, PinOff, MapPin, Radio, Megaphone,
@@ -74,7 +75,16 @@ export function WallPostCard({
             <WallUserAvatar author={post.author} />
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-white font-semibold text-sm truncate">{getAuthorDisplayName(post.author)}</p>
+                {post.author?.id ? (
+                  <Link
+                    to={`/profile/${post.author.id}`}
+                    className="text-white font-semibold text-sm truncate hover:text-red-300 transition-colors"
+                  >
+                    {getAuthorDisplayName(post.author)}
+                  </Link>
+                ) : (
+                  <p className="text-white font-semibold text-sm truncate">{getAuthorDisplayName(post.author)}</p>
+                )}
                 <WallRoleBadge role={post.author?.role} />
                 {post.is_official && (
                   <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.5 rounded flex items-center gap-0.5">

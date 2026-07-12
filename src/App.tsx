@@ -177,6 +177,7 @@ function AppRoutes() {
       <Route path="/settings" element={<ProtectedPage page="settings"><Pages.SettingsPage /></ProtectedPage>} />
       <Route path="/profile/dossier" element={<Navigate to="/profile?tab=dossier" replace />} />
       <Route path="/profile/bank" element={<Navigate to="/profile?tab=bank" replace />} />
+      <Route path="/profile/:userId" element={<ProtectedPage page="profile"><Pages.ProfilePage /></ProtectedPage>} />
       <Route path="/profile" element={<ProtectedPage page="profile"><Pages.ProfilePage /></ProtectedPage>} />
       <Route path="/integrations" element={<ProtectedPage page="driver_integrations"><Pages.DriverIntegrationsPage /></ProtectedPage>} />
       <Route path="/driver/integrations" element={<Navigate to="/integrations" replace />} />
