@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Download, HardDriveDownload, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { isNativeErpLauncher } from '../lib/appMode';
 import {
   ERP_LAUNCHER_VERSION,
   dismissLauncherNotice,
@@ -25,14 +26,19 @@ export function ErpLauncherBanner() {
   if (!visible) return null;
 
   const downloadUrl = getErpLauncherDownloadUrl();
+  const isNativeUpdate = isNativeErpLauncher();
 
   function handleDismiss() {
-    dismissLauncherNotice();
+    if (!isNativeUpdate) {
+      dismissLauncherNotice();
+    }
     setVisible(false);
   }
 
   function handleDownload() {
-    markLauncherDownloaded();
+    if (!isNativeUpdate) {
+      markLauncherDownloaded();
+    }
     setVisible(false);
   }
 
@@ -54,11 +60,10 @@ export function ErpLauncherBanner() {
           <HardDriveDownload className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
           <div className="min-w-0">
             <p className="text-sm font-bold text-white">
-              Mise à jour Windows v{ERP_LAUNCHER_VERSION} — application ERP à installer
+              Mise à jour Windows v{ERP_LAUNCHER_VERSION} — nouveau logo ZD disponible
             </p>
             <p className="text-xs text-white/55 mt-0.5">
-              Téléchargez le launcher Z&amp;D Thermoliner pour ne plus passer par Google Chrome
-              (moins de RAM, processus <span className="text-white/70">ZD-Thermoliner-ERP</span>).
+              Téléchargez puis ouvrez le fichier : l&apos;ancienne version et le raccourci Bureau seront remplacés automatiquement.
             </p>
             <p className="text-[10px] text-white/35 mt-1">
               Chauffeurs : guide aussi dans{' '}

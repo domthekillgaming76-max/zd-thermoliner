@@ -1,7 +1,7 @@
-import { isDesktopPlatform, isNativeErpLauncher } from './appMode';
+import { getNativeErpLauncherVersion, isDesktopPlatform, isNativeErpLauncher } from './appMode';
 
 /** Launcher ERP natif Windows (WebView2) — hors Chrome/Edge. */
-export const ERP_LAUNCHER_VERSION = '1.0.4';
+export const ERP_LAUNCHER_VERSION = '1.0.5';
 
 export const ERP_LAUNCHER_FILENAME = `ZD-Thermoliner-ERP-Windows-${ERP_LAUNCHER_VERSION}.exe`;
 
@@ -52,7 +52,14 @@ export function markLauncherDownloaded(version: string = ERP_LAUNCHER_VERSION): 
 export function shouldShowLauncherNotice(): boolean {
   if (typeof window === 'undefined') return false;
   if (!isDesktopPlatform()) return false;
-  if (isNativeErpLauncher()) return false;
+
+  if (isNativeErpLauncher()) {
+    const nativeVersion = getNativeErpLauncherVersion();
+    if (nativeVersion === ERP_LAUNCHER_VERSION) return false;
+
+    const dismissed = getDismissedLauncherVersion();
+    return dismissed !== ERP_LAUNCHER_VERSION;
+  }
 
   const installed = getInstalledLauncherVersion();
   if (installed === ERP_LAUNCHER_VERSION) return false;

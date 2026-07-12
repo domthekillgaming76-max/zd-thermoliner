@@ -4,6 +4,12 @@ export function isNativeErpLauncher(): boolean {
   return navigator.userAgent.includes('ZDThermolinerErpLauncher');
 }
 
+/** Retourne la version annoncée par le launcher natif dans son User-Agent. */
+export function getNativeErpLauncherVersion(): string | null {
+  if (typeof navigator === 'undefined') return null;
+  return navigator.userAgent.match(/ZDThermolinerErpLauncher\/([0-9]+(?:\.[0-9]+){1,3})/i)?.[1] ?? null;
+}
+
 /** Détecte si l'ERP tourne en application installée (PWA), pas dans un onglet navigateur. */
 export function isStandaloneApp(): boolean {
   if (typeof window === 'undefined') return false;
