@@ -52,7 +52,7 @@ const storagePath = `windows/${fileName}`;
 const githubRawUrl = `https://github.com/${githubRepo}/raw/${githubBranch}/public/downloads/${fileName}`;
 const erpDownloadUrl = `${erpBase}/downloads/${fileName}`;
 const changelog =
-  `Client Windows Z&D Thermoliner v${version} — voix au chargement cargo, salon livraison live, plugin télémétrie v1.1.1.`;
+  `Client Windows Z&D Thermoliner v${version} — choix voix F/M, sons d'alerte tachygraphe testables.`;
 
 if (!fs.existsSync(exePath)) {
   console.error(`[publish] Fichier introuvable: ${exePath}`);
