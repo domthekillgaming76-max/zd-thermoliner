@@ -11,7 +11,7 @@ const fileName = `ZD-Thermoliner-Launcher-Windows-${version}-Setup.exe`;
 const candidates = [
   path.join(root, 'public', 'downloads', fileName),
   path.join(root, '..', 'zd-thermoliner-client', 'release', version, fileName),
-  path.join(root, '..', 'zd-thermoliner-client', 'release', version, 'Z&D Thermoliner Launcher-Windows-1.0.1-Setup.exe'),
+  path.join(root, '..', 'zd-thermoliner-client', 'release', version, `Z&D Thermoliner Launcher-Windows-${version}-Setup.exe`),
 ];
 
 const destDir = path.join(root, 'public', 'downloads');

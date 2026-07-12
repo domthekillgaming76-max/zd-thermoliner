@@ -29,7 +29,7 @@ const defaultExe = path.join(
   'zd-thermoliner-client',
   'release',
   version,
-  'ZD-Thermoliner-Launcher-Windows-1.0.1-Setup.exe',
+  `ZD-Thermoliner-Launcher-Windows-${version}-Setup.exe`,
 );
 
 const altExe = path.join(
@@ -38,7 +38,7 @@ const altExe = path.join(
   'zd-thermoliner-client',
   'release',
   version,
-  'Z&D Thermoliner Launcher-Windows-1.0.1-Setup.exe',
+  `Z&D Thermoliner Launcher-Windows-${version}-Setup.exe`,
 );
 
 const exePath = path.resolve(
@@ -52,7 +52,7 @@ const storagePath = `windows/${fileName}`;
 const githubRawUrl = `https://github.com/${githubRepo}/raw/${githubBranch}/public/downloads/${fileName}`;
 const erpDownloadUrl = `${erpBase}/downloads/${fileName}`;
 const changelog =
-  `Client Windows Z&D Thermoliner v${version} — tachygraphe RP, carte conducteur, tickets fin de journée.`;
+  `Client Windows Z&D Thermoliner v${version} — correction tachygraphe RP (page noire), carte conducteur stable.`;
 
 if (!fs.existsSync(exePath)) {
   console.error(`[publish] Fichier introuvable: ${exePath}`);
