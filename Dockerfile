@@ -8,7 +8,9 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
-RUN npm run typecheck && npm run build
+RUN npm run typecheck && npm run build \
+  && mkdir -p dist/downloads \
+  && cp -f public/downloads/*.exe dist/downloads/ 2>/dev/null || true
 FROM node:22-alpine
 WORKDIR /app
 

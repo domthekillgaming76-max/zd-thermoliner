@@ -19,6 +19,8 @@ const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const version = process.env.CLIENT_VERSION || '1.0.1';
 const erpBase = (process.env.ERP_PUBLIC_URL || 'https://erp.zd-thermoliner.fr').replace(/\/$/, '');
+const githubRepo = process.env.CLIENT_GITHUB_REPO || 'domthekillgaming76-max/zd-thermoliner';
+const githubBranch = process.env.CLIENT_GITHUB_BRANCH || 'main';
 
 const defaultExe = path.join(
   root,
@@ -46,6 +48,8 @@ const fileName = `ZD-Thermoliner-Launcher-Windows-${version}-Setup.exe`;
 const publicDir = path.join(root, 'public', 'downloads');
 const publicPath = path.join(publicDir, fileName);
 const storagePath = `windows/${fileName}`;
+const githubRawUrl = `https://github.com/${githubRepo}/raw/${githubBranch}/public/downloads/${fileName}`;
+const erpDownloadUrl = `${erpBase}/downloads/${fileName}`;
 const changelog =
   'Client Windows Z&D Thermoliner v1.0.1 — télémétrie ETS2/ATS, personnalisation, sync ERP automatique.';
 
@@ -60,7 +64,8 @@ console.log(`[publish] Copié → public/downloads/${fileName}`);
 
 const fileBuffer = fs.readFileSync(exePath);
 const sizeMb = (fileBuffer.length / (1024 * 1024)).toFixed(1);
-let downloadUrl = `${erpBase}/downloads/${fileName}`;
+// GitHub raw : fiable immédiatement (Coolify peut ne pas avoir redéployé /downloads/)
+let downloadUrl = githubRawUrl;
 
 console.log(`[publish] Taille: ${sizeMb} Mo`);
 
@@ -121,7 +126,7 @@ ON CONFLICT (version) DO UPDATE SET
   }
 
   if (fileBuffer.length > 50 * 1024 * 1024) {
-    console.warn('[publish] Fichier > 50 Mo — hébergement ERP (/downloads/) utilisé (limite plan Free Supabase)');
+    console.warn('[publish] Fichier > 50 Mo — lien GitHub raw utilisé (ERP /downloads/ en secours après redeploy Coolify)');
   }
 
   execSync(`npx supabase db query --linked --yes ${JSON.stringify(sql)}`, {
@@ -141,4 +146,4 @@ try {
 
 console.log('[publish] OK — lien de téléchargement actif:');
 console.log(downloadUrl);
-console.log('[publish] Redéployez l’ERP (Coolify) pour servir le fichier depuis /downloads/');
+console.log(`[publish] Secours ERP (après redeploy Coolify): ${erpDownloadUrl}`);
