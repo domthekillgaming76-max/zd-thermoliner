@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
-  <rect width="512" height="512" rx="80" fill="#080808"/>
-  <rect x="40" y="40" width="432" height="432" rx="64" fill="#141414" stroke="#dc2626" stroke-width="8"/>
-  <text x="256" y="290" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="140" font-weight="800" fill="#dc2626">Z&amp;D</text>
-  <rect x="100" y="350" width="312" height="16" rx="8" fill="#dc2626" opacity="0.6"/>
-</svg>

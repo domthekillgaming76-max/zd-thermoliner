@@ -8,12 +8,15 @@ node_modules/
 
 # Build output
 dist/
+release-dist.zip
+release-*.zip
 *.tsbuildinfo
 
 # Supabase local
 supabase/.temp/
 
 # Distribution — packs générés localement
+distribution/Z&D-Thermoliner-ERP/
 distribution/**/*.zip
 distribution/**/node_modules/
 distribution/Z&D-Thermoliner-APP-HTTPS/

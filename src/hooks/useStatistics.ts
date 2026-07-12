@@ -12,16 +12,17 @@ export function useStatistics() {
     staleTime: PERF.statisticsPollMs,
     refetchInterval: PERF.statisticsPollMs,
   });
+  const { refetch } = query;
 
   useEffect(() => {
     const channel = supabase
       .channel('statistics_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'road_sheets' }, () => query.refetch())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => query.refetch())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'drivers' }, () => query.refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'road_sheets' }, () => refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'drivers' }, () => refetch())
       .subscribe();
     return () => { channel.unsubscribe(); };
-  }, [query.refetch]);
+  }, [refetch]);
 
   return query;
 }

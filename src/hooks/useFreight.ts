@@ -33,17 +33,18 @@ export function useFreight(
     staleTime: PERF.queryStaleTime,
     refetchInterval: PERF.freightPollMs,
   });
+  const { refetch } = query;
 
   useEffect(() => {
     if (!userId) return;
     const channel = supabase
       .channel(`freight_rt_${userId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'freight_offers' }, () => query.refetch())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'freight_chains' }, () => query.refetch())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transport_missions' }, () => query.refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'freight_offers' }, () => refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'freight_chains' }, () => refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transport_missions' }, () => refetch())
       .subscribe();
     return () => { channel.unsubscribe(); };
-  }, [userId, query.refetch]);
+  }, [userId, refetch]);
 
   const invalidate = () => qc.invalidateQueries({ queryKey: queryKeys.freight.all });
 

@@ -19,7 +19,7 @@ export function TrainingQuizPanel({
 
   useEffect(() => {
     if (quiz) setAnswers({});
-  }, [quiz?.id]);
+  }, [quiz]);
 
   if (!quiz) return null;
 

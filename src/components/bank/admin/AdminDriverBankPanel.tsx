@@ -64,7 +64,7 @@ export function AdminDriverBankPanel() {
     onError: (err: Error) => setError(err.message),
   });
 
-  const accounts = accountsQuery.data ?? [];
+  const accounts = useMemo(() => accountsQuery.data ?? [], [accountsQuery.data]);
   const filteredAccounts = useMemo(() => {
     const q = driverFilter.trim().toLowerCase();
     if (!q) return accounts;

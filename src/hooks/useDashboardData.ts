@@ -58,24 +58,25 @@ export function useDashboardData(userId: string | undefined) {
     refetchOnWindowFocus: true,
     enabled: !!userId,
   });
+  const { refetch } = query;
 
   useEffect(() => {
     if (!userId) return;
 
     const channel = supabase
       .channel(`dashboard_rt_${userId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => query.refetch())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'road_sheets' }, () => query.refetch())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'company_bank_account' }, () => query.refetch())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transport_missions' }, () => query.refetch())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'drivers' }, () => query.refetch())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trucks' }, () => query.refetch())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'freight_offers' }, () => query.refetch())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'online_presence' }, () => query.refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'road_sheets' }, () => refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'company_bank_account' }, () => refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transport_missions' }, () => refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'drivers' }, () => refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'trucks' }, () => refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'freight_offers' }, () => refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'online_presence' }, () => refetch())
       .subscribe();
 
     return () => { channel.unsubscribe(); };
-  }, [userId, query.refetch]);
+  }, [userId, refetch]);
 
   const data = query.data ?? EMPTY;
 

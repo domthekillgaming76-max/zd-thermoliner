@@ -61,7 +61,7 @@ export function ClientLauncherPage() {
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [adminForm, setAdminForm] = useState({
-    version: '1.0.1',
+    version: '1.0.14',
     download_url: '',
     changelog: '',
     mandatory: false,
@@ -268,7 +268,7 @@ export function ClientLauncherPage() {
                     value={adminForm.version}
                     onChange={e => setAdminForm(f => ({ ...f, version: e.target.value }))}
                     className="erp-input w-full text-sm"
-                    placeholder="1.0.1"
+                    placeholder="1.0.14"
                   />
                 </div>
                 <label className="flex items-center gap-2 text-sm text-white/60 self-end pb-2 cursor-pointer">

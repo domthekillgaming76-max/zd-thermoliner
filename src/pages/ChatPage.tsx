@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Hash, MessageSquare, Pencil, Plus, Send, Sparkles, X } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,10 +19,6 @@ export function ChatPage() {
   const [roomColor, setRoomColor] = useState('#ef4444');
   const [roomError, setRoomError] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    void loadRooms();
-  }, []);
 
   useEffect(() => {
     if (!selectedRoom) return;
@@ -54,21 +50,19 @@ export function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  async function loadRooms() {
+  const loadRooms = useCallback(async () => {
     try {
       const { data } = await supabase.from('chat_rooms').select('*').order('created_at');
       if (data) {
         setRooms(data);
-        if (data.length > 0 && !selectedRoom) {
-          setSelectedRoom(data[0]);
-        }
+        if (data.length > 0) setSelectedRoom(current => current ?? data[0]);
       }
     } catch (error) {
       console.error('Error loading rooms:', error);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   async function loadMessages(roomId: string) {
     try {
@@ -132,6 +126,10 @@ export function ChatPage() {
       setRoomError('Impossible de créer le salon. Vérifiez que la dernière migration Supabase est appliquée.');
     }
   }
+
+  useEffect(() => {
+    void loadRooms();
+  }, [loadRooms]);
 
   function openRoomEditor() {
     if (!selectedRoom) return;

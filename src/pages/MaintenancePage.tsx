@@ -48,8 +48,8 @@ export function MaintenancePage() {
 
   const { data, isLoading, isError, error } = useFleetModule();
 
-  const trucks = data?.trucks ?? [];
-  const maintenance = data?.maintenance ?? [];
+  const trucks = useMemo(() => data?.trucks ?? [], [data?.trucks]);
+  const maintenance = useMemo(() => data?.maintenance ?? [], [data?.maintenance]);
   const truckMap = useMemo(() => new Map(trucks.map(t => [t.id, t])), [trucks]);
 
   const alerts = useMemo(

@@ -321,7 +321,7 @@ export function ProfilePage() {
 
     }
 
-  }, [profile?.id, profile?.updated_at, resetSkip, isViewingOther]);
+  }, [profile, resetSkip, isViewingOther]);
 
 
 

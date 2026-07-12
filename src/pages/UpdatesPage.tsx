@@ -76,9 +76,9 @@ export function UpdatesPage() {
           : Promise.resolve({ data: [] }),
       ]);
 
-      const readSet = new Set((readsRes.data || []).map((r: any) => r.update_id));
+      const readSet = new Set((readsRes.data || []).map((r: { update_id: string }) => r.update_id));
       const counts: Record<string, number> = {};
-      (countsRes.data || []).forEach((r: any) => {
+      (countsRes.data || []).forEach((r: { update_id: string }) => {
         counts[r.update_id] = (counts[r.update_id] || 0) + 1;
       });
       setReadCounts(counts);

@@ -12,17 +12,18 @@ export function useLiveOpsMetrics() {
     staleTime: PERF.queryStaleTime,
     refetchInterval: PERF.liveOpsPollMs,
   });
+  const { refetch } = query;
 
   useEffect(() => {
     const channel = supabase
       .channel('live_ops_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transport_missions' }, () => query.refetch())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'freight_offers' }, () => query.refetch())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'road_sheets' }, () => query.refetch())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'driver_presence' }, () => query.refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transport_missions' }, () => refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'freight_offers' }, () => refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'road_sheets' }, () => refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'driver_presence' }, () => refetch())
       .subscribe();
     return () => { channel.unsubscribe(); };
-  }, [query.refetch]);
+  }, [refetch]);
 
   return query;
 }
@@ -35,16 +36,17 @@ export function useFleetMap(userId?: string, role?: string | null, email?: strin
     staleTime: PERF.queryStaleTime,
     refetchInterval: PERF.liveOpsPollMs,
   });
+  const { refetch } = query;
 
   useEffect(() => {
     if (!userId) return;
     const channel = supabase
       .channel('fleet_map_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'delivery_tracking' }, () => query.refetch())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'driver_presence' }, () => query.refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'delivery_tracking' }, () => refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'driver_presence' }, () => refetch())
       .subscribe();
     return () => { channel.unsubscribe(); };
-  }, [userId, query.refetch]);
+  }, [userId, refetch]);
 
   return query;
 }

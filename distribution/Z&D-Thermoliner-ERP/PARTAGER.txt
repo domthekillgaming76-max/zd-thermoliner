@@ -1,9 +1,0 @@
-# Dossier prêt à partager
-
-Généré le 11/07/2026 00:14:40
-
-1. Zippez ce dossier `Z&D-Thermoliner-ERP`
-2. Partagez-le (sans fichier .env)
-3. Le destinataire : install.bat → configure .env → start.bat
-
-Voir LISEZMOI.md et INSTALLATION.md

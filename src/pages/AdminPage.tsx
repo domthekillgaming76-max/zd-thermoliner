@@ -398,8 +398,8 @@ export function AdminPage() {
             ) : (
               auditLogs.map(log => {
                 const cfg = ACTION_ICONS[log.action_type] || ACTION_ICONS.left_company;
-                const targetName = (log.target as any)?.pseudo || (log.target as any)?.full_name || (log.target as any)?.email || log.target_user_id.slice(0, 8);
-                const actorName = (log.actor as any)?.pseudo || (log.actor as any)?.full_name || (log.actor as any)?.email || 'Système';
+                const targetName = log.target?.pseudo || log.target?.full_name || log.target?.email || log.target_user_id.slice(0, 8);
+                const actorName = log.actor?.pseudo || log.actor?.full_name || log.actor?.email || 'Système';
                 const isExpanded = expandedLog === log.id;
 
                 return (

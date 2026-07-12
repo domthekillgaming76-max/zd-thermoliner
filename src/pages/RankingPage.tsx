@@ -12,6 +12,19 @@ interface DriverRanking {
   medals: MedalType[];
 }
 
+interface RankingDriverRow {
+  id: string;
+  name: string;
+  pseudo: string | null;
+  photo_url: string | null;
+  avatar_url: string | null;
+}
+
+interface RankingSheetRow {
+  driver_id: string;
+  total_distance: number | null;
+}
+
 export function RankingPage() {
   const [rankings, setRankings] = useState<DriverRanking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,19 +61,19 @@ export function RankingPage() {
           );
 
         const sheetsByDriver: Record<string, { distance: number; count: number }> = {};
-        (sheetsData || []).forEach((s: any) => {
+        ((sheetsData || []) as RankingSheetRow[]).forEach(s => {
           if (!sheetsByDriver[s.driver_id]) sheetsByDriver[s.driver_id] = { distance: 0, count: 0 };
           sheetsByDriver[s.driver_id].distance += Number(s.total_distance) || 0;
           sheetsByDriver[s.driver_id].count++;
         });
 
-        const stats: DriverRanking[] = driversRes.data.map((d: any) => ({
+        const stats: DriverRanking[] = (driversRes.data as RankingDriverRow[]).map(d => ({
           id: d.id,
           name: d.pseudo || d.name,
           photo_url: d.avatar_url || d.photo_url,
           distance: sheetsByDriver[d.id]?.distance || 0,
           deliveries: sheetsByDriver[d.id]?.count || 0,
-          medals: medalsRes.data?.filter((m: any) => m.driver_id === d.id) || [],
+          medals: (medalsRes.data as MedalType[] | null)?.filter(m => m.driver_id === d.id) || [],
         }));
 
         stats.sort((a, b) => b.distance - a.distance);

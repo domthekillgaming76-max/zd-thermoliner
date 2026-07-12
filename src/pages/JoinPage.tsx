@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Truck, Send, CheckCircle, Clock, AlertCircle, User, Mail, Calendar, Gamepad2, MessageSquare, Truck as TruckIcon, Clock as ClockIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase, RecruitmentApplication } from '../lib/supabase';
@@ -20,18 +20,13 @@ export function JoinPage() {
     availability: '',
   });
 
-  useEffect(() => {
-    if (user) {
-      loadExistingApplication();
-    }
-  }, [user]);
-
-  async function loadExistingApplication() {
+  const loadExistingApplication = useCallback(async () => {
+    if (!user) return;
     try {
       const { data } = await supabase
         .from('recruitment_applications')
         .select('*')
-        .eq('user_id', user!.id)
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (data) {
@@ -53,7 +48,11 @@ export function JoinPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [user]);
+
+  useEffect(() => {
+    void loadExistingApplication();
+  }, [loadExistingApplication]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

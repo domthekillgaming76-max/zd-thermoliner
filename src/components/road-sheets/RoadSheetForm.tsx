@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Camera, Loader2 } from 'lucide-react';
 import { isValidDriverUuid } from '../../services/roadSheetService';
 import {
@@ -75,7 +75,6 @@ export function RoadSheetForm({
   drivers,
   trucks,
   currentUserId,
-  defaultDriverName: _defaultDriverName,
   initialForm,
   submitLabel = 'Enregistrer la feuille',
   saving = false,
@@ -113,7 +112,7 @@ export function RoadSheetForm({
     setForm(prev => ({ ...prev, [key]: value }));
   }
 
-  function applyDriverSelection(driverId: string) {
+  const applyDriverSelection = useCallback((driverId: string) => {
     const driver = drivers.find(d => d.id === driverId);
     if (!driver) return;
 
@@ -128,7 +127,7 @@ export function RoadSheetForm({
       driver_id: driver.id,
       truck_id: truckId || prev.truck_id,
     }));
-  }
+  }, [drivers, trucks]);
 
   useEffect(() => {
     if (isValidDriverUuid(form.driver_id) && drivers.some(d => d.id === form.driver_id)) {
@@ -146,7 +145,7 @@ export function RoadSheetForm({
         applyDriverSelection(ownDriver.id);
       }
     }
-  }, [drivers, trucks, currentUserId, form.driver_id]);
+  }, [drivers, currentUserId, form.driver_id, applyDriverSelection]);
 
   function handleDriverChange(driverId: string) {
     applyDriverSelection(driverId);
