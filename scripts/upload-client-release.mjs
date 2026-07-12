@@ -52,7 +52,8 @@ const storagePath = `windows/${fileName}`;
 const githubRawUrl = `https://github.com/${githubRepo}/raw/${githubBranch}/public/downloads/${fileName}`;
 const erpDownloadUrl = `${erpBase}/downloads/${fileName}`;
 const changelog =
-  `Client Windows Z&D Thermoliner v${version} — choix voix F/M, sons d'alerte tachygraphe testables.`;
+  process.env.CLIENT_CHANGELOG ||
+  `Client Windows Z&D Thermoliner v${version} — overlay in-game HUD (widgets + tachygraphe), optimisé basse consommation.`;
 
 if (!fs.existsSync(exePath)) {
   console.error(`[publish] Fichier introuvable: ${exePath}`);
