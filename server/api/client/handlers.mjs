@@ -381,17 +381,21 @@ export async function handleClientUpdates(req, res) {
     const currentVersion = req.query.version || req.headers['x-client-version'] || '0.0.0';
 
     const dbRelease = await fetchLatestClientRelease();
-    const latestVersion = dbRelease?.version
-      || process.env.CLIENT_LATEST_VERSION
-      || '1.0.0';
-    const downloadUrl = dbRelease?.download_url
-      || process.env.CLIENT_DOWNLOAD_URL
-      || '';
-    const changelog = dbRelease?.changelog
-      || process.env.CLIENT_CHANGELOG
-      || 'Z&D Thermoliner Client — version initiale';
-    const mandatory = dbRelease?.mandatory ?? (process.env.CLIENT_UPDATE_MANDATORY === 'true');
+    if (!dbRelease?.version) {
+      return res.json({
+        available: false,
+        version: currentVersion,
+        latest_version: currentVersion,
+        releaseNotes: '',
+        changelog: '',
+        mandatory: false,
+      });
+    }
 
+    const latestVersion = dbRelease.version;
+    const downloadUrl = dbRelease.download_url || '';
+    const changelog = dbRelease.changelog || '';
+    const mandatory = dbRelease.mandatory ?? false;
     const available = compareVersions(latestVersion, currentVersion) > 0;
 
     return res.json({
