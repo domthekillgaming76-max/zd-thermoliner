@@ -65,6 +65,22 @@ fs.mkdirSync(publicDir, { recursive: true });
 fs.copyFileSync(exePath, publicPath);
 console.log(`[publish] Copié → public/downloads/${fileName}`);
 
+const telemetryZipName = `ZD-Thermoliner-Telemetry-Plugin-${version}.zip`;
+const telemetryZipSrc = path.join(
+  root,
+  '..',
+  'zd-thermoliner-client',
+  'release',
+  version,
+  telemetryZipName,
+);
+if (fs.existsSync(telemetryZipSrc)) {
+  fs.copyFileSync(telemetryZipSrc, path.join(publicDir, telemetryZipName));
+  console.log(`[publish] Copié → public/downloads/${telemetryZipName}`);
+} else {
+  console.warn(`[publish] ZIP plugin absent (${telemetryZipName}) — npm run build côté client`);
+}
+
 const fileBuffer = fs.readFileSync(exePath);
 const sizeMb = (fileBuffer.length / (1024 * 1024)).toFixed(1);
 const sha256 = crypto.createHash('sha256').update(fileBuffer).digest('hex').toUpperCase();
