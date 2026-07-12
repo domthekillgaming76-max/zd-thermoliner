@@ -130,7 +130,14 @@ app.get('/downloads/:filename', (req, res, next) => {
   if (!filePath.startsWith(path.resolve(downloadsPath))) {
     return res.status(404).type('text/plain').send('Fichier introuvable.');
   }
-  return res.sendFile(filePath, err => {
+  return res.sendFile(filePath, {
+    headers: {
+      'Content-Type': 'application/vnd.microsoft.portable-executable',
+      'Content-Disposition': `attachment; filename="${safeName}"`,
+      'X-Content-Type-Options': 'nosniff',
+      'Cache-Control': 'public, max-age=86400',
+    },
+  }, err => {
     if (err) next(err);
   });
 });
@@ -139,8 +146,9 @@ app.use('/downloads', express.static(downloadsPath, {
   maxAge: '1d',
   setHeaders(res, filePath) {
     if (filePath.toLowerCase().endsWith('.exe')) {
-      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Type', 'application/vnd.microsoft.portable-executable');
       res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
+      res.setHeader('X-Content-Type-Options', 'nosniff');
     }
   },
 }));

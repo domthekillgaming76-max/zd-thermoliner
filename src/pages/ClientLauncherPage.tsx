@@ -97,7 +97,15 @@ export function ClientLauncherPage() {
 
   function handleDownload() {
     if (!hasDownload) return;
-    window.open(downloadUrl, '_blank', 'noopener,noreferrer');
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.rel = 'noopener noreferrer';
+    a.download = release?.version
+      ? `ZD-Thermoliner-Launcher-Windows-${release.version}-Setup.exe`
+      : 'ZD-Thermoliner-Launcher-Setup.exe';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 
   function copyErpUrl() {
@@ -182,6 +190,13 @@ export function ClientLauncherPage() {
                 <p className="text-xs text-amber-400/90 mt-3 flex items-center gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5" />
                   Lien de téléchargement non configuré — contactez un administrateur.
+                </p>
+              )}
+              {hasDownload && (
+                <p className="text-xs text-white/30 mt-3 leading-relaxed">
+                  Si Microsoft Edge affiche «&nbsp;pas fréquemment téléchargé&nbsp;», cliquez sur les trois points
+                  {' '}<span className="text-white/45">⋯</span> puis <strong className="text-white/50">Conserver</strong>.
+                  {' '}Installateur officiel Z&amp;D Thermoliner — signature en cours de déploiement.
                 </p>
               )}
             </div>

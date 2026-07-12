@@ -9,6 +9,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import crypto from 'crypto';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
@@ -53,7 +54,7 @@ const githubRawUrl = `https://github.com/${githubRepo}/raw/${githubBranch}/publi
 const erpDownloadUrl = `${erpBase}/downloads/${fileName}`;
 const changelog =
   process.env.CLIENT_CHANGELOG ||
-  `Client Windows Z&D Thermoliner v${version} — correctif voix livraison + sélection voix F/M immédiate.`;
+  `Client Windows Z&D Thermoliner v${version} — correctif voix au chargement livraison, sélection voix immédiate, overlay in-game.`;
 
 if (!fs.existsSync(exePath)) {
   console.error(`[publish] Fichier introuvable: ${exePath}`);
@@ -66,10 +67,13 @@ console.log(`[publish] Copié → public/downloads/${fileName}`);
 
 const fileBuffer = fs.readFileSync(exePath);
 const sizeMb = (fileBuffer.length / (1024 * 1024)).toFixed(1);
-// GitHub raw : fiable immédiatement (Coolify peut ne pas avoir redéployé /downloads/)
-let downloadUrl = githubRawUrl;
+const sha256 = crypto.createHash('sha256').update(fileBuffer).digest('hex').toUpperCase();
+// ERP en priorité (domaine officiel, meilleure confiance navigateur) ; GitHub raw en secours
+let downloadUrl = erpDownloadUrl;
 
 console.log(`[publish] Taille: ${sizeMb} Mo`);
+console.log(`[publish] SHA256: ${sha256}`);
+console.log('[publish] SmartScreen (gratuit, par version) : https://www.microsoft.com/wdsi/filesubmission');
 
 async function publishReleaseUrl(finalUrl) {
   const esc = (s) => s.replace(/'/g, "''");
@@ -154,4 +158,5 @@ try {
 
 console.log('[publish] OK — lien de téléchargement actif:');
 console.log(downloadUrl);
-console.log(`[publish] Secours ERP (après redeploy Coolify): ${erpDownloadUrl}`);
+console.log(`[publish] Secours GitHub raw: ${githubRawUrl}`);
+console.log(`[publish] Secours ERP direct: ${erpDownloadUrl}`);
