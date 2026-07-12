@@ -5,7 +5,7 @@ export const TRANSACTION_COLUMNS_MINIMAL =
   'id,user_id,type,amount,description,category,date,created_at';
 
 export const TRANSACTION_COLUMNS_EXTENDED =
-  `${TRANSACTION_COLUMNS_MINIMAL},driver_id,road_sheet_id,auto_generated,created_by,reference,balance_after,status`;
+  `${TRANSACTION_COLUMNS_MINIMAL},driver_id,road_sheet_id,truck_id,garage_id,auto_generated,created_by,reference,balance_after,status,source,metadata`;
 
 export const TRANSACTION_COLUMNS_BALANCE = 'type,amount,status';
 

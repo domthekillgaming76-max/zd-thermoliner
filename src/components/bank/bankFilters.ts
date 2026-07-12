@@ -51,7 +51,7 @@ export function getPeriodRange(period: PeriodFilter): { dateFrom: string; dateTo
 export function matchesCategoryGroup(tx: Transaction, group: CategoryGroup): boolean {
   if (group === 'all') return true;
   if (group === 'income') return isCreditTransaction(tx);
-  if (group === 'expense') return isDebitTransaction(tx) && tx.type === 'expense';
+  if (group === 'expense') return isDebitTransaction(tx);
   if (group === 'fuel') return tx.type === 'fuel';
   if (group === 'salary') return tx.type === 'salary';
   if (group === 'maintenance') return tx.type === 'maintenance';
@@ -117,6 +117,9 @@ export const TRANSACTION_TYPE_OPTIONS: { value: TransactionType | 'all'; label: 
   { value: 'maintenance', label: 'Maintenance' },
   { value: 'insurance', label: 'Assurance' },
   { value: 'salary', label: 'Salaire' },
+  { value: 'rent', label: 'Location / loyer' },
+  { value: 'tax', label: 'Taxe' },
+  { value: 'penalty', label: 'Pénalité' },
   { value: 'transfer', label: 'Virement' },
   { value: 'expense', label: 'Autre' },
 ];

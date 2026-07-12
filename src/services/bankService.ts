@@ -14,15 +14,11 @@ import {
 
   fetchAllTransactions,
 
-  fetchLatestTransactionForUser,
-
   fetchTransactionById,
 
   logSupabaseError,
 
 } from '../lib/transactionSchema';
-
-import { insertTransactionRow } from '../lib/transactionInsert';
 
 import { monthKey, todayKey } from '../lib/format';
 
@@ -330,46 +326,6 @@ export async function fetchEnterpriseBankBundle(lastSyncAt: string | null) {
 
 
 
-async function adjustCompanyBalance(delta: number): Promise<void> {
-
-  const account = await fetchCompanyAccount();
-
-  if (!account) {
-
-    await supabase.from('company_bank_account').insert({
-
-      account_name: 'Z&D Thermoliner',
-
-      iban_rp: 'FR76 3000 2999 0000 0000 0000 000',
-
-      balance: delta,
-
-    });
-
-    return;
-
-  }
-
-
-
-  await supabase
-
-    .from('company_bank_account')
-
-    .update({
-
-      balance: Number(account.balance) + delta,
-
-      updated_at: new Date().toISOString(),
-
-    })
-
-    .eq('id', account.id);
-
-}
-
-
-
 export async function createManualTransaction(
 
   input: ManualTransactionInput,
@@ -380,43 +336,24 @@ export async function createManualTransaction(
 
   const amount = Math.abs(input.amount);
 
-  const signedDelta = input.type === 'income' ? amount : -amount;
-
-
-
-  await insertTransactionRow({
-
-    user_id: userId,
-
-    type: input.type,
-
-    amount,
-
-    description: input.description || null,
-
-    category: input.category || null,
-
-    date: input.date.split('T')[0],
-
-    created_by: userId,
-
-    auto_generated: false,
-
+  const { data: created, error } = await supabase.rpc('post_company_transaction', {
+    p_type: input.type,
+    p_amount: amount,
+    p_description: input.description || (input.type === 'income' ? 'Encaissement manuel' : 'Décaissement manuel'),
+    p_category: input.category || null,
+    p_date: input.date.split('T')[0],
+    p_user_id: userId,
+    p_auto_generated: false,
+    p_source: 'manual',
+    p_metadata: { origin: 'bank_page' },
   });
-
-
-
-  await adjustCompanyBalance(signedDelta);
-
-
-
-  const created = await fetchLatestTransactionForUser(userId);
+  if (error) throw error;
 
   if (!created) throw new Error('Transaction créée mais introuvable.');
 
 
 
-  return created;
+  return created as unknown as Transaction;
 
 }
 
@@ -434,19 +371,13 @@ export async function deleteTransaction(id: string): Promise<void> {
 
 
 
-  const amount = Number(tx.amount);
-
-  const delta = isCreditTransaction(tx) ? -amount : amount;
-
-
-
-  const { error } = await supabase.from('transactions').delete().eq('id', id);
+  const { error } = await supabase.rpc('delete_manual_company_transaction', {
+    p_transaction_id: id,
+  });
 
   if (error) throw error;
 
 
-
-  await adjustCompanyBalance(delta);
 
 }
 

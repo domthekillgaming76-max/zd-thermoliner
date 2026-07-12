@@ -1,5 +1,3 @@
-import { insertTransactionRow } from '../lib/transactionInsert';
-import { fetchCompanyAccount } from './bankService';
 import { supabase } from '../lib/supabase';
 
 export type TransferKind =
@@ -32,30 +30,22 @@ export async function createTransfer(input: TransferInput): Promise<void> {
 
   const label = TRANSFER_LABELS[input.kind];
   const date = (input.scheduledDate ?? new Date().toISOString()).split('T')[0];
-  const isScheduled = input.kind === 'scheduled' && input.scheduledDate;
-
-  await insertTransactionRow({
-    user_id: input.userId,
-    type: input.kind === 'internal' ? 'transfer' : 'expense',
-    amount,
-    description: `${label} — ${input.beneficiary}${input.reference ? ` (${input.reference})` : ''}`,
-    category: input.kind === 'driver' ? 'Salary' : input.kind === 'supplier' ? 'Other' : 'Other',
-    date,
-    created_by: input.userId,
-    auto_generated: false,
-    reference: input.reference || null,
+  const isScheduled = input.kind === 'scheduled' && Boolean(input.scheduledDate);
+  const { error } = await supabase.rpc('post_company_transaction', {
+    p_type: input.kind === 'internal' ? 'transfer' : 'expense',
+    p_amount: amount,
+    p_description: `${label} — ${input.beneficiary}${input.reference ? ` (${input.reference})` : ''}`,
+    p_category: input.kind === 'driver' ? 'Salary' : 'Other',
+    p_date: date,
+    p_reference: input.reference || null,
+    p_user_id: input.userId,
+    p_auto_generated: false,
+    p_source: isScheduled ? 'scheduled_transfer' : 'transfer',
+    p_metadata: {
+      kind: input.kind,
+      beneficiary: input.beneficiary,
+      scheduled: isScheduled,
+    },
   });
-
-  if (!isScheduled) {
-    const account = await fetchCompanyAccount();
-    if (account) {
-      await supabase
-        .from('company_bank_account')
-        .update({
-          balance: Number(account.balance) - amount,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', account.id);
-    }
-  }
+  if (error) throw error;
 }

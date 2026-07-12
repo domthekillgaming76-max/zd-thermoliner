@@ -121,6 +121,8 @@ export type Transaction = {
   balance_after?: number | null;
   auto_generated?: boolean | null;
   status?: 'posted' | 'pending' | null;
+  source?: string | null;
+  metadata?: Record<string, unknown> | null;
 };
 
 export type CompanyBankAccount = {

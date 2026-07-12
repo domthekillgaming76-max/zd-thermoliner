@@ -1,4 +1,4 @@
-import { ExternalLink, KeyRound, Truck, X, Building2 } from 'lucide-react';
+import { AlertTriangle, ExternalLink, KeyRound, Truck, X, Building2 } from 'lucide-react';
 import { fmtEuro } from '../../lib/format';
 import { CLOVIS_STEAM_MOD_URL } from '../../lib/clovisRentalTypes';
 import type { ClovisCatalogItem } from '../../lib/clovisRentalTypes';
@@ -8,6 +8,7 @@ interface ClovisRentConfirmModalProps {
   item: ClovisCatalogItem | null;
   companyBalance: number | null;
   renting: boolean;
+  error?: string | null;
   onClose: () => void;
   onConfirm: () => void;
 }
@@ -17,6 +18,7 @@ export function ClovisRentConfirmModal({
   item,
   companyBalance,
   renting,
+  error,
   onClose,
   onConfirm,
 }: ClovisRentConfirmModalProps) {
@@ -50,6 +52,16 @@ export function ClovisRentConfirmModal({
         </div>
 
         <div className="p-5 space-y-5">
+          {error && (
+            <div
+              className="flex items-start gap-3 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+              role="alert"
+            >
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
           <div
             className="rounded-xl p-4 border"
             style={{ borderColor: `${accent}33`, background: `${accent}10` }}

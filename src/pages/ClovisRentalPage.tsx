@@ -176,7 +176,11 @@ export function ClovisRentalPage() {
         item={pendingRent}
         companyBalance={companyBalance}
         renting={startRental.isPending}
-        onClose={() => setPendingRent(null)}
+        error={error}
+        onClose={() => {
+          setPendingRent(null);
+          setError(null);
+        }}
         onConfirm={confirmRent}
       />
 
