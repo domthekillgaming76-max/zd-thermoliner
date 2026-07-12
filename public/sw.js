@@ -2,7 +2,7 @@
 const CACHE_NAME = '__CACHE_NAME__';
 
 /** Offline-only assets — never cache index.html or JS bundles. */
-const OFFLINE_ASSETS = ['/manifest.json', '/icons/icon-192.svg', '/icons/icon-512.svg'];
+const OFFLINE_ASSETS = ['/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

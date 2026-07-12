@@ -11,6 +11,12 @@ if (-not (Test-Path $batPath)) {
   exit 1
 }
 
+$iconPath = Join-Path $ProjectRoot 'public\icons\desktop-shortcut.ico'
+if (-not (Test-Path $iconPath)) {
+  Write-Host "[ATTENTION] Icone introuvable : $iconPath"
+  $iconPath = $null
+}
+
 $desktop = [Environment]::GetFolderPath('Desktop')
 $linkPath = Join-Path $desktop 'Z&D Thermoliner ERP.lnk'
 
@@ -20,8 +26,14 @@ $shortcut.TargetPath = $batPath
 $shortcut.WorkingDirectory = $ProjectRoot
 $shortcut.WindowStyle = 1
 $shortcut.Description = "Ouvrir Z&D Thermoliner ERP ($ErpUrl)"
+if ($iconPath) {
+  $shortcut.IconLocation = "$iconPath,0"
+}
 $shortcut.Save()
 
 Write-Host "[OK] Raccourci Bureau mis a jour :"
 Write-Host "     $linkPath"
+if ($iconPath) {
+  Write-Host "     Icone : $iconPath"
+}
 Write-Host "     URL : $ErpUrl"
