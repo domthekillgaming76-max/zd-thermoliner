@@ -168,11 +168,7 @@ export function TrackingPage() {
                     <option value="all">Tous statuts</option>
                     <option value="planned">Planifiée</option>
                     <option value="loading">Chargement</option>
-                    <option value="on_route">En route</option>
-                    <option value="paused">En pause</option>
-                    <option value="late">En retard</option>
                     <option value="arrived">Arrivée</option>
-                    <option value="delivered">Livrée</option>
                   </select>
                 </div>
               </div>

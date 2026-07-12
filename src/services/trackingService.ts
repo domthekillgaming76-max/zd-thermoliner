@@ -54,9 +54,44 @@ function computeProgressFromPosition(
   return { progress, remaining };
 }
 
+const TRACKING_SALON_REMOVED_STATUSES: TrackingStatus[] = [
+  'delivered',
+  'cancelled',
+  'paused',
+  'on_route',
+  'late',
+];
+
+async function deleteTrackingRecordsByStatus(statuses: TrackingStatus[]): Promise<void> {
+  if (statuses.length === 0) return;
+  const { error } = await supabase
+    .from('delivery_tracking')
+    .delete()
+    .in('status', statuses);
+  if (error && !isTrackingSchemaError(error)) {
+    console.warn('[Z&D] deleteTrackingRecordsByStatus', error.message);
+  }
+}
+
+/** Supprime l'historique livré + tous les fret en pause / en route du salon GPS. */
+async function purgeTrackingSalon(): Promise<void> {
+  await deleteTrackingRecordsByStatus([
+    'delivered',
+    'cancelled',
+    'paused',
+    'on_route',
+    'late',
+  ]);
+}
+
+async function deleteTrackingRecord(trackingId: string): Promise<void> {
+  const { error } = await supabase.from('delivery_tracking').delete().eq('id', trackingId);
+  if (error) throw error;
+}
+
 async function syncMissionsToTracking(missions: TransportMission[]): Promise<void> {
   const active = missions.filter(m =>
-    ['planned', 'assigned', 'in_progress'].includes(m.status),
+    ['planned', 'assigned'].includes(m.status),
   );
   if (active.length === 0) return;
 
@@ -221,13 +256,7 @@ async function buildAlerts(deliveries: DeliveryTracking[]): Promise<TrackingAler
       });
     }
     if (d.status === 'delivered') {
-      alerts.push({
-        tracking_id: d.id,
-        alert_type: 'delivery_completed',
-        severity: 'info',
-        message: `Livraison terminée — ${d.arrival_city}`,
-        acknowledged: false,
-      });
+      continue;
     }
   }
 
@@ -330,6 +359,7 @@ export async function fetchTrackingBundle(
     .in('status', ['planned', 'assigned', 'in_progress']);
 
   if (canViewAllTracking(role, email)) {
+    await purgeTrackingSalon();
     await syncMissionsToTracking((missions ?? []) as TransportMission[]);
   }
 
@@ -352,7 +382,9 @@ export async function fetchTrackingBundle(
       deliveries = [];
     }
   } else {
-    deliveries = deliveries.filter(d => d.is_active || !['delivered', 'cancelled'].includes(d.status));
+    deliveries = deliveries.filter(
+      d => !TRACKING_SALON_REMOVED_STATUSES.includes(d.status),
+    );
   }
 
   const trackingIds = deliveries.map(d => d.id);
@@ -411,6 +443,14 @@ export async function updateDeliveryStatus(
   const etaMinutes = computeEtaMinutes(Number(row.remaining_km), status);
   const eta_at = etaMinutes ? new Date(Date.now() + etaMinutes * 60000).toISOString() : null;
 
+  if (['delivered', 'cancelled'].includes(status)) {
+    if (status === 'delivered' && row.mission_id) {
+      await supabase.from('transport_missions').update({ status: 'delivered' }).eq('id', row.mission_id);
+    }
+    await deleteTrackingRecord(trackingId);
+    return;
+  }
+
   const { error } = await supabase
     .from('delivery_tracking')
     .update({
@@ -433,10 +473,6 @@ export async function updateDeliveryStatus(
     status,
     notes: `Statut → ${status}`,
   });
-
-  if (status === 'delivered' && row.mission_id) {
-    await supabase.from('transport_missions').update({ status: 'delivered' }).eq('id', row.mission_id);
-  }
 }
 
 export async function updateGpsPosition(
