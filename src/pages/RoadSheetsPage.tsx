@@ -475,17 +475,14 @@ export function RoadSheetsPage() {
         ) : sheets.length === 0 ? (
 
           <div className="card-premium p-8">
-
-            <EmptyState
-
-              icon={Route}
-
-              title="Aucune feuille de route"
-
-              description="Créez votre première feuille pour commencer le suivi financier."
-
-            />
-
+            <div className="max-w-lg mx-auto">
+              <img src="/images/road-sheet-salon.jpg" alt="Feuille de route" className="mx-auto mb-4 w-full max-w-md rounded-lg object-cover" />
+              <EmptyState
+                icon={Route}
+                title="Aucune feuille de route"
+                description="Créez votre première feuille pour commencer le suivi financier."
+              />
+            </div>
           </div>
 
         ) : (
