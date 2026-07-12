@@ -20,12 +20,19 @@ internal sealed class ErpMainForm : Form
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = Color.FromArgb(8, 8, 8);
 
-        var iconPath = File.Exists(DesktopInstaller.InstalledIconPath)
-            ? DesktopInstaller.InstalledIconPath
-            : Path.Combine(AppContext.BaseDirectory, "assets", "desktop-shortcut.ico");
-        if (File.Exists(iconPath))
+        try
         {
-            Icon = new Icon(iconPath);
+            var exePath = File.Exists(DesktopInstaller.InstalledExePath)
+                ? DesktopInstaller.InstalledExePath
+                : Environment.ProcessPath ?? Application.ExecutablePath;
+            if (!string.IsNullOrWhiteSpace(exePath))
+            {
+                Icon = Icon.ExtractAssociatedIcon(exePath);
+            }
+        }
+        catch
+        {
+            /* icone par defaut */
         }
 
         Controls.Add(_webView);

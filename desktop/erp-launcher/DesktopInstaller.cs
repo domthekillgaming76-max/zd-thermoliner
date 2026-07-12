@@ -5,7 +5,7 @@ namespace ZDThermoliner.ErpLauncher;
 
 internal static class DesktopInstaller
 {
-    public const string ShortcutFileName = "Z&D Thermoliner ERP.lnk";
+    public const string ShortcutFileName = "ZD Thermoliner ERP.lnk";
     private const string EmbeddedAssetsPrefix = "ZDThermoliner.ErpLauncher.assets.";
 
     public static string InstallDirectory { get; } = Path.Combine(
@@ -17,34 +17,62 @@ internal static class DesktopInstaller
 
     public static string InstalledIconPath { get; } = Path.Combine(InstallDirectory, "assets", "desktop-shortcut.ico");
 
+    public static string LogPath { get; } = Path.Combine(InstallDirectory, "launcher.log");
+
     public static string CurrentVersion { get; } =
         Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0";
 
+    public static bool IsReadyLaunch()
+    {
+        return Environment.GetCommandLineArgs()
+            .Any(arg => string.Equals(arg, LauncherConfig.ReadyArgument, StringComparison.OrdinalIgnoreCase));
+    }
+
     public static bool SyncAndRelaunchIfNeeded()
     {
-        var sourceExe = Environment.ProcessPath ?? Application.ExecutablePath;
-        if (string.IsNullOrWhiteSpace(sourceExe) || !File.Exists(sourceExe))
+        if (IsReadyLaunch())
         {
             return false;
         }
 
-        Directory.CreateDirectory(InstallDirectory);
-        Directory.CreateDirectory(Path.Combine(InstallDirectory, "assets"));
-
-        CopyAssets(Path.GetDirectoryName(sourceExe) ?? AppContext.BaseDirectory);
-        InstallExecutable(sourceExe);
-        WriteVersionMarker();
-        EnsureDesktopShortcut();
-
-        if (!PathsEqual(sourceExe, InstalledExePath))
+        try
         {
-            Process.Start(new ProcessStartInfo
+            var sourceExe = Environment.ProcessPath ?? Application.ExecutablePath;
+            if (string.IsNullOrWhiteSpace(sourceExe) || !File.Exists(sourceExe))
             {
-                FileName = InstalledExePath,
-                UseShellExecute = true,
-                WorkingDirectory = InstallDirectory,
-            });
-            return true;
+                Log("Source exe introuvable.");
+                return false;
+            }
+
+            Directory.CreateDirectory(InstallDirectory);
+            Directory.CreateDirectory(Path.Combine(InstallDirectory, "assets"));
+
+            CopyAssets(Path.GetDirectoryName(sourceExe) ?? AppContext.BaseDirectory);
+            InstallExecutable(sourceExe);
+            WriteVersionMarker();
+            EnsureDesktopShortcut();
+
+            if (!PathsEqual(sourceExe, InstalledExePath))
+            {
+                Log($"Relance depuis installation : {InstalledExePath}");
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = InstalledExePath,
+                    Arguments = LauncherConfig.ReadyArgument,
+                    UseShellExecute = true,
+                    WorkingDirectory = InstallDirectory,
+                });
+                return true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log($"Sync error: {ex}");
+            MessageBox.Show(
+                $"Installation du raccourci impossible.\n\n{ex.Message}",
+                ErpMainForm.WindowTitle,
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
         }
 
         return false;
@@ -52,6 +80,11 @@ internal static class DesktopInstaller
 
     private static void InstallExecutable(string sourceExe)
     {
+        if (PathsEqual(sourceExe, InstalledExePath))
+        {
+            return;
+        }
+
         var shouldCopy = !File.Exists(InstalledExePath);
         if (!shouldCopy)
         {
@@ -63,6 +96,7 @@ internal static class DesktopInstaller
         if (shouldCopy)
         {
             File.Copy(sourceExe, InstalledExePath, overwrite: true);
+            Log("Exe installe/mis a jour.");
         }
     }
 
@@ -116,35 +150,48 @@ internal static class DesktopInstaller
 
     private static void WriteVersionMarker()
     {
-        var versionFile = Path.Combine(InstallDirectory, "version.txt");
-        File.WriteAllText(versionFile, CurrentVersion);
+        File.WriteAllText(Path.Combine(InstallDirectory, "version.txt"), CurrentVersion);
     }
 
     private static void EnsureDesktopShortcut()
     {
         var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
         var shortcutPath = Path.Combine(desktop, ShortcutFileName);
-        var iconPath = File.Exists(InstalledIconPath)
-            ? InstalledIconPath
-            : Path.Combine(InstallDirectory, "assets", "desktop-shortcut.ico");
 
-        var shellType = Type.GetTypeFromProgID("WScript.Shell");
-        if (shellType is null)
-        {
-            return;
-        }
+        var shellType = Type.GetTypeFromProgID("WScript.Shell")
+            ?? throw new InvalidOperationException("WScript.Shell indisponible.");
 
         dynamic shell = Activator.CreateInstance(shellType)!;
         dynamic shortcut = shell.CreateShortcut(shortcutPath);
         shortcut.TargetPath = InstalledExePath;
+        shortcut.Arguments = LauncherConfig.ReadyArgument;
         shortcut.WorkingDirectory = InstallDirectory;
         shortcut.WindowStyle = 1;
         shortcut.Description = "Z and D Thermoliner ERP";
-        if (File.Exists(iconPath))
-        {
-            shortcut.IconLocation = $"{iconPath},0";
-        }
+        shortcut.IconLocation = $"{InstalledExePath},0";
         shortcut.Save();
+
+        var legacyShortcut = Path.Combine(desktop, "Z&D Thermoliner ERP.lnk");
+        if (File.Exists(legacyShortcut))
+        {
+            File.Delete(legacyShortcut);
+        }
+
+        Log($"Raccourci Bureau : {shortcutPath}");
+    }
+
+    public static void Log(string message)
+    {
+        try
+        {
+            Directory.CreateDirectory(InstallDirectory);
+            var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}{Environment.NewLine}";
+            File.AppendAllText(LogPath, line);
+        }
+        catch
+        {
+            /* ignore */
+        }
     }
 
     private static bool PathsEqual(string a, string b)
