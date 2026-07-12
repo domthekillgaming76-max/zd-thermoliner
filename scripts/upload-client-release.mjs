@@ -52,7 +52,7 @@ const storagePath = `windows/${fileName}`;
 const githubRawUrl = `https://github.com/${githubRepo}/raw/${githubBranch}/public/downloads/${fileName}`;
 const erpDownloadUrl = `${erpBase}/downloads/${fileName}`;
 const changelog =
-  `Client Windows Z&D Thermoliner v${version} — tachygraphe autonome branché télémétrie, ticket d'essai imprimable.`;
+  `Client Windows Z&D Thermoliner v${version} — voix au chargement cargo, salon livraison live, plugin télémétrie v1.1.1.`;
 
 if (!fs.existsSync(exePath)) {
   console.error(`[publish] Fichier introuvable: ${exePath}`);

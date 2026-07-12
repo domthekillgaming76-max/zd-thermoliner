@@ -33,6 +33,8 @@ export function normalizeJobPayload(body = {}) {
     game,
     cargo: str(body.cargo ?? body.cargoName ?? body.cargo_name),
     cargoMassKg: num(body.cargoMassKg ?? body.cargo_mass_kg ?? body.mass),
+    cargoLoaded: body.cargoLoaded === true || body.cargo_loaded === true,
+    cargoLoadedAt: str(body.cargoLoadedAt ?? body.cargo_loaded_at),
     sourceCity: str(body.sourceCity ?? body.source_city ?? body.departure_city ?? body.from_city),
     sourceCompany: str(body.sourceCompany ?? body.source_company ?? body.departure_company),
     destinationCity: str(body.destinationCity ?? body.destination_city ?? body.arrival_city ?? body.to_city),
@@ -138,6 +140,9 @@ export async function processSyncJobEvent(profile, driver, body = {}) {
   }
   if (event === 'JOB_UPDATE' || event === 'JOB_UPDATED') {
     return await updateTelemetryJob(profile, driver, payload);
+  }
+  if (event === 'CARGO_LOADED') {
+    return await updateTelemetryJob(profile, driver, { ...payload, status: 'active', cargoLoaded: true });
   }
 
   const telemetry = body.telemetry;
@@ -598,6 +603,21 @@ export async function updateTelemetryJob(profile, driver, body) {
 
   if (payload.actualDistanceKm != null) {
     jobPatch.actual_distance_km = payload.actualDistanceKm;
+  }
+
+  if (payload.cargo) {
+    jobPatch.cargo = payload.cargo;
+  }
+  if (payload.cargoMassKg != null) {
+    jobPatch.weight_kg = payload.cargoMassKg;
+  }
+  if (payload.cargoLoaded) {
+    jobPatch.status = 'active';
+    jobPatch.metadata = {
+      ...(jobPatch.metadata || {}),
+      cargo_loaded: true,
+      cargo_loaded_at: payload.cargoLoadedAt ?? now,
+    };
   }
 
   await supabaseAdmin.from('telemetry_jobs').update(jobPatch).eq('id', job.id);
