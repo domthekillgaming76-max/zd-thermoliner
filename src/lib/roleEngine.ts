@@ -10,7 +10,7 @@ export type ModuleKey =
   | 'dashboard' | 'road_sheets' | 'freight_market' | 'dispatch'
   | 'gps_tracking' | 'fleet' | 'maintenance' | 'drivers' | 'reports'
   | 'finance' | 'invoices' | 'salaries' | 'accounting' | 'bank'
-  | 'administration' | 'roles_salons' | 'salons_admin' | 'admin_integrations'
+  | 'administration' | 'roles_salons' | 'salons_admin' | 'admin_integrations' | 'rp_control_center'
   | 'training_center' | 'driver_portal' | 'documents' | 'notifications'
   | 'fleet_map' | 'statistics' | 'assistant' | 'garages' | 'clients'
   | 'driver_integrations' | 'client_launcher' | 'events' | 'join' | 'clovis_rental';
@@ -81,6 +81,7 @@ export const ROUTE_MODULE_RULES: { prefix: string; module: ModuleKey }[] = [
   { prefix: '/administration/roles-salons', module: 'roles_salons' },
   { prefix: '/administration/salons', module: 'salons_admin' },
   { prefix: '/administration/integrations', module: 'admin_integrations' },
+  { prefix: '/administration/rp-control', module: 'rp_control_center' },
   { prefix: '/administration', module: 'administration' },
   { prefix: '/road-sheets', module: 'road_sheets' },
   { prefix: '/fleet-map', module: 'fleet_map' },

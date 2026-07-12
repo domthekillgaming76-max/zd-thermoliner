@@ -49,6 +49,7 @@ export const SalonsManagementPage = lazyNamed(() => import('../pages/SalonsManag
 export const RolesSalonsPage = lazyNamed(() => import('../pages/RolesSalonsPage'), 'RolesSalonsPage');
 export const DriverIntegrationsPage = lazyNamed(() => import('../pages/DriverIntegrationsPage'), 'DriverIntegrationsPage');
 export const AdminIntegrationsPage = lazyNamed(() => import('../pages/AdminIntegrationsPage'), 'AdminIntegrationsPage');
+export const RpControlPage = lazyNamed(() => import('../pages/RpControlPage'), 'RpControlPage');
 export const RecruitmentPage = lazyNamed(() => import('../pages/recruitment/RecruitmentPage'), 'RecruitmentPage');
 export const MyApplicationsPage = lazyNamed(() => import('../pages/recruitment/MyApplicationsPage'), 'MyApplicationsPage');
 export const RecruitmentAdminPage = lazyNamed(() => import('../pages/recruitment/RecruitmentAdminPage'), 'RecruitmentAdminPage');

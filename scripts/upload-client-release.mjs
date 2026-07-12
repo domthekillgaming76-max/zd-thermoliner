@@ -8,6 +8,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
@@ -51,7 +52,7 @@ const storagePath = `windows/${fileName}`;
 const githubRawUrl = `https://github.com/${githubRepo}/raw/${githubBranch}/public/downloads/${fileName}`;
 const erpDownloadUrl = `${erpBase}/downloads/${fileName}`;
 const changelog =
-  'Client Windows Z&D Thermoliner v1.0.1 — télémétrie ETS2/ATS, personnalisation, sync ERP automatique.';
+  `Client Windows Z&D Thermoliner v${version} — tachygraphe RP, carte conducteur, tickets fin de journée.`;
 
 if (!fs.existsSync(exePath)) {
   console.error(`[publish] Fichier introuvable: ${exePath}`);
@@ -129,11 +130,17 @@ ON CONFLICT (version) DO UPDATE SET
     console.warn('[publish] Fichier > 50 Mo — lien GitHub raw utilisé (ERP /downloads/ en secours après redeploy Coolify)');
   }
 
-  execSync(`npx supabase db query --linked --yes ${JSON.stringify(sql)}`, {
-    cwd: root,
-    stdio: 'inherit',
-    env: process.env,
-  });
+  const sqlFile = path.join(os.tmpdir(), `zd-publish-${version}.sql`);
+  fs.writeFileSync(sqlFile, sql, 'utf8');
+  try {
+    execSync(`npx supabase db query --linked --yes -f "${sqlFile}"`, {
+      cwd: root,
+      stdio: 'inherit',
+      env: process.env,
+    });
+  } finally {
+    fs.unlinkSync(sqlFile);
+  }
   return finalUrl;
 }
 

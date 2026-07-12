@@ -9,6 +9,7 @@ import {
   handleClientUpdates,
   handleClientHealth,
 } from './handlers.mjs';
+import { handleTachographTicket, handleTachographStatus } from './tachographHandlers.mjs';
 import {
   handleJobStart,
   handleJobUpdate,
@@ -29,6 +30,8 @@ clientApiRouter.post('/telemetry', requireClientAuth, requireClientRole(CHAUFFEU
 clientApiRouter.post('/sync', requireClientAuth, requireClientRole(CHAUFFEUR_ACCESS), handleClientSync);
 clientApiRouter.get('/updates', handleClientUpdates);
 clientApiRouter.get('/health', handleClientHealth);
+clientApiRouter.post('/tachograph/ticket', requireClientAuth, requireClientRole(CHAUFFEUR_ACCESS), handleTachographTicket);
+clientApiRouter.get('/tachograph/status', requireClientAuth, requireClientRole(CHAUFFEUR_ACCESS), handleTachographStatus);
 
 clientApiRouter.post('/jobs/start', requireClientAuth, requireClientRole(CHAUFFEUR_ACCESS), handleJobStart);
 clientApiRouter.post('/jobs/update', requireClientAuth, requireClientRole(CHAUFFEUR_ACCESS), handleJobUpdate);

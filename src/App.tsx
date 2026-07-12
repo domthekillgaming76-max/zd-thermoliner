@@ -170,6 +170,7 @@ function AppRoutes() {
       <Route path="/administration/roles-salons" element={<ProtectedPage page="roles_salons"><Pages.RolesSalonsPage /></ProtectedPage>} />
       <Route path="/administration/salons" element={<ProtectedPage page="salons_admin"><Pages.SalonsManagementPage /></ProtectedPage>} />
       <Route path="/administration/integrations" element={<ProtectedPage page="admin_integrations"><Pages.AdminIntegrationsPage /></ProtectedPage>} />
+      <Route path="/administration/rp-control" element={<ProtectedPage page="rp_control_center"><Pages.RpControlPage /></ProtectedPage>} />
       <Route path="/administration" element={<ProtectedPage page="administration"><Pages.AdminSecurityPage /></ProtectedPage>} />
       <Route path="/settings" element={<ProtectedPage page="settings"><Pages.SettingsPage /></ProtectedPage>} />
       <Route path="/profile/dossier" element={<Navigate to="/profile?tab=dossier" replace />} />
