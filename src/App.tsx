@@ -8,7 +8,7 @@ import { AppUpdateProvider } from './contexts/AppUpdateContext';
 import { AppUpdateGlobalNotice } from './components/AppUpdateBanner';
 import { LiveNotificationProvider } from './contexts/LiveNotificationContext';
 import { PwaInstallPrompt } from './components/PwaInstallPrompt';
-import { DesktopAppBanner } from './components/DesktopAppBanner';
+import { ErpLauncherBanner } from './components/ErpLauncherBanner';
 import { MemberGuard } from './components/MemberGuard';
 import { getPostLoginPath } from './lib/accessControl';
 import { PERF } from './lib/perfConfig';
@@ -196,7 +196,7 @@ function App() {
             <AppModulesProvider>
               <AppUpdateProvider>
                 <LiveNotificationProvider>
-                  <DesktopAppBanner />
+                  <ErpLauncherBanner />
                   <AppUpdateGlobalNotice />
                   <AppRoutes />
                   <PwaInstallPrompt />

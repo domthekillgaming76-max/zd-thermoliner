@@ -18,7 +18,7 @@ function Find-InstalledPwaShortcut {
 
   foreach ($pattern in $patterns) {
     $candidates = Get-ChildItem -Path $pattern -ErrorAction SilentlyContinue | Where-Object {
-      $_.Name -match 'Z&D|Thermoliner|ZD ERP|Z&D ERP'
+      $_.Name -match 'Thermoliner|ZD ERP'
     }
     if ($candidates) {
       return $candidates | Select-Object -First 1
@@ -31,6 +31,7 @@ $pwaShortcut = Find-InstalledPwaShortcut
 
 $nativeLauncher = Join-Path $env:LOCALAPPDATA 'Programs\ZD-Thermoliner-ERP\ZD-Thermoliner-ERP.exe'
 $localLauncher = Join-Path $ProjectRoot 'desktop\erp-launcher\publish\ZD-Thermoliner-ERP.exe'
+$downloadLauncher = Join-Path $env:USERPROFILE 'Downloads\ZD-Thermoliner-ERP-Windows-1.0.0.exe'
 
 $shell = New-Object -ComObject WScript.Shell
 $shortcut = $shell.CreateShortcut($linkPath)
@@ -38,21 +39,27 @@ $shortcut = $shell.CreateShortcut($linkPath)
 if (Test-Path $nativeLauncher) {
   $shortcut.TargetPath = $nativeLauncher
   $shortcut.WorkingDirectory = Split-Path $nativeLauncher
-  $shortcut.Description = "Z&D Thermoliner ERP (launcher natif)"
+  $shortcut.Description = 'Z and D Thermoliner ERP (launcher natif)'
   if (Test-Path $iconPath) { $shortcut.IconLocation = "$iconPath,0" }
   Write-Host "[OK] Raccourci launcher natif : $nativeLauncher"
 } elseif (Test-Path $localLauncher) {
   $shortcut.TargetPath = $localLauncher
   $shortcut.WorkingDirectory = Split-Path $localLauncher
-  $shortcut.Description = "Z&D Thermoliner ERP (launcher natif local)"
+  $shortcut.Description = 'Z and D Thermoliner ERP (launcher natif local)'
   if (Test-Path $iconPath) { $shortcut.IconLocation = "$iconPath,0" }
-  Write-Host "[OK] Raccourci launcher natif (build local)"
+  Write-Host '[OK] Raccourci launcher natif (build local)'
+} elseif (Test-Path $downloadLauncher) {
+  $shortcut.TargetPath = $downloadLauncher
+  $shortcut.WorkingDirectory = Split-Path $downloadLauncher
+  $shortcut.Description = 'Z and D Thermoliner ERP (launcher telecharge)'
+  if (Test-Path $iconPath) { $shortcut.IconLocation = "$iconPath,0" }
+  Write-Host "[OK] Raccourci launcher telecharges : $downloadLauncher"
 } elseif ($pwaShortcut) {
   $existing = $shell.CreateShortcut($pwaShortcut.FullName)
   $shortcut.TargetPath = $existing.TargetPath
   $shortcut.Arguments = $existing.Arguments
   $shortcut.WorkingDirectory = $existing.WorkingDirectory
-  $shortcut.Description = "Z&D Thermoliner ERP (application installee)"
+  $shortcut.Description = 'Z and D Thermoliner ERP (application installee)'
   if ($existing.IconLocation) {
     $shortcut.IconLocation = $existing.IconLocation
   }
@@ -65,12 +72,12 @@ if (Test-Path $nativeLauncher) {
   $shortcut.TargetPath = $batPath
   $shortcut.WorkingDirectory = $ProjectRoot
   $shortcut.WindowStyle = 1
-  $shortcut.Description = "Ouvrir Z&D Thermoliner ERP ($ErpUrl) — installez via Edge/Chrome pour l'app Windows"
+  $shortcut.Description = "Ouvrir Z and D Thermoliner ERP ($ErpUrl)"
   if (Test-Path $iconPath) {
     $shortcut.IconLocation = "$iconPath,0"
   }
-  Write-Host "[INFO] PWA non installee — raccourci vers LANCER-ERP.bat (mode fenetre legere)"
-  Write-Host "       Installez l'ERP depuis Edge/Chrome : menu -> Installer Z&D ERP"
+  Write-Host '[INFO] Raccourci vers LANCER-ERP.bat (mode fenetre legere)'
+  Write-Host '       Astuce : telechargez le launcher natif dans Parametres - Aide'
 }
 
 $shortcut.Save()
