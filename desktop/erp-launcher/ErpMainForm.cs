@@ -9,6 +9,8 @@ internal sealed class ErpMainForm : Form
 
     private readonly WebView2 _webView = new() { Dock = DockStyle.Fill };
     private readonly string _erpUrl;
+    private readonly System.Windows.Forms.Timer _retryTimer = new() { Interval = 5000 };
+    private bool _navigationInProgress;
 
     public ErpMainForm()
     {
@@ -36,6 +38,7 @@ internal sealed class ErpMainForm : Form
         }
 
         Controls.Add(_webView);
+        _retryTimer.Tick += RetryNavigation;
         Load += OnFormLoadAsync;
         FormClosing += OnFormClosing;
     }
@@ -79,11 +82,25 @@ internal sealed class ErpMainForm : Form
             settings.IsStatusBarEnabled = false;
             settings.IsZoomControlEnabled = false;
 
+            _webView.CoreWebView2.NavigationStarting += (_, _) =>
+            {
+                _navigationInProgress = true;
+                Text = $"{WindowTitle} — connexion…";
+            };
+
             _webView.CoreWebView2.NavigationCompleted += (_, args) =>
             {
-                if (!args.IsSuccess)
+                _navigationInProgress = false;
+                if (args.IsSuccess)
                 {
-                    Text = $"{WindowTitle} — erreur réseau";
+                    _retryTimer.Stop();
+                    Text = WindowTitle;
+                }
+                else
+                {
+                    Text = $"{WindowTitle} — reconnexion automatique…";
+                    _retryTimer.Start();
+                    DesktopInstaller.Log($"Navigation échouée : {args.WebErrorStatus}");
                 }
             };
 
@@ -100,8 +117,27 @@ internal sealed class ErpMainForm : Form
         }
     }
 
+    private void RetryNavigation(object? sender, EventArgs e)
+    {
+        if (_navigationInProgress || _webView.CoreWebView2 is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _webView.CoreWebView2.Navigate(_erpUrl);
+        }
+        catch (Exception ex)
+        {
+            DesktopInstaller.Log($"Reconnexion impossible : {ex.Message}");
+        }
+    }
+
     private void OnFormClosing(object? sender, FormClosingEventArgs e)
     {
+        _retryTimer.Stop();
+        _retryTimer.Dispose();
         _webView.Dispose();
     }
 }
