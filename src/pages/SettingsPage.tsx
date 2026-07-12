@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { canAccessAdministration } from '../lib/adminPermissions';
 import { FormAlert, FormSuccess } from '../components/erp/FormAlert';
 import { APP_VERSION_LABEL } from '../lib/appVersion';
+import { ErpInstallGuide } from '../components/ErpInstallGuide';
 
 const BLOCKED_ROLES = ['candidat', 'banni', 'ancien_membre'];
 const PREFS_KEY = 'zd_erp_settings';
@@ -262,11 +263,14 @@ export function SettingsPage() {
         )}
 
         {section === 'help' && (
-          <div className="rounded-2xl p-5 space-y-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-            <HelpItem title="Créer une feuille de route" text="Feuilles de route → Nouvelle feuille. Les calculs se mettent à jour en temps réel." />
-            <HelpItem title="Dispatch & missions" text="Le dispatch crée des missions et génère automatiquement une feuille de route à la livraison." />
-            <HelpItem title="Recrutement" text="Les visiteurs peuvent postuler via Bureau du PDG. L'admin valide les candidatures." />
-            <HelpItem title="Support" text="Contactez le PDG ou DOM76 sur Discord pour toute assistance." />
+          <div className="space-y-4">
+            <ErpInstallGuide variant="full" />
+            <div className="rounded-2xl p-5 space-y-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <HelpItem title="Créer une feuille de route" text="Feuilles de route → Nouvelle feuille. Les calculs se mettent à jour en temps réel." />
+              <HelpItem title="Dispatch & missions" text="Le dispatch crée des missions et génère automatiquement une feuille de route à la livraison." />
+              <HelpItem title="Recrutement" text="Les visiteurs peuvent postuler via Bureau du PDG. L'admin valide les candidatures." />
+              <HelpItem title="Support" text="Contactez le PDG ou DOM76 sur Discord pour toute assistance." />
+            </div>
           </div>
         )}
 

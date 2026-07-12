@@ -8,6 +8,7 @@ import {
   MISSION_STATUS_LABELS,
 } from '../../lib/driverPortalTypes';
 import { DriverQuickActions } from './DriverQuickActions';
+import { ErpInstallGuide } from '../ErpInstallGuide';
 
 interface DriverHomePanelProps {
   data: DriverPortalBundle;
@@ -22,6 +23,8 @@ export function DriverHomePanel({ data, onAction, busy }: DriverHomePanelProps) 
 
   return (
     <div className="space-y-4 driver-portal-fade-in">
+      <ErpInstallGuide variant="compact" />
+
       <div className="driver-portal-glass driver-portal-truck-card rounded-2xl p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
