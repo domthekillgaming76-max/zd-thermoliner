@@ -344,43 +344,71 @@ export function RoadSheetsPage() {
 
       <div className="space-y-6">
 
-        <PageHeader
+        <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#0b0b0b] shadow-[0_20px_60px_rgba(0,0,0,0.3)]">
+          <div
+            className="absolute inset-0 bg-cover bg-center scale-[1.02] transition-transform duration-500"
+            style={{ backgroundImage: "url('/images/road-sheet-salon.jpg')" }}
+          />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(217,25,32,0.24),_transparent_38%),linear-gradient(90deg,rgba(6,6,6,0.95)_0%,rgba(6,6,6,0.75)_55%,rgba(6,6,6,0.4)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_0%,rgba(255,255,255,0.03)_100%)]" />
+          <div className="absolute -bottom-12 -right-10 h-40 w-40 rounded-full bg-red-500/20 blur-3xl" />
+          <div className="relative flex min-h-[280px] flex-col justify-center px-6 py-8 sm:px-8 lg:px-10 lg:py-10">
+            <div className="max-w-3xl space-y-4">
+              <div className="inline-flex w-fit items-center gap-2 rounded-full border border-red-500/25 bg-red-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-red-300 shadow-[0_0_20px_rgba(217,25,32,0.08)]">
+                <Route className="h-3.5 w-3.5" />
+                Transport & suivi
+              </div>
+              <div className="space-y-3">
+                <h1 className="text-3xl font-black tracking-[0.16em] text-white sm:text-4xl lg:text-[2.5rem]">
+                  FEUILLES DE ROUTE
+                </h1>
+                <p className="max-w-2xl text-sm leading-7 text-white/80 sm:text-base">
+                  Gérez et suivez toutes les missions de transport de Z&D Thermoliner.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
 
-          icon={Route}
+        <div className="rounded-[24px] border border-white/10 bg-[#0f0f0f]/80 p-4 shadow-[0_12px_35px_rgba(0,0,0,0.2)]">
+          <PageHeader
 
-          title="Feuilles de route"
+            icon={Route}
 
-          subtitle={
+            title="Feuilles de route"
 
-            isAdministrator
+            subtitle={
 
-              ? `${sheets.length} feuille${sheets.length !== 1 ? 's' : ''} — Validation administrateur`
+              isAdministrator
 
-              : `${sheets.length} feuille${sheets.length !== 1 ? 's' : ''} — Vos feuilles en attente de validation`
+                ? `${sheets.length} feuille${sheets.length !== 1 ? 's' : ''} — Validation administrateur`
 
-          }
+                : `${sheets.length} feuille${sheets.length !== 1 ? 's' : ''} — Vos feuilles en attente de validation`
 
-          actions={
+            }
 
-            <button
+            actions={
 
-              type="button"
+              <button
 
-              onClick={() => setShowModal(true)}
+                type="button"
 
-              className="btn-primary flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-semibold text-sm"
+                onClick={() => setShowModal(true)}
 
-            >
+                className="btn-primary flex items-center gap-2 px-4 py-2.5 rounded-xl text-white font-semibold text-sm"
 
-              <Plus className="w-4 h-4" />
+              >
 
-              Nouvelle feuille
+                <Plus className="w-4 h-4" />
 
-            </button>
+                Nouvelle feuille
 
-          }
+              </button>
 
-        />
+            }
+
+          />
+        </div>
 
 
 

@@ -14,6 +14,7 @@ export const RegisterPage = lazyNamed(() => import('../pages/RegisterPage'), 'Re
 export const LandingPage = lazyNamed(() => import('../pages/LandingPage'), 'LandingPage');
 export const DashboardPage = lazyNamed(() => import('../pages/DashboardPage'), 'DashboardPage');
 export const WallPage = lazyNamed(() => import('../pages/WallPage'), 'WallPage');
+export const ChatPage = lazyNamed(() => import('../pages/ChatPage'), 'ChatPage');
 export const UpdatesPage = lazyNamed(() => import('../pages/UpdatesPage'), 'UpdatesPage');
 export const ClientLauncherPage = lazyNamed(() => import('../pages/ClientLauncherPage'), 'ClientLauncherPage');
 export const DriversPage = lazyNamed(() => import('../pages/DriversPage'), 'DriversPage');

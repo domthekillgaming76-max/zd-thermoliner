@@ -267,6 +267,8 @@ export type ChatRoom = {
   type: 'public' | 'private' | 'direct';
   created_by: string | null;
   created_at: string;
+  icon: string | null;
+  accent_color: string | null;
 };
 
 export type ChatMessage = {
