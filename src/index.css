@@ -542,6 +542,14 @@ select:focus {
   pointer-events: none;
 }
 
+.dashboard-rp-gallery figure img {
+  filter: saturate(1.05) contrast(1.02);
+}
+
+.dashboard-rp-gallery figure:hover img {
+  filter: saturate(1.12) contrast(1.05);
+}
+
 /* ── Premium Dashboard ── */
 .premium-hero {
   background: linear-gradient(135deg, rgba(16,16,16,0.98) 0%, rgba(8,8,8,0.99) 60%, rgba(12,8,8,0.98) 100%);

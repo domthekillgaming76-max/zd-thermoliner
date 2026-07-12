@@ -13,6 +13,8 @@ import { FleetMapPanel } from '../components/liveops/FleetMapPanel';
 import { DriverSalarySummary } from '../components/liveops/DriverSalarySummary';
 import {
   PremiumDashboardHero,
+  DashboardBureauxHeroBanner,
+  DashboardRpGallery,
   ExecutiveSummary,
   MetricsGrid,
   FinanceAnalytics,
@@ -45,12 +47,16 @@ export function DashboardPage() {
   return (
     <Layout>
       <div className="space-y-8 md:space-y-10 pb-6 max-w-[1600px]">
+        <DashboardBureauxHeroBanner />
+
         <PremiumDashboardHero
           greeting={`Bonjour, ${displayName}`}
           onRefresh={refresh}
           isRefreshing={isRefreshing}
           lastUpdated={lastUpdated}
         />
+
+        <DashboardRpGallery />
 
         <DashboardSection title="Résumé exécutif" subtitle="Les chiffres essentiels en un coup d'œil">
           <ExecutiveSummary highlights={highlights} loading={data.loading} />

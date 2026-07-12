@@ -1,4 +1,5 @@
 export { PremiumDashboardHero } from './PremiumDashboardHero';
+export { DashboardBureauxHeroBanner, DashboardRpGallery } from './DashboardRpGallery';
 export { ExecutiveSummary } from './ExecutiveSummary';
 export { MetricTile, MetricsGrid } from './MetricTile';
 export { DashboardSection, DashboardWidget } from './DashboardSection';
