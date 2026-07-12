@@ -10,11 +10,13 @@ export function canAccessWall(
   return true;
 }
 
-export function canPublishOnWall(role: string | null | undefined, email?: string | null): boolean {
+export function canPublishOnWall(
+  role: string | null | undefined,
+  email?: string | null,
+  options?: { isActive?: boolean | null; isSuspended?: boolean | null },
+): boolean {
   if (isAdministratorEmail(email)) return true;
-  if (!role || role === 'banni') return false;
-  if (isVisitorRole(role)) return false;
-  return true;
+  return canAccessWall(role, options);
 }
 
 export function canCommentOnWall(

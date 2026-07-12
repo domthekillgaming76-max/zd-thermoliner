@@ -50,7 +50,7 @@ export function WallPage() {
   };
   const canModerate = canModerateWall(profile?.role, user?.email);
   const canPin = canPinWallPosts(profile?.role, user?.email);
-  const canPublish = canPublishOnWall(profile?.role, user?.email);
+  const canPublish = canPublishOnWall(profile?.role, user?.email, wallOptions);
   const canComment = canCommentOnWall(profile?.role, wallOptions);
   const canReact = canReactOnWall(profile?.role, wallOptions);
   const posts = data?.posts ?? [];
