@@ -7,15 +7,23 @@ import { ClovisTruckCard } from '../components/clovis/ClovisTruckCard';
 import { ClovisActiveRentalPanel } from '../components/clovis/ClovisActiveRentalPanel';
 import { ClovisAgencyInfoPanel } from '../components/clovis/ClovisAgencyInfoPanel';
 import { ClovisAgencyGallery, ClovisHeroBanner } from '../components/clovis/ClovisAgencyGallery';
+import { ClovisRentConfirmModal } from '../components/clovis/ClovisRentConfirmModal';
+import { ClovisRentalSuccessModal } from '../components/clovis/ClovisRentalSuccessModal';
 import { useAuth } from '../contexts/AuthContext';
 import { useClovisRental } from '../hooks/useClovisRental';
 import { fmtEuro } from '../lib/format';
 import { normalizeRole } from '../lib/roleEngine';
+import type { ClovisCatalogItem, ClovisRentalStartResult } from '../lib/clovisRentalTypes';
 
 export function ClovisRentalPage() {
   const { user, profile } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [pendingRent, setPendingRent] = useState<ClovisCatalogItem | null>(null);
+  const [rentSuccess, setRentSuccess] = useState<{
+    result: ClovisRentalStartResult;
+    photoUrl: string | null;
+  } | null>(null);
 
   const { data, isLoading, startRental, returnRental } = useClovisRental(user?.id);
 
@@ -23,23 +31,26 @@ export function ClovisRentalPage() {
   const activeRental = data?.activeRental ?? null;
   const companyBalance = data?.companyBalance ?? null;
   const isChauffeur = normalizeRole(profile?.role) === 'chauffeur' || normalizeRole(profile?.role) === 'admin';
+  const driverName = profile?.pseudo || profile?.full_name || 'Chauffeur';
 
-  async function handleRent(catalogId: string, label: string, rate: number) {
+  function openRentModal(item: ClovisCatalogItem) {
     setError(null);
-    if (companyBalance !== null && companyBalance < rate) {
-      setError(`Solde entreprise insuffisant — ${fmtEuro(rate)} requis pour la 1ère journée (disponible : ${fmtEuro(companyBalance)}).`);
+    if (companyBalance !== null && companyBalance < item.daily_rate) {
+      setError(
+        `Solde entreprise insuffisant — ${fmtEuro(item.daily_rate)} requis pour la 1ère journée (disponible : ${fmtEuro(companyBalance)}).`,
+      );
       return;
     }
-    if (!confirm(
-      `Confirmer la location du ${label} à ${fmtEuro(rate)}/jour ?\n\n`
-      + `Le montant sera prélevé sur le compte bancaire de l'entreprise Z&D Thermoliner.`,
-    )) {
-      return;
-    }
+    setPendingRent(item);
+  }
+
+  async function confirmRent() {
+    if (!pendingRent) return;
+    setError(null);
     try {
-      const msg = await startRental.mutateAsync(catalogId);
-      setSuccess(msg);
-      setTimeout(() => setSuccess(null), 4000);
+      const result = await startRental.mutateAsync(pendingRent.id);
+      setPendingRent(null);
+      setRentSuccess({ result, photoUrl: pendingRent.photo_url });
     } catch (err) {
       setError((err as Error).message);
     }
@@ -146,8 +157,8 @@ export function ClovisRentalPage() {
                       <ClovisTruckCard
                         item={item}
                         disabled={!isChauffeur || Boolean(activeRental)}
-                        renting={startRental.isPending}
-                        onRent={() => handleRent(item.id, item.label, item.daily_rate)}
+                        renting={startRental.isPending && pendingRent?.id === item.id}
+                        onRent={() => openRentModal(item)}
                       />
                     </div>
                   ))}
@@ -159,6 +170,23 @@ export function ClovisRentalPage() {
           <ClovisAgencyInfoPanel />
         </div>
       </div>
+
+      <ClovisRentConfirmModal
+        open={Boolean(pendingRent)}
+        item={pendingRent}
+        companyBalance={companyBalance}
+        renting={startRental.isPending}
+        onClose={() => setPendingRent(null)}
+        onConfirm={confirmRent}
+      />
+
+      <ClovisRentalSuccessModal
+        open={Boolean(rentSuccess)}
+        result={rentSuccess?.result ?? null}
+        driverName={driverName}
+        photoUrl={rentSuccess?.photoUrl}
+        onClose={() => setRentSuccess(null)}
+      />
     </Layout>
   );
 }

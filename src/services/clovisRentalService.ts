@@ -4,6 +4,7 @@ import type {
   ClovisCatalogItem,
   ClovisRentalBundle,
   ClovisRentalCharge,
+  ClovisRentalStartResult,
 } from '../lib/clovisRentalTypes';
 
 function isSchemaError(error: { code?: string; message?: string } | null): boolean {
@@ -74,12 +75,19 @@ export async function fetchClovisRentalBundle(profileId: string): Promise<Clovis
   };
 }
 
-export async function startClovisRental(catalogId: string): Promise<string> {
+export async function startClovisRental(catalogId: string): Promise<ClovisRentalStartResult> {
   const { data, error } = await supabase.rpc('start_clovis_rental', { p_catalog_id: catalogId });
   if (error) throw error;
-  const result = data as { ok?: boolean; message?: string };
-  if (!result?.ok) throw new Error('Impossible de démarrer la location');
-  return result.message ?? 'Location activée';
+  const result = data as ClovisRentalStartResult & { ok?: boolean; message?: string };
+  if (!result?.ok) throw new Error(result?.message ?? 'Impossible de démarrer la location');
+  return {
+    ok: true,
+    rental_id: result.rental_id,
+    contract_ref: result.contract_ref,
+    daily_rate: Number(result.daily_rate),
+    vehicle_label: result.vehicle_label,
+    message: result.message ?? 'Location activée',
+  };
 }
 
 export async function returnClovisRental(rentalId?: string): Promise<string> {

@@ -52,3 +52,15 @@ export interface ClovisRentalBundle {
 }
 
 export const CLOVIS_DAILY_RATE = 450;
+
+export const CLOVIS_STEAM_MOD_URL =
+  'https://steamcommunity.com/sharedfiles/filedetails/?id=3636691159';
+
+export interface ClovisRentalStartResult {
+  ok: boolean;
+  rental_id: string;
+  contract_ref: string;
+  daily_rate: number;
+  vehicle_label: string;
+  message: string;
+}
