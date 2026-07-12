@@ -5,12 +5,29 @@ cd /d "%~dp0"
 
 set "ERP_URL=https://erp.zd-thermoliner.fr"
 
+rem Launcher natif (prioritaire)
+set "NATIVE_LAUNCHER=%LOCALAPPDATA%\Programs\ZD-Thermoliner-ERP\ZD-Thermoliner-ERP.exe"
+if exist "%NATIVE_LAUNCHER%" (
+  echo  Ouverture launcher natif Z and D Thermoliner ERP...
+  start "" "%NATIVE_LAUNCHER%"
+  timeout /t 2 /nobreak >nul
+  exit /b 0
+)
+
+set "LOCAL_LAUNCHER=%~dp0desktop\erp-launcher\publish\ZD-Thermoliner-ERP.exe"
+if exist "%LOCAL_LAUNCHER%" (
+  echo  Ouverture launcher natif (build local)...
+  start "" "%LOCAL_LAUNCHER%"
+  timeout /t 2 /nobreak >nul
+  exit /b 0
+)
+
 echo.
-echo  Z and D Thermoliner ERP — mode application legere
+echo  Z and D Thermoliner ERP — mode navigateur leger
 echo  %ERP_URL%
+echo  Astuce : telechargez le launcher natif dans Parametres - Aide
 echo.
 
-rem Preferer Edge (WebView2) — plus leger que Chrome avec extensions
 set "BROWSER="
 set "BROWSER_NAME="
 
@@ -31,13 +48,10 @@ if not defined BROWSER if exist "%ProgramFiles(x86)%\Google\Chrome\Application\c
   set "BROWSER_NAME=Chrome"
 )
 
-rem Flags : fenetre app sans onglets, sans sync/extensions = moins de RAM/CPU
 set "APP_FLAGS=--app=%ERP_URL% --disable-extensions --disable-sync --no-first-run --disable-background-networking --disable-default-apps --disable-features=TranslateUI"
 
 if defined BROWSER (
   echo  Ouverture via %BROWSER_NAME% (fenetre application)...
-  echo  Astuce : installez l'ERP via le menu %BROWSER_NAME% pour une vraie application Windows.
-  echo.
   start "" "%BROWSER%" %APP_FLAGS%
 ) else (
   start "" "%ERP_URL%"

@@ -29,3 +29,8 @@ Thumbs.db
 
 # Legacy / unused
 electron/
+
+# .NET ERP launcher build artifacts
+desktop/erp-launcher/bin/
+desktop/erp-launcher/obj/
+desktop/erp-launcher/publish/

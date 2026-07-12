@@ -29,10 +29,25 @@ function Find-InstalledPwaShortcut {
 
 $pwaShortcut = Find-InstalledPwaShortcut
 
+$nativeLauncher = Join-Path $env:LOCALAPPDATA 'Programs\ZD-Thermoliner-ERP\ZD-Thermoliner-ERP.exe'
+$localLauncher = Join-Path $ProjectRoot 'desktop\erp-launcher\publish\ZD-Thermoliner-ERP.exe'
+
 $shell = New-Object -ComObject WScript.Shell
 $shortcut = $shell.CreateShortcut($linkPath)
 
-if ($pwaShortcut) {
+if (Test-Path $nativeLauncher) {
+  $shortcut.TargetPath = $nativeLauncher
+  $shortcut.WorkingDirectory = Split-Path $nativeLauncher
+  $shortcut.Description = "Z&D Thermoliner ERP (launcher natif)"
+  if (Test-Path $iconPath) { $shortcut.IconLocation = "$iconPath,0" }
+  Write-Host "[OK] Raccourci launcher natif : $nativeLauncher"
+} elseif (Test-Path $localLauncher) {
+  $shortcut.TargetPath = $localLauncher
+  $shortcut.WorkingDirectory = Split-Path $localLauncher
+  $shortcut.Description = "Z&D Thermoliner ERP (launcher natif local)"
+  if (Test-Path $iconPath) { $shortcut.IconLocation = "$iconPath,0" }
+  Write-Host "[OK] Raccourci launcher natif (build local)"
+} elseif ($pwaShortcut) {
   $existing = $shell.CreateShortcut($pwaShortcut.FullName)
   $shortcut.TargetPath = $existing.TargetPath
   $shortcut.Arguments = $existing.Arguments

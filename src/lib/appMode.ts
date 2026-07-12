@@ -1,6 +1,13 @@
+/** Détecte le launcher natif Windows (WebView2). */
+export function isNativeErpLauncher(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return navigator.userAgent.includes('ZDThermolinerErpLauncher');
+}
+
 /** Détecte si l'ERP tourne en application installée (PWA), pas dans un onglet navigateur. */
 export function isStandaloneApp(): boolean {
   if (typeof window === 'undefined') return false;
+  if (isNativeErpLauncher()) return true;
   return (
     window.matchMedia('(display-mode: standalone)').matches
     || window.matchMedia('(display-mode: minimal-ui)').matches
