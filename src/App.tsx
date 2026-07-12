@@ -8,6 +8,7 @@ import { AppUpdateProvider } from './contexts/AppUpdateContext';
 import { AppUpdateGlobalNotice } from './components/AppUpdateBanner';
 import { LiveNotificationProvider } from './contexts/LiveNotificationContext';
 import { PwaInstallPrompt } from './components/PwaInstallPrompt';
+import { DesktopAppBanner } from './components/DesktopAppBanner';
 import { MemberGuard } from './components/MemberGuard';
 import { getPostLoginPath } from './lib/accessControl';
 import { PERF } from './lib/perfConfig';
@@ -19,6 +20,7 @@ const queryClient = new QueryClient({
       retry: 1,
       refetchOnWindowFocus: false,
       refetchOnReconnect: true,
+      refetchIntervalInBackground: false,
       staleTime: PERF.queryStaleTime,
       gcTime: PERF.queryGcTime,
     },
@@ -194,6 +196,7 @@ function App() {
             <AppModulesProvider>
               <AppUpdateProvider>
                 <LiveNotificationProvider>
+                  <DesktopAppBanner />
                   <AppUpdateGlobalNotice />
                   <AppRoutes />
                   <PwaInstallPrompt />

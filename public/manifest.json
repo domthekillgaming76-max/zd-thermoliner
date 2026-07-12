@@ -1,13 +1,17 @@
 {
+  "id": "/",
   "name": "Z&D Thermoliner ERP",
   "short_name": "Z&D ERP",
   "description": "ERP transport Z&D Thermoliner — feuilles de route, dispatch, finance et flotte",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#080808",
   "theme_color": "#dc2626",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "lang": "fr",
+  "categories": ["business", "productivity"],
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -20,6 +24,20 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Tableau de bord",
+      "short_name": "Dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Dispatch",
+      "short_name": "Dispatch",
+      "url": "/dispatch",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

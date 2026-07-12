@@ -1,23 +1,40 @@
+import { isStandaloneApp } from './appMode';
+
 /**
- * Profil « éco » — réduit CPU, RAM et requêtes réseau sur PC modestes.
- * Les pages actives gardent le realtime Supabase ; le polling HTTP est espacé.
+ * Profil « éco » — réduit CPU, RAM et requêtes réseau.
+ * En mode application installée (PWA), les intervalles sont allongés.
  */
+const STANDALONE = typeof window !== 'undefined' && isStandaloneApp();
+const STANDALONE_FACTOR = STANDALONE ? 1.6 : 1;
+
+function poll(ms: number): number {
+  return Math.round(ms * STANDALONE_FACTOR);
+}
+
 export const PERF = {
-  rolePollMs: 5_000,
-  dashboardPollMs: 30_000,
-  driversPollMs: 15_000,
-  wallPollMs: 20_000,
+  rolePollMs: poll(5_000),
+  dashboardPollMs: poll(30_000),
+  driversPollMs: poll(15_000),
+  wallPollMs: poll(20_000),
   wallPollInBackground: false,
-  freightPollMs: 30_000,
-  modulesPollMs: 5_000,
-  notificationPollMs: 20_000,
-  presenceListPollMs: 15_000,
-  driverBankPollMs: 15_000,
-  telemetryPollMs: 30_000,
-  liveOpsPollMs: 30_000,
-  trackingPollMs: 30_000,
-  statisticsPollMs: 60_000,
-  backupIntervalMs: 10 * 60_000,
-  queryStaleTime: 20_000,
+  freightPollMs: poll(30_000),
+  modulesPollMs: poll(5_000),
+  notificationPollMs: poll(20_000),
+  presenceListPollMs: poll(15_000),
+  driverBankPollMs: poll(15_000),
+  telemetryPollMs: poll(30_000),
+  liveOpsPollMs: poll(30_000),
+  trackingPollMs: poll(30_000),
+  statisticsPollMs: poll(60_000),
+  backupIntervalMs: poll(10 * 60_000),
+  queryStaleTime: poll(20_000),
   queryGcTime: 5 * 60_000,
+  /** PWA installée — polling allégé côté client. */
+  isStandaloneApp: STANDALONE,
 } as const;
+
+/** Retourne false pour couper le polling quand l'app est en arrière-plan. */
+export function pollIntervalWhenVisible(baseMs: number, visible: boolean): number | false {
+  if (!visible) return false;
+  return baseMs;
+}
