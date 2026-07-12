@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node scripts/copy-client-installer.mjs && vite build",
     "start": "node --env-file=.env server/index.mjs",
     "pack:release": "node scripts/prepare-release.mjs",
+    "publish:client": "node scripts/upload-client-release.mjs",
     "cron:freight": "node scripts/generate-freight-cron.js",
     "cron:integrations": "node scripts/sync-integrations-cron.js",
     "lint": "eslint .",

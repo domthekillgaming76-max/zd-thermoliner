@@ -13,7 +13,7 @@ export type ModuleKey =
   | 'administration' | 'roles_salons' | 'salons_admin' | 'admin_integrations'
   | 'training_center' | 'driver_portal' | 'documents' | 'notifications'
   | 'fleet_map' | 'statistics' | 'assistant' | 'garages' | 'clients'
-  | 'driver_integrations' | 'events' | 'join' | 'clovis_rental';
+  | 'driver_integrations' | 'client_launcher' | 'events' | 'join' | 'clovis_rental';
 
 const RAW_TO_APP_ROLE: Record<string, AppRole> = {
   visiteur: 'visiteur', visitor: 'visiteur', invité: 'visiteur', invite: 'visiteur',
@@ -107,6 +107,7 @@ export const ROUTE_MODULE_RULES: { prefix: string; module: ModuleKey }[] = [
   { prefix: '/statistics', module: 'statistics' },
   { prefix: '/notifications', module: 'notifications' },
   { prefix: '/integrations', module: 'driver_integrations' },
+  { prefix: '/client', module: 'client_launcher' },
   { prefix: '/settings', module: 'settings' },
   { prefix: '/profile', module: 'profile' },
   { prefix: '/wall', module: 'wall' },

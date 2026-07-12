@@ -132,6 +132,7 @@ function AppRoutes() {
       <Route path="/dashboard" element={<ProtectedPage page="dashboard"><Pages.DashboardPage /></ProtectedPage>} />
       <Route path="/wall" element={<ProtectedPage page="wall"><Pages.WallPage /></ProtectedPage>} />
       <Route path="/updates" element={<ProtectedPage page="updates"><Pages.UpdatesPage /></ProtectedPage>} />
+      <Route path="/client" element={<ProtectedPage page="client_launcher"><Pages.ClientLauncherPage /></ProtectedPage>} />
       <Route path="/events" element={<ProtectedPage page="events"><Pages.EventsPage /></ProtectedPage>} />
       <Route path="/recruitment" element={<ProtectedPage page="recruitment"><Pages.RecruitmentPage /></ProtectedPage>} />
       <Route path="/recruitment/applications" element={<ProtectedPage page="recruitment_applications"><Pages.MyApplicationsPage /></ProtectedPage>} />

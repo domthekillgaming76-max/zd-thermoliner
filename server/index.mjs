@@ -119,6 +119,32 @@ app.get('/api/health', async (_req, res) => {
 
 app.use('/api/client', clientApiRouter);
 
+const downloadsPath = path.join(distPath, 'downloads');
+
+app.get('/downloads/:filename', (req, res, next) => {
+  const safeName = path.basename(req.params.filename);
+  if (!safeName.endsWith('.exe')) {
+    return res.status(404).type('text/plain').send('Fichier introuvable.');
+  }
+  const filePath = path.resolve(downloadsPath, safeName);
+  if (!filePath.startsWith(path.resolve(downloadsPath))) {
+    return res.status(404).type('text/plain').send('Fichier introuvable.');
+  }
+  return res.sendFile(filePath, err => {
+    if (err) next(err);
+  });
+});
+
+app.use('/downloads', express.static(downloadsPath, {
+  maxAge: '1d',
+  setHeaders(res, filePath) {
+    if (filePath.toLowerCase().endsWith('.exe')) {
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
+    }
+  },
+}));
+
 app.use(express.static(distPath, {
   maxAge: '7d',
   setHeaders(res, filePath) {
@@ -134,6 +160,9 @@ app.use(express.static(distPath, {
 
 app.get(/^(?!\/api\/).*/, (req, res, next) => {
   const p = req.path.split('?')[0];
+  if (p.startsWith('/downloads/')) {
+    return res.status(404).type('text/plain').send('Installateur client introuvable — contactez l\'administration.');
+  }
   const looksLikeAsset = /\.[a-z0-9]+$/i.test(p) && !p.endsWith('.html');
   if (looksLikeAsset) {
     return res.status(404).type('text/plain').send('Asset not found — rechargez (Ctrl+F5).');

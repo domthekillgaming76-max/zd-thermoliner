@@ -233,4 +233,9 @@ AS $$
 $$;
 
 -- 8. Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE public.room_permissions;
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.room_permissions;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
