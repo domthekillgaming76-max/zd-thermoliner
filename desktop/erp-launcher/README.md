@@ -24,7 +24,9 @@ node scripts/copy-erp-launcher.mjs
 npm run build
 ```
 
-Le fichier est copié vers `public/downloads/ZD-Thermoliner-ERP-Windows-1.0.0.exe` et téléchargeable depuis l'ERP (Paramètres → Aide, Portail chauffeur).
+Le fichier est copié vers `public/downloads/ZD-Thermoliner-ERP-Windows-1.0.1.exe` et téléchargeable depuis l'ERP (Paramètres → Aide, Portail chauffeur).
+
+À chaque lancement ou mise à jour, le launcher installe l'exe dans `%LOCALAPPDATA%\Programs\ZD-Thermoliner-ERP\` et recrée le raccourci Bureau avec le logo Z&D.
 
 ## URL personnalisée
 

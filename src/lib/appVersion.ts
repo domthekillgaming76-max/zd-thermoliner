@@ -1,5 +1,5 @@
 /** Bump this constant on each production release. */
-export const APP_VERSION = '2.6.6';
+export const APP_VERSION = '2.6.7';
 
 /** Alias used by the PWA update system. */
 export const CURRENT_APP_VERSION = APP_VERSION;

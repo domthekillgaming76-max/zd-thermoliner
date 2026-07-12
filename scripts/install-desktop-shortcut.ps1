@@ -31,7 +31,7 @@ $pwaShortcut = Find-InstalledPwaShortcut
 
 $nativeLauncher = Join-Path $env:LOCALAPPDATA 'Programs\ZD-Thermoliner-ERP\ZD-Thermoliner-ERP.exe'
 $localLauncher = Join-Path $ProjectRoot 'desktop\erp-launcher\publish\ZD-Thermoliner-ERP.exe'
-$downloadLauncher = Join-Path $env:USERPROFILE 'Downloads\ZD-Thermoliner-ERP-Windows-1.0.0.exe'
+$downloadLauncher = Join-Path $env:USERPROFILE 'Downloads\ZD-Thermoliner-ERP-Windows-1.0.1.exe'
 
 $shell = New-Object -ComObject WScript.Shell
 $shortcut = $shell.CreateShortcut($linkPath)

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AppWindow, CheckCircle2, Download, HardDriveDownload, Monitor, Smartphone } from 'lucide-react';
-import { getErpLauncherDownloadUrl } from '../lib/erpLauncher';
+import { getErpLauncherDownloadUrl, ERP_LAUNCHER_FILENAME } from '../lib/erpLauncher';
 import { isDesktopPlatform, isNativeErpLauncher, isStandaloneApp, shouldPromptDesktopInstall } from '../lib/appMode';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -72,7 +72,7 @@ export function ErpInstallGuide({ variant = 'full', className = '' }: ErpInstall
 
   const nativeSteps = [
     'Téléchargez le launcher Windows (.exe) ci-dessous',
-    'Double-cliquez sur ZD-Thermoliner-ERP-Windows-1.0.0.exe',
+    `Double-cliquez sur ${ERP_LAUNCHER_FILENAME}`,
     'Si Windows affiche un avertissement : « Plus d\'infos » puis « Exécuter quand même »',
     'L\'ERP s\'ouvre dans une fenêtre dédiée (ZD-Thermoliner-ERP dans le Gestionnaire des tâches)',
     'Épinglez l\'icône à la barre des tâches ou au Bureau',

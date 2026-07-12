@@ -1,7 +1,7 @@
 import { isDesktopPlatform, isNativeErpLauncher } from './appMode';
 
 /** Launcher ERP natif Windows (WebView2) — hors Chrome/Edge. */
-export const ERP_LAUNCHER_VERSION = '1.0.0';
+export const ERP_LAUNCHER_VERSION = '1.0.1';
 
 export const ERP_LAUNCHER_FILENAME = `ZD-Thermoliner-ERP-Windows-${ERP_LAUNCHER_VERSION}.exe`;
 

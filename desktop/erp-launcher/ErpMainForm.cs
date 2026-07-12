@@ -20,7 +20,9 @@ internal sealed class ErpMainForm : Form
         StartPosition = FormStartPosition.CenterScreen;
         BackColor = Color.FromArgb(8, 8, 8);
 
-        var iconPath = Path.Combine(AppContext.BaseDirectory, "assets", "desktop-shortcut.ico");
+        var iconPath = File.Exists(DesktopInstaller.InstalledIconPath)
+            ? DesktopInstaller.InstalledIconPath
+            : Path.Combine(AppContext.BaseDirectory, "assets", "desktop-shortcut.ico");
         if (File.Exists(iconPath))
         {
             Icon = new Icon(iconPath);
@@ -64,7 +66,7 @@ internal sealed class ErpMainForm : Form
             await _webView.EnsureCoreWebView2Async(env);
 
             var settings = _webView.CoreWebView2.Settings;
-            settings.UserAgent = $"{settings.UserAgent} ZDThermolinerErpLauncher/1.0";
+            settings.UserAgent = $"{settings.UserAgent} ZDThermolinerErpLauncher/{DesktopInstaller.CurrentVersion}";
             settings.AreDefaultContextMenusEnabled = true;
             settings.AreDevToolsEnabled = false;
             settings.IsStatusBarEnabled = false;
