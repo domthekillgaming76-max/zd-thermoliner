@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check, X } from 'lucide-react';
+import { Check, Gamepad2, X } from 'lucide-react';
 import type { FreightOffer } from '../../lib/freightTypes';
 import { formatFreightCurrency } from '../../lib/freightTypes';
 
@@ -11,7 +11,7 @@ interface FreightAcceptModalProps {
   trailers: { id: string; label: string }[];
   saving: boolean;
   onClose: () => void;
-  onAccept: (input: { driverId?: string; truckId?: string; trailerId?: string }) => void;
+  onAccept: (input: { driverId?: string; truckId?: string; trailerId?: string; sendToGame?: boolean }) => void;
 }
 
 export function FreightAcceptModal({
@@ -20,12 +20,14 @@ export function FreightAcceptModal({
   const [driverId, setDriverId] = useState('');
   const [truckId, setTruckId] = useState('');
   const [trailerId, setTrailerId] = useState('');
+  const [sendToGame, setSendToGame] = useState(true);
 
   useEffect(() => {
     if (!open) return;
     setDriverId('');
     setTruckId('');
     setTrailerId('');
+    setSendToGame(true);
   }, [open, offer?.id]);
 
   useEffect(() => {
@@ -87,6 +89,22 @@ export function FreightAcceptModal({
             </select>
           </div>
 
+          <label className="flex items-start gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={sendToGame}
+              onChange={e => setSendToGame(e.target.checked)}
+              className="mt-0.5 h-4 w-4 accent-cyan-500"
+            />
+            <Gamepad2 className="w-4 h-4 text-cyan-400 mt-0.5 shrink-0" />
+            <span>
+              <span className="block text-sm font-semibold text-white">Préparer dans ETS2 solo</span>
+              <span className="block text-[11px] text-white/40 mt-0.5">
+                Le launcher recevra la mission et préparera une sauvegarde rechargeable dans le jeu.
+              </span>
+            </span>
+          </label>
+
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 erp-btn-secondary">Annuler</button>
             <button
@@ -96,11 +114,12 @@ export function FreightAcceptModal({
                 driverId,
                 truckId: truckId || undefined,
                 trailerId: trailerId || undefined,
+                sendToGame,
               })}
               className="flex-1 erp-btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <Check className="w-4 h-4" />
-              {saving ? 'Création…' : 'Accepter mission & feuille de route'}
+              {saving ? 'Création…' : sendToGame ? 'Accepter et envoyer vers ETS2' : 'Accepter mission & feuille de route'}
             </button>
           </div>
         </div>

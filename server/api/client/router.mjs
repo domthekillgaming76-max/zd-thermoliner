@@ -10,6 +10,7 @@ import {
   handleClientHealth,
 } from './handlers.mjs';
 import { handleTachographTicket, handleTachographStatus } from './tachographHandlers.mjs';
+import { handleDispatchPending, handleDispatchClaim, handleDispatchComplete } from './dispatchHandlers.mjs';
 import {
   handleJobStart,
   handleJobUpdate,
@@ -39,3 +40,6 @@ clientApiRouter.post('/jobs/complete', requireClientAuth, requireClientRole(CHAU
 clientApiRouter.post('/jobs/cancel', requireClientAuth, requireClientRole(CHAUFFEUR_ACCESS), handleJobCancel);
 clientApiRouter.get('/jobs/active', requireClientAuth, requireClientRole(CHAUFFEUR_ACCESS), handleJobActive);
 clientApiRouter.get('/jobs/history', requireClientAuth, requireClientRole(CHAUFFEUR_ACCESS), handleJobHistory);
+clientApiRouter.get('/dispatch/pending', requireClientAuth, requireClientRole(CHAUFFEUR_ACCESS), handleDispatchPending);
+clientApiRouter.post('/dispatch/:id/claim', requireClientAuth, requireClientRole(CHAUFFEUR_ACCESS), handleDispatchClaim);
+clientApiRouter.post('/dispatch/:id/complete', requireClientAuth, requireClientRole(CHAUFFEUR_ACCESS), handleDispatchComplete);

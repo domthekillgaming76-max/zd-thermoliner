@@ -198,6 +198,7 @@ export interface AcceptFreightInput {
   driverId?: string | null;
   truckId?: string | null;
   trailerId?: string | null;
+  sendToGame?: boolean;
 }
 
 export const FREIGHT_STATUS_LABELS: Record<FreightOfferStatus, string> = {

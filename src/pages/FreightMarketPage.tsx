@@ -141,7 +141,7 @@ export function FreightMarketPage() {
     }
   }
 
-  async function handleAccept(assign: { driverId?: string; truckId?: string; trailerId?: string }) {
+  async function handleAccept(assign: { driverId?: string; truckId?: string; trailerId?: string; sendToGame?: boolean }) {
     if (!accepting) return;
     setPageError(null);
     try {
@@ -150,10 +150,15 @@ export function FreightMarketPage() {
         driverId: assign.driverId ?? null,
         truckId: assign.truckId ?? null,
         trailerId: assign.trailerId ?? null,
+        sendToGame: assign.sendToGame,
       });
       setAcceptOpen(false);
       setAccepting(null);
-      setSuccessMessage(`Mission créée${result.roadSheetId ? ' + feuille de route brouillon' : ''}.`);
+      setSuccessMessage(
+        assign.sendToGame
+          ? `Mission créée${result.roadSheetId ? ' + feuille de route brouillon' : ''} et envoyée au launcher ETS2.`
+          : `Mission créée${result.roadSheetId ? ' + feuille de route brouillon' : ''}.`,
+      );
     } catch (err) {
       setPageError(err instanceof Error ? err.message : 'Erreur acceptation.');
     }

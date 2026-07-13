@@ -456,6 +456,18 @@ export async function acceptFreightOffer(
     updated_at: new Date().toISOString(),
   }).eq('id', o.id);
 
+  if (input.sendToGame && input.driverId) {
+    const { error: queueError } = await supabase.rpc('queue_game_dispatch', {
+      p_offer_id: o.id,
+      p_mission_id: mission.id,
+      p_driver_id: input.driverId,
+      p_game: 'ets2',
+    });
+    if (queueError) {
+      throw new Error(`Mission créée, mais envoi vers ETS2 impossible : ${queueError.message}`);
+    }
+  }
+
   return { missionId: mission.id, roadSheetId };
 }
 

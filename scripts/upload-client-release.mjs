@@ -19,7 +19,7 @@ const root = path.join(__dirname, '..');
 
 const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const version = process.env.CLIENT_VERSION || '1.0.14';
+const version = process.env.CLIENT_VERSION || '2.0.1';
 const erpBase = (process.env.ERP_PUBLIC_URL || 'https://erp.zd-thermoliner.fr').replace(/\/$/, '');
 const githubRepo = process.env.CLIENT_GITHUB_REPO || 'domthekillgaming76-max/zd-thermoliner';
 const githubBranch = process.env.CLIENT_GITHUB_BRANCH || 'main';
