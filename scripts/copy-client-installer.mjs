@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '..');
-const version = process.env.CLIENT_VERSION || '2.0.3';
+const version = process.env.CLIENT_VERSION || '2.1.0';
 const fileName = `ZD-Thermoliner-Launcher-Windows-${version}-Setup.exe`;
 
 const candidates = [
