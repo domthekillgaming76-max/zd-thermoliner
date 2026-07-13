@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   Download,
-  Monitor,
   CheckCircle2,
   ExternalLink,
   Shield,
