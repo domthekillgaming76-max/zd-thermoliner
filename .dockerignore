@@ -10,3 +10,7 @@ desktop/erp-launcher/obj
 desktop/erp-launcher/publish
 supabase/.temp
 *.tsbuildinfo
+
+# Ne pas envoyer tous les anciens installateurs au builder Coolify.
+public/downloads/ZD-Thermoliner-Launcher-Windows-*-Setup.exe
+!public/downloads/ZD-Thermoliner-Launcher-Windows-2.1.0-Setup.exe
