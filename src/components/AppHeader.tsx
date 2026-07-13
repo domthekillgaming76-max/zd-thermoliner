@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Search, Plus, Route, Banknote, User, LogOut, Settings, ChevronDown, Menu,
+  CalendarDays, ChevronDown, Clock3, LogOut, Menu, MessageCircle,
+  Search, Settings, User, Users,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
@@ -11,25 +12,23 @@ import { AppUpdateBadge } from './AppUpdateBadge';
 import { UserBadges } from './erp/UserBadges';
 import { canAccessModule } from '../lib/roleEngine';
 
-const QUICK_ACTIONS = [
-  { to: '/road-sheets', icon: Route, label: 'Feuille de route', color: '#fb923c', bankOnly: false },
-  { to: '/bank', icon: Banknote, label: 'Transaction', color: '#34d399', bankOnly: true },
-  { to: '/drivers', icon: Plus, label: 'Chauffeur', color: '#22d3ee', bankOnly: false },
-];
-
 export function AppHeader() {
   const { profile, signOut, isAdministrator, role, normalizedRole, user } = useAuth();
   const { toggleCollapsed } = useSidebar();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [userOpen, setUserOpen] = useState(false);
-  const [searchFocused, setSearchFocused] = useState(false);
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const displayName = profile?.pseudo || profile?.full_name || 'Membre';
   const initials = displayName[0]?.toUpperCase() ?? '?';
   const liveRole = role ?? normalizedRole;
   const showBank = canAccessModule(liveRole, 'bank');
-  const quickActions = QUICK_ACTIONS.filter(a => !a.bankOnly || showBank);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -40,174 +39,78 @@ export function AppHeader() {
     else if (q.includes('banq') || q.includes('bank')) navigate(showBank ? '/bank' : '/finance');
     else if (q.includes('route') || q.includes('feuille')) navigate('/road-sheets');
     else if (q.includes('garage')) navigate('/garages');
+    else if (q.includes('repas') || q.includes('restaurant')) navigate('/meals');
     else navigate('/dashboard');
   }
 
+  const iconLinks = [
+    { to: '/chat', icon: MessageCircle, label: 'Messages' },
+    { to: '/drivers', icon: Users, label: 'Utilisateurs' },
+    { to: '/events', icon: CalendarDays, label: 'Calendrier' },
+  ];
+
   return (
-    <header
-      className="erp-header sticky top-0 z-30 px-4 md:px-6 h-16 flex items-center gap-3 md:gap-4"
-      style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
-    >
-      {/* Mobile menu + logo */}
-      <div className="flex items-center gap-3 flex-shrink-0">
-        <button
-          type="button"
-          onClick={toggleCollapsed}
-          className="hidden md:flex w-9 h-9 items-center justify-center rounded-xl hover:bg-white/5 transition-colors"
-          aria-label="Basculer la barre latérale"
-        >
-          <Menu className="w-4 h-4 text-white/40" />
+    <header className="erp-header fleet-app-header sticky top-0 z-30 px-3 sm:px-4 lg:px-6 h-[74px] flex items-center gap-3 lg:gap-5">
+      <div className="flex items-center gap-3 shrink-0">
+        <button type="button" onClick={toggleCollapsed} className="fleet-header-icon hidden md:flex" aria-label="Basculer la barre latérale">
+          <Menu className="w-[18px] h-[18px]" />
         </button>
-        <div className="md:hidden">
-          <Logo size="sm" showText={false} />
-        </div>
-        <div className="hidden md:block">
-          <Logo size="sm" />
+        <div className="md:hidden"><Logo size="sm" showText={false} /></div>
+        <div className="hidden lg:block min-w-[190px]">
+          <p className="text-sm font-semibold text-white truncate">Bonjour {displayName}</p>
+          <p className="text-[10px] text-white/35 mt-0.5 tracking-wide">Bienvenue sur Z&amp;D Thermoliner</p>
         </div>
       </div>
 
-      {/* Search */}
-      <form onSubmit={handleSearch} className="flex-1 max-w-xl hidden sm:block">
-        <div
-          className={`relative flex items-center rounded-xl transition-all duration-200 ${
-            searchFocused ? 'erp-search-focus' : ''
-          }`}
-          style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.07)',
-          }}
-        >
-          <Search className="w-4 h-4 text-white/30 absolute left-3 pointer-events-none" />
+      <form onSubmit={handleSearch} className="flex-1 max-w-2xl mx-auto hidden sm:block">
+        <div className="fleet-global-search">
+          <Search className="w-4 h-4 text-white/35 absolute left-4 pointer-events-none" />
           <input
             type="search"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
-            placeholder="Rechercher chauffeurs, flotte, routes..."
-            className="w-full bg-transparent text-sm text-white placeholder:text-white/25 py-2.5 pl-10 pr-4 outline-none"
+            placeholder="Rechercher un chauffeur, véhicule, mission..."
+            className="w-full bg-transparent text-xs text-white placeholder:text-white/28 py-3 pl-11 pr-16 outline-none"
           />
+          <kbd className="absolute right-3 text-[9px] text-white/25 border border-white/10 bg-white/[.04] rounded-md px-1.5 py-1">CTRL K</kbd>
         </div>
       </form>
 
-      {/* Mobile search icon */}
-      <button
-        type="button"
-        className="sm:hidden w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white/5"
-        onClick={() => navigate('/dashboard')}
-        aria-label="Rechercher"
-      >
-        <Search className="w-4 h-4 text-white/40" />
-      </button>
-
-      <div className="flex items-center gap-2 md:gap-3 ml-auto flex-shrink-0">
-        {/* Quick actions */}
-        <div className="hidden lg:flex items-center gap-1.5">
-          {quickActions.map(action => (
-            <Link
-              key={action.to}
-              to={action.to}
-              title={action.label}
-              className="w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:scale-105 hover:bg-white/[0.06]"
-              style={{ border: '1px solid rgba(255,255,255,0.06)' }}
-            >
-              <action.icon className="w-4 h-4" style={{ color: action.color }} />
-            </Link>
+      <div className="flex items-center gap-1.5 ml-auto shrink-0">
+        <div className="hidden xl:flex items-center gap-1">
+          {iconLinks.map(({ to, icon: Icon, label }) => (
+            <Link key={to} to={to} className="fleet-header-icon" title={label} aria-label={label}><Icon className="w-[17px] h-[17px]" /></Link>
           ))}
         </div>
-
-        <Link
-          to="/road-sheets"
-          className="lg:hidden btn-primary flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-white"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span className="hidden xs:inline">Nouveau</span>
-        </Link>
-
         <NotificationBar />
+        <div className="hidden 2xl:flex items-center gap-2 px-3 h-10 rounded-xl border border-white/[.07] bg-white/[.035]">
+          <Clock3 className="w-3.5 h-3.5 text-red-400" />
+          <div className="leading-none"><p className="text-xs font-semibold tabular-nums text-white">{now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p><p className="text-[8px] text-white/30 mt-1 capitalize">{now.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</p></div>
+        </div>
 
-        <Link
-          to="/profile"
-          className="relative hidden sm:flex w-9 h-9 items-center justify-center rounded-xl hover:bg-white/5 transition-colors"
-          title="Mon profil"
-          aria-label="Mon profil"
-        >
-          <User className="w-4 h-4 text-white/40" />
-          <AppUpdateBadge className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 text-[0px]" />
-        </Link>
-
-        {/* User menu */}
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setUserOpen(!userOpen)}
-            className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-xl hover:bg-white/5 transition-colors"
-          >
-            <div
-              className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center font-bold text-xs text-white flex-shrink-0 relative"
-              style={{ background: 'linear-gradient(135deg, #dc2626, #7f1d1d)' }}
-            >
-              {profile?.avatar_url
-                ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
-                : initials}
-              <AppUpdateBadge className="absolute -top-1 -right-1 w-2.5 h-2.5 text-[0px] ring-2 ring-[#080808]" />
+        <div className="relative ml-1">
+          <button type="button" onClick={() => setUserOpen(!userOpen)} className="fleet-user-button">
+            <div className="fleet-user-avatar">
+              {profile?.avatar_url ? <img src={profile.avatar_url} alt="" /> : initials}
+              <AppUpdateBadge className="absolute -top-1 -right-1 w-2.5 h-2.5 text-[0px]" />
             </div>
-            <span className="hidden md:block text-sm font-semibold text-white/80 max-w-[120px] truncate">
-              {displayName}
-            </span>
-            <UserBadges
-              isAdministrator={isAdministrator}
-              role={liveRole}
-              email={user?.email ?? profile?.email}
-              size="xs"
-              className="hidden md:inline-flex"
-            />
-            <ChevronDown className={`hidden md:block w-3.5 h-3.5 text-white/30 transition-transform ${userOpen ? 'rotate-180' : ''}`} />
+            <div className="hidden lg:block text-left min-w-0"><p className="text-[11px] font-semibold text-white truncate max-w-[92px]">{displayName}</p><p className="text-[8px] uppercase tracking-wider text-white/30">{liveRole || 'Membre'}</p></div>
+            <ChevronDown className={`hidden lg:block w-3.5 h-3.5 text-white/30 transition-transform ${userOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {userOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setUserOpen(false)} />
-              <div
-                className="absolute right-0 top-full mt-2 w-56 rounded-xl shadow-2xl z-50 overflow-hidden animate-slide-up"
-                style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.08)' }}
-              >
-                <div className="p-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-bold text-white truncate">{displayName}</p>
-                    <UserBadges
-                      isAdministrator={isAdministrator}
-                      role={liveRole}
-                      email={user?.email ?? profile?.email}
-                      size="xs"
-                    />
-                  </div>
-                  <p className="text-xs text-white/35 truncate mt-1">{profile?.email}</p>
+              <div className="fleet-user-menu absolute right-0 top-full mt-3 w-60 z-50 overflow-hidden">
+                <div className="p-4 border-b border-white/[.07]">
+                  <p className="text-sm font-semibold text-white truncate">{displayName}</p>
+                  <p className="text-[10px] text-white/35 truncate mt-1">{profile?.email}</p>
+                  <UserBadges isAdministrator={isAdministrator} role={liveRole} email={user?.email ?? profile?.email} size="xs" className="mt-2" />
                 </div>
-                <div className="p-1.5">
-                  <Link
-                    to="/profile"
-                    onClick={() => setUserOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-white/60 hover:text-white hover:bg-white/[0.04] transition-colors"
-                  >
-                    <User className="w-4 h-4" />
-                    <span className="flex-1">Mon profil</span>
-                    <AppUpdateBadge className="w-4 h-4 text-[9px]" showCount />
-                  </Link>
-                  <Link
-                    to="/settings"
-                    onClick={() => setUserOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-white/60 hover:text-white hover:bg-white/[0.04] transition-colors"
-                  >
-                    <Settings className="w-4 h-4" /> Paramètres
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => { setUserOpen(false); signOut(); }}
-                    className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" /> Déconnexion
-                  </button>
+                <div className="p-2">
+                  <Link to="/profile" onClick={() => setUserOpen(false)} className="fleet-menu-link"><User className="w-4 h-4" /> Mon profil</Link>
+                  <Link to="/settings" onClick={() => setUserOpen(false)} className="fleet-menu-link"><Settings className="w-4 h-4" /> Paramètres</Link>
+                  <button type="button" onClick={() => { setUserOpen(false); signOut(); }} className="fleet-menu-link is-danger"><LogOut className="w-4 h-4" /> Déconnexion</button>
                 </div>
               </div>
             </>

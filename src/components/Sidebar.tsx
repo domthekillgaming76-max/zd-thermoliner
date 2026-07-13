@@ -11,7 +11,6 @@ import { useSidebar } from '../contexts/SidebarContext';
 import { buildDynamicSidebarSections, type NavSection } from '../lib/dynamicNavBuilder';
 import { DEFAULT_ROOM_PERMISSIONS } from '../lib/defaultRoomPermissions';
 import type { RoomPermission } from '../lib/roomTypes';
-import type { CategoryTheme } from '../lib/sidebarTheme';
 
 function fallbackRooms(): RoomPermission[] {
   const now = new Date().toISOString();
@@ -29,7 +28,6 @@ function SidebarNavLink({
   label,
   icon: Icon,
   collapsed,
-  theme,
   end,
   notifyDot,
 }: {
@@ -37,7 +35,6 @@ function SidebarNavLink({
   label: string;
   icon: ComponentType<{ className?: string; style?: CSSProperties }>;
   collapsed: boolean;
-  theme: CategoryTheme;
   end?: boolean;
   notifyDot?: boolean;
 }) {
@@ -54,8 +51,8 @@ function SidebarNavLink({
       style={({ isActive }) =>
         isActive
           ? {
-              background: theme.accentSoft,
-              boxShadow: `0 0 20px ${theme.glow}, inset 0 1px 0 ${theme.border}`,
+              background: 'linear-gradient(135deg, #D62828 0%, #a9161d 100%)',
+              boxShadow: '0 12px 28px rgba(214,40,40,.28), inset 0 1px 0 rgba(255,255,255,.2)',
             }
           : undefined
       }
@@ -65,7 +62,7 @@ function SidebarNavLink({
           {isActive && (
             <span
               className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[58%] rounded-r-full zd-sidebar-active-bar"
-              style={{ background: theme.accent, boxShadow: `0 0 10px ${theme.glow}` }}
+              style={{ background: '#fff', boxShadow: '0 0 12px rgba(255,255,255,.75)' }}
             />
           )}
           <span
@@ -73,13 +70,13 @@ function SidebarNavLink({
               collapsed ? 'w-9 h-9' : 'w-8 h-8'
             } ${isActive ? 'scale-[1.02]' : 'group-hover:scale-105'}`}
             style={{
-              background: isActive ? theme.iconBg : 'rgba(255,255,255,0.04)',
-              border: `1px solid ${isActive ? theme.border : 'rgba(255,255,255,0.06)'}`,
+              background: isActive ? 'rgba(255,255,255,.13)' : 'rgba(255,255,255,0.025)',
+              border: `1px solid ${isActive ? 'rgba(255,255,255,.2)' : 'rgba(255,255,255,0.055)'}`,
             }}
           >
             <Icon
               className="w-[17px] h-[17px] transition-colors duration-200"
-              style={{ color: isActive ? theme.accent : `${theme.accent}99` }}
+              style={{ color: isActive ? '#fff' : 'rgba(255,255,255,.56)' }}
             />
             {notifyDot && (
               <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-[#0a0a0a] animate-pulse" />
@@ -110,27 +107,25 @@ function SidebarSection({
   section: NavSection;
   collapsed: boolean;
 }) {
-  const { theme } = section;
-
   return (
     <div className="mb-4">
       {!collapsed ? (
         <div className="flex items-center gap-2 px-2 mb-2 mt-1">
           <span
             className="w-1.5 h-1.5 rounded-full shrink-0"
-            style={{ background: theme.accent, boxShadow: `0 0 8px ${theme.glow}` }}
+            style={{ background: '#FF4A4A', boxShadow: '0 0 8px rgba(255,74,74,.5)' }}
           />
           <p
             className="text-[10px] font-bold uppercase tracking-[0.14em]"
-            style={{ color: `${theme.accent}cc` }}
+            style={{ color: 'rgba(168,176,185,.7)' }}
           >
             {section.title}
           </p>
-          <div className="flex-1 h-px ml-1" style={{ background: `linear-gradient(90deg, ${theme.border}, transparent)` }} />
+          <div className="flex-1 h-px ml-1" style={{ background: 'linear-gradient(90deg, rgba(255,74,74,.2), transparent)' }} />
         </div>
       ) : (
         <div className="flex justify-center py-2">
-          <span className="w-5 h-px" style={{ background: theme.border }} />
+          <span className="w-5 h-px" style={{ background: 'rgba(255,74,74,.25)' }} />
         </div>
       )}
       <div>
@@ -141,7 +136,6 @@ function SidebarSection({
             label={item.label}
             icon={item.icon}
             collapsed={collapsed}
-            theme={theme}
             notifyDot={item.notifyDot}
             end={item.to === '/dashboard' || item.to === '/finance' || item.to === '/wall'}
           />
@@ -169,7 +163,7 @@ export function Sidebar() {
   return (
     <aside
       className={`zd-sidebar-premium fixed left-0 top-0 h-full z-40 hidden md:flex flex-col transition-all duration-300 ${
-        collapsed ? 'w-[76px]' : 'w-64'
+        collapsed ? 'w-[82px]' : 'w-[260px]'
       }`}
     >
       {/* Header / brand */}

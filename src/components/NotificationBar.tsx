@@ -92,10 +92,10 @@ export function NotificationBar() {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 hover:bg-white/5 rounded-lg transition-colors"
+        className="fleet-header-icon relative"
         aria-label="Notifications"
       >
-        <Bell className="w-4 h-4 text-white/40" />
+        <Bell className="w-[17px] h-[17px]" />
         {unreadCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}
@@ -108,7 +108,7 @@ export function NotificationBar() {
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
           <div
             className="absolute right-0 top-full mt-2 w-72 max-h-80 rounded-xl shadow-2xl z-50 overflow-hidden"
-            style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.08)' }}
+            style={{ background: 'rgba(8,17,29,.97)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(25px)' }}
           >
             <div className="p-3 border-b flex items-center justify-between gap-2" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
               <div className="min-w-0">

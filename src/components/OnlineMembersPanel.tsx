@@ -62,7 +62,7 @@ export function OnlineMembersPanel() {
         <button
           type="button"
           onClick={() => setOpen(v => !v)}
-          className="hidden lg:flex w-7 h-7 items-center justify-center rounded-lg hover:bg-white/5 text-white/40 hover:text-red-400 transition-colors"
+          className="hidden 2xl:flex w-7 h-7 items-center justify-center rounded-lg hover:bg-white/5 text-white/40 hover:text-red-400 transition-colors"
           aria-label={open ? 'Replier le panneau' : 'Déplier le panneau'}
         >
           {open ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -129,7 +129,7 @@ export function OnlineMembersPanel() {
     <>
       {/* Desktop — fixed right panel */}
       <aside
-        className={`hidden lg:flex flex-col fixed right-0 top-0 h-full z-20 erp-sidebar transition-all duration-300 border-l ${
+        className={`hidden 2xl:flex flex-col fixed right-0 top-0 h-full z-20 erp-sidebar transition-all duration-300 border-l ${
           open ? 'w-64' : 'w-12'
         }`}
         style={{ borderColor: 'rgba(255,255,255,0.06)' }}
@@ -152,7 +152,7 @@ export function OnlineMembersPanel() {
       </aside>
 
       {/* Mobile — floating button + drawer */}
-      <div className="lg:hidden">
+      <div className="2xl:hidden">
         <button
           type="button"
           onClick={() => setMobileOpen(v => !v)}

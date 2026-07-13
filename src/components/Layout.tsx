@@ -19,17 +19,24 @@ function LayoutShell({ children }: LayoutProps) {
 
   return (
     <RoleSyncGuard>
-      <div className="min-h-screen flex erp-shell" style={{ background: '#080808' }}>
+      <div className="min-h-screen flex erp-shell relative isolate overflow-x-hidden">
+        <div className="zd-app-atmosphere" aria-hidden="true">
+          <span className="zd-atmosphere-cloud zd-atmosphere-cloud-one" />
+          <span className="zd-atmosphere-cloud zd-atmosphere-cloud-two" />
+          <span className="zd-atmosphere-red-trail zd-atmosphere-red-trail-one" />
+          <span className="zd-atmosphere-red-trail zd-atmosphere-red-trail-two" />
+          <span className="zd-atmosphere-light" />
+        </div>
         <Sidebar />
         <div
-          className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
-            collapsed ? 'md:ml-[76px]' : 'md:ml-64'
-          } lg:pr-64`}
+          className={`relative z-10 flex-1 flex flex-col min-w-0 transition-all duration-300 ${
+            collapsed ? 'md:ml-[82px]' : 'md:ml-[260px]'
+          } 2xl:pr-64`}
         >
           <AppHeader />
           <MobileNav />
-          <main className="flex-1 p-4 md:p-6 lg:p-8 pb-24 md:pb-8">
-            <div className="max-w-[1440px] mx-auto">
+          <main className="flex-1 p-3 sm:p-4 md:p-5 xl:p-6 pb-24 md:pb-8">
+            <div className="max-w-[1680px] mx-auto">
               {children}
             </div>
           </main>
