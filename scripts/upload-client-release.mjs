@@ -19,7 +19,7 @@ const root = path.join(__dirname, '..');
 
 const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const version = process.env.CLIENT_VERSION || '2.1.0';
+const version = process.env.CLIENT_VERSION || '2.2.0';
 const erpBase = (process.env.ERP_PUBLIC_URL || 'https://erp.zd-thermoliner.fr').replace(/\/$/, '');
 const githubRepo = process.env.CLIENT_GITHUB_REPO || 'domthekillgaming76-max/zd-thermoliner';
 const githubBranch = process.env.CLIENT_GITHUB_BRANCH || 'main';
@@ -30,7 +30,7 @@ const defaultExe = path.join(
   'zd-thermoliner-client',
   'release',
   version,
-  `ZD-Thermoliner-Launcher-Windows-${version}-Setup.exe`,
+  `ZD-SCS-Job-Creator-Windows-${version}-Setup.exe`,
 );
 
 const altExe = path.join(
@@ -39,14 +39,14 @@ const altExe = path.join(
   'zd-thermoliner-client',
   'release',
   version,
-  `Z&D Thermoliner Launcher-Windows-${version}-Setup.exe`,
+  `Z&D SCS Job Creator-Windows-${version}-Setup.exe`,
 );
 
 const exePath = path.resolve(
   process.argv[2] || (fs.existsSync(defaultExe) ? defaultExe : altExe),
 );
 
-const fileName = `ZD-Thermoliner-Launcher-Windows-${version}-Setup.exe`;
+const fileName = `ZD-SCS-Job-Creator-Windows-${version}-Setup.exe`;
 const publicDir = path.join(root, 'public', 'downloads');
 const publicPath = path.join(publicDir, fileName);
 const storagePath = `windows/${fileName}`;
@@ -54,7 +54,7 @@ const githubRawUrl = `https://github.com/${githubRepo}/raw/${githubBranch}/publi
 const erpDownloadUrl = `${erpBase}/downloads/${fileName}`;
 const changelog =
   process.env.CLIENT_CHANGELOG ||
-  `Client Windows Z&D Thermoliner v${version} — correctif voix au chargement livraison, sélection voix immédiate, overlay in-game.`;
+  `Z&D SCS Job Creator v${version} — création locale de véritables offres SCS ETS2/ATS, sauvegarde de secours et suivi télémétrique sans connexion ERP.`;
 
 if (!fs.existsSync(exePath)) {
   console.error(`[publish] Fichier introuvable: ${exePath}`);

@@ -13,4 +13,5 @@ supabase/.temp
 
 # Ne pas envoyer tous les anciens installateurs au builder Coolify.
 public/downloads/ZD-Thermoliner-Launcher-Windows-*-Setup.exe
-!public/downloads/ZD-Thermoliner-Launcher-Windows-2.1.0-Setup.exe
+public/downloads/ZD-SCS-Job-Creator-Windows-*-Setup.exe
+!public/downloads/ZD-SCS-Job-Creator-Windows-2.2.0-Setup.exe

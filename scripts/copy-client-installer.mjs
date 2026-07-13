@@ -5,13 +5,13 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '..');
-const version = process.env.CLIENT_VERSION || '2.1.0';
-const fileName = `ZD-Thermoliner-Launcher-Windows-${version}-Setup.exe`;
+const version = process.env.CLIENT_VERSION || '2.2.0';
+const fileName = `ZD-SCS-Job-Creator-Windows-${version}-Setup.exe`;
 
 const candidates = [
   path.join(root, 'public', 'downloads', fileName),
   path.join(root, '..', 'zd-thermoliner-client', 'release', version, fileName),
-  path.join(root, '..', 'zd-thermoliner-client', 'release', version, `Z&D Thermoliner Launcher-Windows-${version}-Setup.exe`),
+  path.join(root, '..', 'zd-thermoliner-client', 'release', version, `Z&D SCS Job Creator-Windows-${version}-Setup.exe`),
 ];
 
 const destDir = path.join(root, 'public', 'downloads');

@@ -4,9 +4,7 @@ import {
   Monitor,
   CheckCircle2,
   ExternalLink,
-  Truck,
   Shield,
-  Copy,
   RefreshCw,
   Save,
   AlertTriangle,
@@ -25,7 +23,7 @@ import type { ClientAppRelease } from '../lib/clientReleaseTypes';
 const INSTALL_STEPS = [
   {
     title: 'Télécharger l\'installateur',
-    description: 'Cliquez sur le bouton « Télécharger le client Windows » ci-dessous. Enregistrez le fichier .exe sur votre PC.',
+    description: 'Cliquez sur « Télécharger le créateur SCS » ci-dessous et enregistrez le fichier .exe.',
   },
   {
     title: 'Lancer l\'installation',
@@ -36,19 +34,14 @@ const INSTALL_STEPS = [
     description: 'Cliquez sur Suivant → Installer → Terminer. L\'installation prend moins d\'une minute.',
   },
   {
-    title: 'Se connecter à l\'ERP',
-    description: 'Ouvrez « Z&D Thermoliner Launcher », entrez l\'URL ERP ci-dessous, puis votre email et mot de passe Z&D.',
+    title: 'Choisir le jeu et le profil',
+    description: 'Ouvrez Z&D SCS Job Creator, choisissez ETS2 ou ATS puis le profil de sauvegarde à utiliser.',
   },
   {
-    title: 'Jouer et synchroniser',
-    description: 'Lancez ETS2 ou ATS depuis le launcher. La télémétrie et les missions se synchronisent automatiquement avec l\'ERP.',
+    title: 'Créer et suivre la livraison',
+    description: 'Jeu fermé, choisissez départ, arrivée et cargaison. Lancez ensuite le jeu et acceptez l’offre créée dans le Marché du fret.',
   },
 ];
-
-function erpUrlHint(): string {
-  if (typeof window === 'undefined') return 'https://erp.zd-thermoliner.fr';
-  return window.location.origin;
-}
 
 export function ClientLauncherPage() {
   const { profile, user } = useAuth();
@@ -58,10 +51,9 @@ export function ClientLauncherPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [adminForm, setAdminForm] = useState({
-    version: '2.1.0',
+    version: '2.2.0',
     download_url: '',
     changelog: '',
     mandatory: false,
@@ -101,17 +93,11 @@ export function ClientLauncherPage() {
     a.href = downloadUrl;
     a.rel = 'noopener noreferrer';
     a.download = release?.version
-      ? `ZD-Thermoliner-Launcher-Windows-${release.version}-Setup.exe`
-      : 'ZD-Thermoliner-Launcher-Setup.exe';
+      ? `ZD-SCS-Job-Creator-Windows-${release.version}-Setup.exe`
+      : 'ZD-SCS-Job-Creator-Setup.exe';
     document.body.appendChild(a);
     a.click();
     a.remove();
-  }
-
-  function copyErpUrl() {
-    void navigator.clipboard.writeText(erpUrlHint());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   }
 
   async function handlePublish() {
@@ -135,7 +121,7 @@ export function ClientLauncherPage() {
         <PageHeader
           icon={Download}
           title="Client Windows"
-          subtitle="Téléchargez le launcher Z&D Thermoliner pour ETS2 / ATS — installation simple en quelques clics"
+          subtitle="Créez de vraies offres SCS dans ETS2 / ATS et suivez vos livraisons localement"
         />
 
         {error && <FormAlert message={error} onDismiss={() => setError(null)} />}
@@ -154,13 +140,13 @@ export function ClientLauncherPage() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-primary-400/80 mb-1">
-                Z&D Thermoliner Launcher
+                Z&D SCS Job Creator
               </p>
               <h2 className="text-xl font-black text-white">
                 {loading ? 'Chargement…' : release ? `Version ${release.version}` : 'Client Windows'}
               </h2>
               <p className="text-sm text-white/45 mt-2 leading-relaxed">
-                Compagnon chauffeur officiel : connexion ERP, télémétrie ETS2/ATS, missions et synchronisation automatique.
+                Créateur autonome de livraisons : sauvegardes SCS réelles, choix du dépôt et de la cargaison, suivi par télémétrie locale.
               </p>
               {release?.changelog && (
                 <p className="text-xs text-white/35 mt-3 whitespace-pre-line">{release.changelog}</p>
@@ -173,7 +159,7 @@ export function ClientLauncherPage() {
                   className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed btn-primary"
                 >
                   <Download className="w-5 h-5" />
-                  Télécharger le client Windows
+                  Télécharger le créateur SCS
                   {hasDownload && <ExternalLink className="w-4 h-4 opacity-70" />}
                 </button>
                 <button
@@ -200,27 +186,6 @@ export function ClientLauncherPage() {
                 </p>
               )}
             </div>
-          </div>
-        </section>
-
-        {/* ERP URL */}
-        <section className="admin-glass rounded-2xl p-5 border border-white/5">
-          <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
-            <Truck className="w-4 h-4 text-primary-400" />
-            URL ERP à saisir dans le launcher
-          </h3>
-          <div className="flex flex-wrap items-center gap-2">
-            <code className="flex-1 min-w-0 px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-sm text-emerald-400 font-mono truncate">
-              {erpUrlHint()}
-            </code>
-            <button
-              type="button"
-              onClick={copyErpUrl}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border border-white/10 text-white/60 hover:text-white hover:bg-white/5"
-            >
-              <Copy className="w-3.5 h-3.5" />
-              {copied ? 'Copié !' : 'Copier'}
-            </button>
           </div>
         </section>
 
@@ -251,8 +216,9 @@ export function ClientLauncherPage() {
           <ul className="text-xs text-white/40 space-y-1.5 list-disc list-inside">
             <li>Windows 10 ou 11 (64 bits)</li>
             <li>Euro Truck Simulator 2 ou American Truck Simulator</li>
-            <li>Compte Z&D Thermoliner (email + mot de passe ERP)</li>
-            <li>Connexion Internet pour la synchronisation</li>
+            <li>Une sauvegarde ETS2 ou ATS existante</li>
+            <li>Le jeu doit être fermé pendant la création ou la restauration</li>
+            <li>Aucun compte ERP ni connexion Internet requis après installation</li>
           </ul>
         </section>
 
@@ -268,7 +234,7 @@ export function ClientLauncherPage() {
                     value={adminForm.version}
                     onChange={e => setAdminForm(f => ({ ...f, version: e.target.value }))}
                     className="erp-input w-full text-sm"
-                    placeholder="2.1.0"
+                    placeholder="2.2.0"
                   />
                 </div>
                 <label className="flex items-center gap-2 text-sm text-white/60 self-end pb-2 cursor-pointer">
@@ -287,7 +253,7 @@ export function ClientLauncherPage() {
                   value={adminForm.download_url}
                   onChange={e => setAdminForm(f => ({ ...f, download_url: e.target.value }))}
                   className="erp-input w-full text-sm font-mono"
-                  placeholder="https://…/Z&D-Thermoliner-Launcher-Setup.exe"
+                  placeholder="https://…/ZD-SCS-Job-Creator-Windows-2.2.0-Setup.exe"
                 />
                 <p className="text-[10px] text-white/25 mt-1">
                   Hébergez le setup sur Supabase Storage, GitHub Releases ou votre serveur, puis collez l&apos;URL publique ici.
