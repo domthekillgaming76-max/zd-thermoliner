@@ -18,9 +18,9 @@ import { isDriverRole } from '../lib/accessControl';
 import { LiveOpsPanel } from '../components/liveops/LiveOpsPanel';
 import { FleetMapPanel } from '../components/liveops/FleetMapPanel';
 import { DriverSalarySummary } from '../components/liveops/DriverSalarySummary';
+import { PremiumDashboardHeroRefactored } from '../components/erp/PremiumDashboardHeroRefactored';
 
 import {
-  PremiumDashboardHero,
   DashboardBureauxHeroBanner,
   DashboardRpGallery,
   ExecutiveSummary,
@@ -103,11 +103,11 @@ export function DashboardPage() {
       <main className="mx-auto w-full max-w-[1600px] space-y-8 pb-10 md:space-y-10">
         <DashboardBureauxHeroBanner />
 
-        <PremiumDashboardHero
+        <PremiumDashboardHeroRefactored
           greeting={`Bonjour, ${displayName}`}
           onRefresh={refresh}
           isRefreshing={isRefreshing}
-          lastUpdated={lastUpdated}
+          lastUpdated={lastUpdated?.toLocaleString('fr-FR')}
         />
 
         {showLiveOps && (

@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { LogOut, ChevronLeft } from 'lucide-react';
 import { UserBadges } from './erp/UserBadges';
 import { Logo } from './Logo';
+import { SidebarUserProfile } from './layout/SidebarUserProfile';
 import { useAuth } from '../contexts/AuthContext';
 import { useAppModules } from '../contexts/AppModulesContext';
 import { useAppUpdateBadge } from '../contexts/AppUpdateContext';
@@ -192,6 +193,20 @@ export function Sidebar() {
         >
           <ChevronLeft className={`w-4 h-4 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} />
         </button>
+      </div>
+
+      {/* User Profile Section */}
+      <div
+        className={`${collapsed ? 'px-1.5 py-2' : 'px-2 py-3'} border-b shrink-0`}
+        style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'linear-gradient(180deg, rgba(127,29,29,0.06), transparent)' }}
+      >
+        <SidebarUserProfile
+          profile={profile}
+          user={user}
+          role={liveRole}
+          isAdministrator={isAdministrator}
+          collapsed={collapsed}
+        />
       </div>
 
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 zd-sidebar-scroll">
