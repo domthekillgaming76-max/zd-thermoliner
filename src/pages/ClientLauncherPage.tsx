@@ -53,7 +53,7 @@ export function ClientLauncherPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [adminForm, setAdminForm] = useState({
-    version: '2.2.0',
+    version: '2.2.1',
     download_url: '',
     changelog: '',
     mandatory: false,
@@ -135,8 +135,8 @@ export function ClientLauncherPage() {
         {/* Hero download card */}
         <section className="admin-glass rounded-2xl p-6 border border-primary-500/20">
           <div className="flex flex-col sm:flex-row items-start gap-5">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 bg-primary-500/15 border border-primary-500/30">
-              <Monitor className="w-8 h-8 text-primary-400" />
+            <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-primary-500/15 border border-primary-500/30">
+              <img src="/branding/ZD-SCS-Job-Creator-logo.png" alt="Logo Z&D SCS Job Creator" className="w-full h-full object-cover" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold uppercase tracking-wider text-primary-400/80 mb-1">
@@ -234,7 +234,7 @@ export function ClientLauncherPage() {
                     value={adminForm.version}
                     onChange={e => setAdminForm(f => ({ ...f, version: e.target.value }))}
                     className="erp-input w-full text-sm"
-                    placeholder="2.2.0"
+                    placeholder="2.2.1"
                   />
                 </div>
                 <label className="flex items-center gap-2 text-sm text-white/60 self-end pb-2 cursor-pointer">
@@ -253,7 +253,7 @@ export function ClientLauncherPage() {
                   value={adminForm.download_url}
                   onChange={e => setAdminForm(f => ({ ...f, download_url: e.target.value }))}
                   className="erp-input w-full text-sm font-mono"
-                  placeholder="https://…/ZD-SCS-Job-Creator-Windows-2.2.0-Setup.exe"
+                  placeholder="https://…/ZD-SCS-Job-Creator-Windows-2.2.1-Setup.exe"
                 />
                 <p className="text-[10px] text-white/25 mt-1">
                   Hébergez le setup sur Supabase Storage, GitHub Releases ou votre serveur, puis collez l&apos;URL publique ici.
