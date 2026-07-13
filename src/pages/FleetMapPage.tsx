@@ -27,7 +27,12 @@ export function FleetMapPage() {
             Actualiser
           </button>
         </div>
-        <FleetMapPanel vehicles={vehicles} loading={isLoading} />
+        <FleetMapPanel
+          vehicles={vehicles}
+          loading={isLoading}
+          onRefresh={() => refetch()}
+          isRefreshing={isFetching}
+        />
       </div>
     </Layout>
   );

@@ -207,6 +207,8 @@ export function DashboardPage() {
                 vehicles={fleetMap.data ?? []}
                 loading={fleetMap.isLoading}
                 compact
+                onRefresh={() => fleetMap.refetch()}
+                isRefreshing={fleetMap.isFetching}
               />
             </DashboardWidget>
           </DashboardSection>
