@@ -3,6 +3,7 @@ import type { ModuleKey } from './roleEngine';
 import { resolveModuleIcon } from './moduleIcons';
 import { canAccessConfiguredModule } from './moduleAccess';
 import type { RoomPermission } from './roomTypes';
+import { isRemovedRoomKey } from './removedRooms';
 import {
   SIDEBAR_CATEGORY_ORDER,
   getCategoryTheme,
@@ -37,6 +38,7 @@ function normalizeLabel(key: string, label: string): string {
     training_center: 'Formation & Règles',
     documents: 'Coffre-fort',
     driver_portal: 'Portail chauffeur',
+    meals: 'Repas',
     roles_salons: 'Rôles et salons',
   };
   return fixes[key] ?? label;
@@ -49,7 +51,7 @@ export function buildDynamicSidebarSections(
   options?: { hasUpdate?: boolean },
 ): NavSection[] {
   const visible = rooms
-    .filter(r => r.enabled && canAccessConfiguredModule(role, email, r.room_key, rooms))
+    .filter(r => !isRemovedRoomKey(r.room_key) && r.enabled && canAccessConfiguredModule(role, email, r.room_key, rooms))
     .map(r => ({
       room: r,
       category: resolveSidebarCategory(r.room_key, r.category),

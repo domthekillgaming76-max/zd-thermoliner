@@ -102,7 +102,11 @@ export function filterTransactions(
     rows = rows.filter(isDebitTransaction);
   }
 
-  return rows;
+  return rows.sort((a, b) => {
+    const byBusinessDate = (b.date ?? '').localeCompare(a.date ?? '');
+    if (byBusinessDate !== 0) return byBusinessDate;
+    return new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime();
+  });
 }
 
 export const CATEGORY_GROUP_OPTIONS_EXPORT = CATEGORY_GROUP_OPTIONS;

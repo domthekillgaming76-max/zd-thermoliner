@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Users, Building2, Truck, Banknote, Route, BarChart3, Wrench,
-  FileBarChart, MessageSquare, Briefcase, FileText, Radio,
-  Receipt, Bot, Smartphone, Archive, Map, Container, GraduationCap, Calculator, User,
+  FileBarChart, MessageSquare, Briefcase, FileText,
+  Receipt, Bot, Archive, Container, GraduationCap, Calculator, User, Utensils,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ModuleKey } from './roleEngine';
@@ -22,15 +22,12 @@ export const MODULE_NAV: NavItem[] = [
   { to: '/drivers', icon: Users, label: 'Chauffeurs', module: 'drivers' },
   { to: '/fleet', icon: Truck, label: 'Flotte', module: 'fleet' },
   { to: '/garages', icon: Building2, label: 'Garages', module: 'garages' },
-  { to: '/dispatch', icon: Radio, label: 'Dispatch', module: 'dispatch' },
   { to: '/freight', icon: Container, label: 'Marché Fret', module: 'freight_market' },
-  { to: '/tracking', icon: Map, label: 'GPS Tracking', module: 'gps_tracking' },
-  { to: '/fleet-map', icon: Map, label: 'Carte flotte', module: 'fleet_map' },
+  { to: '/meals', icon: Utensils, label: 'Repas', module: 'meals' },
   { to: '/statistics', icon: FileBarChart, label: 'Statistiques', module: 'statistics' },
   { to: '/clients', icon: Receipt, label: 'Clients & Factures', module: 'clients' },
   { to: '/road-sheets', icon: Route, label: 'Feuilles de route', module: 'road_sheets' },
   { to: '/finance', icon: BarChart3, label: 'Finance', module: 'finance' },
-  { to: '/invoices', icon: Receipt, label: 'Factures', module: 'invoices' },
   { to: '/salaries', icon: Users, label: 'Salaires', module: 'salaries' },
   { to: '/accounting', icon: Calculator, label: 'Comptabilité', module: 'accounting' },
   { to: '/bank', icon: Banknote, label: 'Banque', module: 'bank' },
@@ -39,7 +36,6 @@ export const MODULE_NAV: NavItem[] = [
   { to: '/assistant', icon: Bot, label: 'Assistant IA', module: 'assistant' },
   { to: '/training', icon: GraduationCap, label: 'Formation & Règles', module: 'training_center' },
   { to: '/documents', icon: Archive, label: 'Coffre-fort', module: 'documents' },
-  { to: '/driver', icon: Smartphone, label: 'Portail mobile', module: 'driver_portal' },
 ];
 
 export const PROFILE_NAV: NavItem = {

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { BarChart3, FileText, Users, Calculator, RefreshCw } from 'lucide-react';
+import { BarChart3, Users, Calculator, RefreshCw } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { PageHeader } from '../components/erp/PageHeader';
 import { FormAlert } from '../components/erp/FormAlert';
@@ -13,7 +13,6 @@ import { canAccessBank } from '../lib/bankPermissions';
 import { Navigate } from 'react-router-dom';
 
 const QUICK_LINKS = [
-  { to: '/invoices', icon: FileText, label: 'Factures' },
   { to: '/salaries', icon: Users, label: 'Salaires' },
   { to: '/accounting', icon: Calculator, label: 'Comptabilité' },
   { to: '/bank', icon: BarChart3, label: 'Banque', adminOnly: true },
@@ -78,7 +77,6 @@ export function FinancePage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-bold text-white">Factures récentes</h2>
-                  <Link to="/invoices" className="text-xs text-red-400 hover:text-red-300">Voir tout</Link>
                 </div>
                 <FinanceInvoicesTable invoices={data.recentInvoices} />
               </div>

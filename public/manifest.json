@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Z&D Thermoliner ERP",
   "short_name": "Z&D ERP",
-  "description": "ERP transport Z&D Thermoliner — feuilles de route, dispatch, finance et flotte",
+  "description": "ERP transport Z&D Thermoliner — feuilles de route, finance et flotte",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -31,12 +31,6 @@
       "name": "Tableau de bord",
       "short_name": "Dashboard",
       "url": "/dashboard",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Dispatch",
-      "short_name": "Dispatch",
-      "url": "/dispatch",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]

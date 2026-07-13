@@ -56,10 +56,10 @@ function buildGlobalSuggestions(snapshot: AssistantDataSnapshot): SuggestedActio
     actions.push({
       id: `a-${++id}`,
       type: 'create_mission',
-      title: 'Gérer les missions en cours',
+      title: 'Voir les feuilles de route',
       description: `${snapshot.pendingMissions} mission(s) active(s)`,
       requiresConfirmation: false,
-      route: '/dispatch',
+      route: '/road-sheets',
     });
   }
   if (snapshot.monthlyExpenses > snapshot.monthlyEarnings * 0.7) {
@@ -78,7 +78,7 @@ function buildGlobalSuggestions(snapshot: AssistantDataSnapshot): SuggestedActio
     title: AUTOMATION_LABELS.optimize_route,
     description: 'Analyser les itinéraires pour réduire les km',
     requiresConfirmation: true,
-    route: '/dispatch',
+    route: '/road-sheets',
   });
 
   return actions.slice(0, 5);
@@ -212,7 +212,7 @@ export function generateAssistantReply(
       content: `Vous avez **${snapshot.driverMissions ?? 0}** mission(s) active(s).`,
       metadata: {
         kpis: [{ label: 'Missions actives', value: String(snapshot.driverMissions ?? 0) }],
-        actions: [{ id: 'd2', type: 'create_mission', title: 'Voir dispatch', description: 'Consulter vos missions', requiresConfirmation: false, route: '/dispatch' }],
+        actions: [{ id: 'd2', type: 'create_mission', title: 'Voir mes feuilles', description: 'Consulter vos feuilles de route', requiresConfirmation: false, route: '/road-sheets' }],
       },
     };
   }

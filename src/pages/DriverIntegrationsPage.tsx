@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { Plug, RefreshCw } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { IntegrationProviderCard } from '../components/integrations/IntegrationProviderCard';
@@ -127,10 +126,6 @@ export function DriverIntegrationsPage() {
             )}
           </div>
         </div>
-
-        <p className="text-xs text-white/30 text-center">
-          Route alternative : <Link to="/driver?tab=integrations" className="text-red-400 hover:underline">Portail chauffeur</Link>
-        </p>
       </div>
     </Layout>
   );

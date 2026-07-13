@@ -25,7 +25,6 @@ import { BankKpiLive } from '../components/bank/enterprise/BankKpiLive';
 import { BankNavTabs, type BankTabId } from '../components/bank/enterprise/BankNavTabs';
 import { BankTreasuryPanel } from '../components/bank/enterprise/BankTreasuryPanel';
 import { BankTransactionsEnterprise } from '../components/bank/enterprise/BankTransactionsEnterprise';
-import { BankFleetFinancing } from '../components/bank/enterprise/BankFleetFinancing';
 import { BankTransfersPanel } from '../components/bank/enterprise/BankTransfersPanel';
 import { BankNotificationsPanel } from '../components/bank/enterprise/BankNotificationsPanel';
 import { BankAdvisorEnterprise } from '../components/bank/enterprise/BankAdvisorEnterprise';
@@ -282,12 +281,6 @@ export function BankPage() {
             <BankTreasuryPanel chartData={data?.chartData ?? []} treasury={data?.treasury ?? { chartData: [], availableCash: 0, forecastNextMonth: 0, forecastTrend: 'flat', monthlyBalanceSeries: [] }} loading={loading} />
             <BankExpenseBreakdown breakdown={expenseBreakdown} loading={loading} />
             <BankAutoSyncPanel autoSync={data?.autoSync ?? { revenue: 0, fuel: 0, tolls: 0, repairs: 0, insurance: 0, salary: 0, netProfit: 0, sheetCount: 0 }} loading={loading} />
-          </div>
-        )}
-
-        {tab === 'financing' && (
-          <div className="bank-fade-in">
-            <BankFleetFinancing financing={data?.financing ?? { loans: [], totalRemaining: 0, totalMonthly: 0, truckCount: 0, trailerCount: 0 }} loading={loading} />
           </div>
         )}
 

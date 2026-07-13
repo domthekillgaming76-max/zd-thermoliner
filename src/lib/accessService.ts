@@ -10,6 +10,7 @@ import {
   type AppRole,
 } from './roleEngine';
 import type { RoomPermission } from './roomTypes';
+import { isRemovedRoomKey } from './removedRooms';
 
 export const VISITOR_RESTRICTED_MESSAGE =
   'Accès réservé aux membres Z&D Thermoliner.';
@@ -65,6 +66,7 @@ export function canAccessRoom(
   roomKey: string,
   rooms: RoomPermission[],
 ): boolean {
+  if (isRemovedRoomKey(roomKey)) return false;
   if (isAdministratorEmail(email)) return true;
 
   const room = findRoom(roomKey, rooms);
@@ -76,10 +78,10 @@ export function canAccessRoom(
 export function canAccessSalon(input: AccessCheckInput): boolean {
   const { role, email, moduleOrPage, pathname, rooms, isActive, isSuspended } = input;
 
-  if (isAdministratorEmail(email)) return true;
-
   const roomKey = resolveRoomKey(moduleOrPage, pathname);
   if (!roomKey) return true;
+  if (isRemovedRoomKey(roomKey)) return false;
+  if (isAdministratorEmail(email)) return true;
 
   if (isSuspendedAccount(role, isActive, isSuspended)) {
     return SUSPENDED_ALLOWED.has(roomKey);

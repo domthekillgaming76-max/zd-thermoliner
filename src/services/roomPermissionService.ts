@@ -4,6 +4,7 @@ import { DEFAULT_ROOM_PERMISSIONS } from '../lib/defaultRoomPermissions';
 import type { RoomPermission, RoomPermissionPatch } from '../lib/roomTypes';
 import { ADMIN_CRITICAL_ROOMS } from '../lib/accessPolicy';
 import type { AppRole } from '../lib/roleEngine';
+import { isRemovedRoomKey } from '../lib/removedRooms';
 
 function rowToRoom(row: Record<string, unknown>): RoomPermission {
   return {
@@ -47,7 +48,9 @@ export async function fetchRoomPermissions(): Promise<RoomPermission[]> {
     return fallbackRooms();
   }
   if (!data?.length) return fallbackRooms();
-  return data.map(row => rowToRoom(row as Record<string, unknown>));
+  return data
+    .map(row => rowToRoom(row as Record<string, unknown>))
+    .filter(room => !isRemovedRoomKey(room.room_key));
 }
 
 export async function updateRoomPermission(id: string, patch: RoomPermissionPatch): Promise<RoomPermission> {

@@ -182,4 +182,19 @@ app.get(/^(?!\/api\/).*/, (req, res, next) => {
 
 app.listen(port, () => {
   console.log(`[Z&D] Server listening on :${port}`);
+
+  const processClovisCharges = async () => {
+    try {
+      const result = await handleProcessClovisRentals();
+      if (result.charged > 0 || result.errors.length > 0) {
+        console.log('[Z&D] Clovis daily charges:', result);
+      }
+    } catch (error) {
+      console.error('[Z&D] Clovis daily charges failed:', error);
+    }
+  };
+
+  void processClovisCharges();
+  const clovisTimer = setInterval(processClovisCharges, 60 * 60 * 1000);
+  clovisTimer.unref();
 });

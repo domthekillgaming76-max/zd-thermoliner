@@ -135,7 +135,6 @@ function AppRoutes() {
       <Route path="/wall" element={<ProtectedPage page="wall"><Pages.WallPage /></ProtectedPage>} />
       <Route path="/chat" element={<ProtectedPage page="wall"><Pages.ChatPage /></ProtectedPage>} />
       <Route path="/updates" element={<ProtectedPage page="updates"><Pages.UpdatesPage /></ProtectedPage>} />
-      <Route path="/client" element={<ProtectedPage page="client_launcher"><Pages.ClientLauncherPage /></ProtectedPage>} />
       <Route path="/events" element={<ProtectedPage page="events"><Pages.EventsPage /></ProtectedPage>} />
       <Route path="/recruitment" element={<ProtectedPage page="recruitment"><Pages.RecruitmentPage /></ProtectedPage>} />
       <Route path="/recruitment/applications" element={<ProtectedPage page="recruitment_applications"><Pages.MyApplicationsPage /></ProtectedPage>} />
@@ -146,20 +145,16 @@ function AppRoutes() {
       <Route path="/drivers/:id" element={<ProtectedPage page="drivers"><Pages.DriverProfilePage /></ProtectedPage>} />
       <Route path="/fleet" element={<ProtectedPage page="fleet"><Pages.FleetPage /></ProtectedPage>} />
       <Route path="/fleet/:id" element={<ProtectedPage page="fleet"><Pages.TruckProfilePage /></ProtectedPage>} />
-      <Route path="/dispatch" element={<ProtectedPage page="dispatch"><Pages.DispatchPage /></ProtectedPage>} />
-      <Route path="/driver/dossier" element={<Navigate to="/driver?tab=dossier" replace />} />
-      <Route path="/driver" element={<ProtectedPage page="driver_portal"><Pages.DriverPortalPage /></ProtectedPage>} />
       <Route path="/documents" element={<ProtectedPage page="documents"><Pages.DocumentsPage /></ProtectedPage>} />
-      <Route path="/tracking" element={<ProtectedPage page="gps_tracking"><Pages.TrackingPage /></ProtectedPage>} />
       <Route path="/freight" element={<ProtectedPage page="freight_market"><Pages.FreightMarketPage /></ProtectedPage>} />
       <Route path="/clovis-rental" element={<ProtectedPage page="clovis_rental"><Pages.ClovisRentalPage /></ProtectedPage>} />
+      <Route path="/meals" element={<ProtectedPage page="meals"><Pages.MealsPage /></ProtectedPage>} />
       <Route path="/training" element={<ProtectedPage page="training_center"><Pages.TrainingCenterPage /></ProtectedPage>} />
       <Route path="/clients" element={<ProtectedPage page="clients"><Pages.ClientsPage /></ProtectedPage>} />
       <Route path="/clients/:id" element={<ProtectedPage page="clients"><Pages.ClientProfilePage /></ProtectedPage>} />
       <Route path="/garages" element={<ProtectedPage page="garages"><Pages.GaragesPage /></ProtectedPage>} />
       <Route path="/road-sheets" element={<ProtectedPage page="road_sheets"><Pages.RoadSheetsPage /></ProtectedPage>} />
       <Route path="/finance" element={<ProtectedPage page="finance"><Pages.FinancePage /></ProtectedPage>} />
-      <Route path="/invoices" element={<ProtectedPage page="invoices"><Pages.InvoicesPage /></ProtectedPage>} />
       <Route path="/salaries" element={<ProtectedPage page="salaries"><Pages.SalariesPage /></ProtectedPage>} />
       <Route path="/accounting" element={<ProtectedPage page="accounting"><Pages.AccountingPage /></ProtectedPage>} />
       <Route path="/economy" element={<Navigate to="/finance" replace />} />
@@ -167,7 +162,6 @@ function AppRoutes() {
       <Route path="/bank" element={<ProtectedPage page="bank"><Pages.BankPage /></ProtectedPage>} />
       <Route path="/maintenance" element={<ProtectedPage page="maintenance"><Pages.MaintenancePage /></ProtectedPage>} />
       <Route path="/assistant" element={<ProtectedPage page="assistant"><Pages.AssistantPage /></ProtectedPage>} />
-      <Route path="/fleet-map" element={<ProtectedPage page="fleet_map"><Pages.FleetMapPage /></ProtectedPage>} />
       <Route path="/statistics" element={<ProtectedPage page="statistics"><Pages.StatisticsPage /></ProtectedPage>} />
       <Route path="/notifications" element={<ProtectedPage page="notifications"><Pages.NotificationsPage /></ProtectedPage>} />
       <Route path="/administration/roles-salons" element={<ProtectedPage page="roles_salons"><Pages.RolesSalonsPage /></ProtectedPage>} />
@@ -181,7 +175,6 @@ function AppRoutes() {
       <Route path="/profile/:userId" element={<ProtectedPage page="profile"><Pages.ProfilePage /></ProtectedPage>} />
       <Route path="/profile" element={<ProtectedPage page="profile"><Pages.ProfilePage /></ProtectedPage>} />
       <Route path="/integrations" element={<ProtectedPage page="driver_integrations"><Pages.DriverIntegrationsPage /></ProtectedPage>} />
-      <Route path="/driver/integrations" element={<Navigate to="/integrations" replace />} />
       <Route path="/join" element={<Navigate to="/recruitment" replace />} />
       <Route path="/candidatures" element={<Navigate to="/recruitment/admin" replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />

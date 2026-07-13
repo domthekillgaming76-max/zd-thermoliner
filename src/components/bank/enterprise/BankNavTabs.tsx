@@ -2,7 +2,6 @@ export type BankTabId =
   | 'dashboard'
   | 'transactions'
   | 'treasury'
-  | 'financing'
   | 'transfers'
   | 'drivers'
   | 'settings';
@@ -16,7 +15,6 @@ const TABS: { id: BankTabId; label: string }[] = [
   { id: 'dashboard', label: 'Tableau de bord' },
   { id: 'transactions', label: 'Transactions' },
   { id: 'treasury', label: 'Trésorerie' },
-  { id: 'financing', label: 'Financement flotte' },
   { id: 'transfers', label: 'Virements' },
   { id: 'drivers', label: 'Comptes chauffeurs' },
   { id: 'settings', label: 'Paramètres' },

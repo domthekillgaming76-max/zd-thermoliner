@@ -1,4 +1,5 @@
-import { Loader2, Trash2, TrendingDown, TrendingUp, Zap } from 'lucide-react';
+import { Loader2, Trash2, TrendingDown, TrendingUp, Zap, ReceiptText } from 'lucide-react';
+import { useState } from 'react';
 import { EmptyState } from '../erp/EmptyState';
 import { SkeletonList } from '../erp/Skeleton';
 import {
@@ -8,6 +9,7 @@ import {
 } from '../../lib/bankUtils';
 import type { Transaction } from '../../lib/supabase';
 import { Banknote } from 'lucide-react';
+import { ExpenseReceiptModal } from './ExpenseReceiptModal';
 
 interface BankTransactionTableProps {
   transactions: Transaction[];
@@ -22,6 +24,7 @@ export function BankTransactionTable({
   deletingId,
   onDelete,
 }: BankTransactionTableProps) {
+  const [receiptTransaction, setReceiptTransaction] = useState<Transaction | null>(null);
   if (loading) {
     return (
       <div className="erp-card rounded-2xl p-4">
@@ -44,7 +47,7 @@ export function BankTransactionTable({
 
   return (
     <div className="erp-card rounded-2xl overflow-hidden">
-      <div className="hidden md:grid grid-cols-[1fr_120px_120px_100px_48px] gap-4 px-5 py-3 text-[10px] font-semibold text-white/30 uppercase tracking-wider border-b border-white/5">
+      <div className="hidden md:grid grid-cols-[1fr_120px_120px_100px_84px] gap-4 px-5 py-3 text-[10px] font-semibold text-white/30 uppercase tracking-wider border-b border-white/5">
         <span>Description</span>
         <span>Type</span>
         <span>Date</span>
@@ -59,7 +62,7 @@ export function BankTransactionTable({
           return (
             <div
               key={tx.id}
-              className="flex flex-col md:grid md:grid-cols-[1fr_120px_120px_100px_48px] gap-2 md:gap-4 md:items-center px-4 md:px-5 py-4 hover:bg-white/[0.02] transition-colors"
+              className="flex flex-col md:grid md:grid-cols-[1fr_120px_120px_100px_84px] gap-2 md:gap-4 md:items-center px-4 md:px-5 py-4 hover:bg-white/[0.02] transition-colors"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div
@@ -120,7 +123,10 @@ export function BankTransactionTable({
                 {formatCurrency(Number(tx.amount))} €
               </span>
 
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-1">
+                {!credit && tx.status !== 'pending' && (
+                  <button type="button" onClick={() => setReceiptTransaction(tx)} className="w-8 h-8 hover:bg-amber-500/10 rounded-lg flex items-center justify-center" aria-label="Voir le ticket de caisse"><ReceiptText className="w-3.5 h-3.5 text-amber-400/70" /></button>
+                )}
                 {onDelete && !tx.auto_generated && (
                   <button
                     type="button"
@@ -141,6 +147,7 @@ export function BankTransactionTable({
           );
         })}
       </div>
+      <ExpenseReceiptModal transaction={receiptTransaction} onClose={() => setReceiptTransaction(null)} />
     </div>
   );
 }

@@ -1,13 +1,11 @@
 import type { Transaction } from './supabase';
 import { isCreditTransaction, isDebitTransaction } from './bankUtils';
-import type { FleetLoan } from '../services/bankFinancingService';
 
 export type BankNotificationType =
   | 'incoming_payment'
   | 'outgoing_payment'
   | 'road_sheet_validated'
-  | 'salary_paid'
-  | 'loan_payment';
+  | 'salary_paid';
 
 export interface BankNotification {
   id: string;
@@ -22,7 +20,6 @@ export interface BankNotification {
 export function buildBankNotifications(
   transactions: Transaction[],
   pendingRoadSheets: number,
-  loans: FleetLoan[],
 ): BankNotification[] {
   const items: BankNotification[] = [];
 
@@ -72,18 +69,6 @@ export function buildBankNotifications(
       title: 'Feuilles en attente',
       message: `${pendingRoadSheets} feuille(s) à valider pour comptabilisation`,
       createdAt: new Date().toISOString(),
-      read: false,
-    });
-  }
-
-  for (const loan of loans.filter(l => l.status === 'active').slice(0, 3)) {
-    items.push({
-      id: `loan-${loan.id}`,
-      type: 'loan_payment',
-      title: 'Échéance crédit flotte',
-      message: `${loan.asset_name} — mensualité à prévoir`,
-      amount: loan.monthly_payment,
-      createdAt: loan.updated_at ?? loan.created_at,
       read: false,
     });
   }

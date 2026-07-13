@@ -28,8 +28,6 @@ import { buildTreasuryMetrics, summarizeAutoRoadSheetLines } from '../lib/bankTr
 
 import { buildBankNotifications } from '../lib/bankNotifications';
 
-import { fetchFleetLoans, summarizeFleetFinancing } from './bankFinancingService';
-
 import type { PeriodFilter, CategoryGroup } from '../components/bank/bankFilters';
 
 
@@ -264,15 +262,13 @@ export function buildMonthlyChartData(transactions: Transaction[]) {
 
 export async function fetchEnterpriseBankBundle(lastSyncAt: string | null) {
 
-  const [account, transactions, pendingPayments, loans] = await Promise.all([
+  const [account, transactions, pendingPayments] = await Promise.all([
 
     fetchCompanyAccount(),
 
     fetchTransactions(),
 
     fetchPendingRoadSheetCount(),
-
-    fetchFleetLoans(),
 
   ]);
 
@@ -288,9 +284,7 @@ export async function fetchEnterpriseBankBundle(lastSyncAt: string | null) {
 
   const autoSync = summarizeAutoRoadSheetLines(transactions);
 
-  const financing = summarizeFleetFinancing(loans);
-
-  const notifications = buildBankNotifications(transactions, pendingPayments, loans);
+  const notifications = buildBankNotifications(transactions, pendingPayments);
 
 
 
@@ -311,10 +305,6 @@ export async function fetchEnterpriseBankBundle(lastSyncAt: string | null) {
     treasury,
 
     autoSync,
-
-    financing,
-
-    loans,
 
     notifications,
 

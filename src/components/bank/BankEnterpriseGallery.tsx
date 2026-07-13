@@ -62,7 +62,7 @@ export function BankEnterpriseHeroBanner() {
       <div className="absolute inset-0 bg-gradient-to-r from-[#003d24]/90 via-[#003d24]/50 to-transparent" />
       <div className="absolute bottom-0 left-0 p-4 md:p-5">
         <p className="text-lg md:text-xl font-black text-white tracking-tight">Banque Entreprise</p>
-        <p className="text-xs text-emerald-300 font-semibold">Trésorerie, virements & financement flotte</p>
+        <p className="text-xs text-emerald-300 font-semibold">Trésorerie, virements et suivi des opérations</p>
       </div>
     </div>
   );

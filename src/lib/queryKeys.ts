@@ -27,7 +27,6 @@ export const queryKeys = {
   bank: {
     all: ['bank'] as const,
     data: (filters?: unknown) => ['bank', 'data', filters ?? {}] as const,
-    financing: () => ['bank', 'financing'] as const,
   },
   recruitment: {
     all: ['recruitment', 'all'] as const,
@@ -89,6 +88,12 @@ export const queryKeys = {
   clovisRental: {
     all: ['clovisRental'] as const,
     bundle: (profileId: string) => ['clovisRental', 'bundle', profileId] as const,
+  },
+  meals: {
+    all: ['meals'] as const,
+    catalog: () => ['meals', 'catalog'] as const,
+    store: (profileId: string) => ['meals', 'store', profileId] as const,
+    orders: (profileId: string) => ['meals', 'orders', profileId] as const,
   },
   training: {
     all: ['training'] as const,

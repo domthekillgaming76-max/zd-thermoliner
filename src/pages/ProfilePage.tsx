@@ -5,7 +5,7 @@ import {
 
   User, Camera, Save, Palette, Truck, Globe, MessageCircle,
 
-  Layers, Loader2, RefreshCw, AlertTriangle, CheckCircle2, Upload, FolderOpen, CreditCard, LayoutGrid, ArrowLeft,
+  Layers, Loader2, RefreshCw, AlertTriangle, CheckCircle2, Upload, FolderOpen, CreditCard, LayoutGrid, ArrowLeft, ReceiptText,
 
 } from 'lucide-react';
 
@@ -54,10 +54,11 @@ import { DriverHrFolderSection } from '../components/drivers/DriverHrFolderSecti
 import { DriverBankPanel } from '../components/driver-bank/DriverBankPanel';
 import { useDriverBank } from '../hooks/useDriverBank';
 import { canViewOwnHrFolderOnProfile } from '../lib/driverPermissions';
+import { ProfileMealReceipts } from '../components/meals/ProfileMealReceipts';
 
 
 
-type ProfilePageTab = 'overview' | 'settings' | 'hr_folder' | 'bank_account';
+type ProfilePageTab = 'overview' | 'settings' | 'hr_folder' | 'bank_account' | 'meal_receipts';
 
 function Section({ title, icon: Icon, children }: { title: string; icon: typeof User; children: React.ReactNode }) {
 
@@ -216,6 +217,7 @@ export function ProfilePage() {
     const t = new URLSearchParams(window.location.search).get('tab');
     if (t === 'dossier' || t === 'hr_folder') return 'hr_folder';
     if (t === 'bank' || t === 'bank_account') return 'bank_account';
+    if (t === 'tickets' || t === 'meal_receipts') return 'meal_receipts';
     if (t === 'settings' || t === 'personnalisation') return 'settings';
     return 'overview';
   });
@@ -226,6 +228,7 @@ export function ProfilePage() {
     const t = searchParams.get('tab');
     if (t === 'dossier' || t === 'hr_folder') setPageTab('hr_folder');
     else if (t === 'bank' || t === 'bank_account') setPageTab('bank_account');
+    else if (t === 'tickets' || t === 'meal_receipts') setPageTab('meal_receipts');
     else if (t === 'settings' || t === 'personnalisation') setPageTab('settings');
     else if (t === 'overview' || t === 'feed') setPageTab('overview');
   }, [searchParams]);
@@ -629,6 +632,18 @@ export function ProfilePage() {
             </button>
             </>
           )}
+          <button
+            type="button"
+            onClick={() => setPageTab('meal_receipts')}
+            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+              pageTab === 'meal_receipts'
+                ? 'bg-rose-500/15 text-rose-300 border border-rose-500/25'
+                : 'text-white/35 hover:bg-white/5 border border-transparent'
+            }`}
+          >
+            <ReceiptText className="w-3.5 h-3.5" />
+            Tickets repas
+          </button>
             </>
           )}
 
@@ -682,6 +697,10 @@ export function ProfilePage() {
         ) : pageTab === 'bank_account' && showHrFolder ? (
 
           <DriverBankPanel bundle={bankBundle} loading={bankLoading} />
+
+        ) : pageTab === 'meal_receipts' && !isViewingOther ? (
+
+          <ProfileMealReceipts profileId={user?.id} />
 
         ) : pageTab === 'settings' && !isViewingOther ? (
 

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Download, HardDriveDownload, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { isNativeErpLauncher } from '../lib/appMode';
 import {
@@ -66,14 +65,7 @@ export function ErpLauncherBanner() {
               Téléchargez puis ouvrez le fichier : l&apos;ancienne version et le raccourci Bureau seront remplacés automatiquement.
             </p>
             <p className="text-[10px] text-white/35 mt-1">
-              Chauffeurs : guide aussi dans{' '}
-              <Link to="/driver" className="text-red-400 hover:text-red-300 underline">
-                Portail chauffeur
-              </Link>
-              {' '}ou{' '}
-              <Link to="/settings" className="text-red-400 hover:text-red-300 underline">
-                Paramètres → Aide
-              </Link>
+              Le guide d'installation reste disponible dans Paramètres → Aide.
             </p>
           </div>
         </div>

@@ -1,5 +1,4 @@
-import { Link } from 'react-router-dom';
-import { MapPin, ChevronRight, Truck, RefreshCw } from 'lucide-react';
+import { MapPin, Truck, RefreshCw } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import type { FleetMapVehicle } from '../../lib/liveOpsTypes';
 import { TrackingEuropeMap } from '../tracking/TrackingEuropeMap';
@@ -128,14 +127,6 @@ export function FleetMapPanel({ vehicles, loading, compact, onRefresh, isRefresh
               >
                 <RefreshCw className={`w-4 h-4 text-white/60 ${isRefreshing ? 'animate-spin' : ''}`} />
               </button>
-            )}
-            {!compact && (
-              <Link
-                to="/fleet-map"
-                className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-white/5 transition-colors"
-              >
-                Plein écran <ChevronRight className="w-3 h-3" />
-              </Link>
             )}
           </div>
         </div>

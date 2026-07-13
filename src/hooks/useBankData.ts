@@ -48,9 +48,6 @@ export function useBankData() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'road_sheets' }, () => {
         qc.invalidateQueries({ queryKey: queryKeys.bank.all });
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'fleet_loans' }, () => {
-        qc.invalidateQueries({ queryKey: queryKeys.bank.financing() });
-      })
       .subscribe();
 
     return () => {

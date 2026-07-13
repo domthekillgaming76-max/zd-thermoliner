@@ -47,6 +47,7 @@ export async function fetchAllTransactions(
 
   const runQuery = (columns: string) => {
     let query = supabase.from('transactions').select(columns).order(orderBy, { ascending });
+    if (orderBy === 'date') query = query.order('created_at', { ascending });
     if (options.limit) query = query.limit(options.limit);
     if (options.dateFrom) query = query.gte('date', options.dateFrom);
     if (options.dateTo) query = query.lte('date', options.dateTo);
