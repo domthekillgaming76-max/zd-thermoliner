@@ -40,6 +40,7 @@ export function AppHeader() {
     else if (q.includes('route') || q.includes('feuille')) navigate('/road-sheets');
     else if (q.includes('garage')) navigate('/garages');
     else if (q.includes('repas') || q.includes('restaurant')) navigate('/meals');
+    else if (q.includes('boutique') || q.includes('équipement') || q.includes('decoration')) navigate('/truck-shop');
     else navigate('/dashboard');
   }
 

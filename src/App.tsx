@@ -149,6 +149,7 @@ function AppRoutes() {
       <Route path="/freight" element={<ProtectedPage page="freight_market"><Pages.FreightMarketPage /></ProtectedPage>} />
       <Route path="/clovis-rental" element={<ProtectedPage page="clovis_rental"><Pages.ClovisRentalPage /></ProtectedPage>} />
       <Route path="/meals" element={<ProtectedPage page="meals"><Pages.MealsPage /></ProtectedPage>} />
+      <Route path="/truck-shop" element={<ProtectedPage page="truck_shop"><Pages.TruckShopPage /></ProtectedPage>} />
       <Route path="/training" element={<ProtectedPage page="training_center"><Pages.TrainingCenterPage /></ProtectedPage>} />
       <Route path="/clients" element={<ProtectedPage page="clients"><Pages.ClientsPage /></ProtectedPage>} />
       <Route path="/clients/:id" element={<ProtectedPage page="clients"><Pages.ClientProfilePage /></ProtectedPage>} />

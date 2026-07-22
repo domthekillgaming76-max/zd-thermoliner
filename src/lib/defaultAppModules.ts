@@ -22,6 +22,7 @@ export const DEFAULT_APP_MODULES: ModuleSeed[] = [
   mod({ key: 'freight_market', label: 'Marché Fret', category: 'ERP', icon: 'Container', route: '/freight', enabled: true, sort_order: 60 }),
   mod({ key: 'clovis_rental', label: 'Location Clovis', category: 'ERP', icon: 'KeyRound', route: '/clovis-rental', enabled: true, sort_order: 55 }),
   mod({ key: 'meals', label: 'Repas', category: 'ERP', icon: 'Utensils', route: '/meals', enabled: true, sort_order: 58 }),
+  mod({ key: 'truck_shop', label: 'Boutique camion', category: 'ERP', icon: 'ShoppingBag', route: '/truck-shop', enabled: true, sort_order: 59 }),
   mod({ key: 'statistics', label: 'Statistiques', category: 'ERP', icon: 'FileBarChart', route: '/statistics', enabled: true, sort_order: 90 }),
   mod({ key: 'clients', label: 'Clients & Factures', category: 'ERP', icon: 'Receipt', route: '/clients', enabled: true, sort_order: 100 }),
   mod({ key: 'road_sheets', label: 'Feuilles de route', category: 'ERP', icon: 'Route', route: '/road-sheets', enabled: true, sort_order: 110 }),

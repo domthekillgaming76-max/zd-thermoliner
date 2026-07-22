@@ -50,3 +50,4 @@ export const MyApplicationsPage = lazyNamed(() => import('../pages/recruitment/M
 export const RecruitmentAdminPage = lazyNamed(() => import('../pages/recruitment/RecruitmentAdminPage'), 'RecruitmentAdminPage');
 export const ClovisRentalPage = lazyNamed(() => import('../pages/ClovisRentalPage'), 'ClovisRentalPage');
 export const MealsPage = lazyNamed(() => import('../pages/MealsPage'), 'MealsPage');
+export const TruckShopPage = lazyNamed(() => import('../pages/TruckShopPage'), 'TruckShopPage');

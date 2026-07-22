@@ -95,6 +95,10 @@ export const queryKeys = {
     store: (profileId: string) => ['meals', 'store', profileId] as const,
     orders: (profileId: string) => ['meals', 'orders', profileId] as const,
   },
+  truckShop: {
+    all: ['truckShop'] as const,
+    store: (profileId: string) => ['truckShop', 'store', profileId] as const,
+  },
   training: {
     all: ['training'] as const,
     module: (userId?: string) => ['training', 'module', userId ?? 'anonymous'] as const,

@@ -39,6 +39,7 @@ function normalizeLabel(key: string, label: string): string {
     documents: 'Coffre-fort',
     driver_portal: 'Portail chauffeur',
     meals: 'Repas',
+    truck_shop: 'Boutique camion',
     roles_salons: 'Rôles et salons',
   };
   return fixes[key] ?? label;
