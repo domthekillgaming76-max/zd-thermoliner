@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import type { LiveNotification } from '../lib/liveOpsTypes';
 import { NOTIFICATION_POLL_MS } from '../services/notificationService';
+import { playSoundForNotification } from '../services/notificationSoundService';
 
 interface LiveNotificationContextValue {
   unreadCount: number;
@@ -80,6 +81,7 @@ export function LiveNotificationProvider({ children }: { children: ReactNode }) 
         { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
         payload => {
           const n = payload.new as LiveNotification;
+          playSoundForNotification(n.type);
           knownIdsRef.current.add(n.id);
           const toastId = `${n.id}-${Date.now()}`;
           setToasts(prev => [...prev.slice(-2), { ...n, toastId }]);

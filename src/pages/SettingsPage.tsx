@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Settings, Moon, Bell, Shield, HelpCircle, Info, ChevronRight, LogOut,
-  AlertTriangle, X, KeyRound, Mail, ExternalLink,
+  AlertTriangle, X, KeyRound, Mail, ExternalLink, Volume2, Play,
 } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,6 +12,7 @@ import { canAccessAdministration } from '../lib/adminPermissions';
 import { FormAlert, FormSuccess } from '../components/erp/FormAlert';
 import { APP_VERSION_LABEL } from '../lib/appVersion';
 import { ErpInstallGuide } from '../components/ErpInstallGuide';
+import { playNotificationSound } from '../services/notificationSoundService';
 
 const BLOCKED_ROLES = ['candidat', 'banni', 'ancien_membre'];
 const PREFS_KEY = 'zd_erp_settings';
@@ -22,14 +23,34 @@ interface UserPrefs {
   darkMode: boolean;
   notifications: boolean;
   emailAlerts: boolean;
+  notificationSounds: boolean;
+  wallSounds: boolean;
+  bankSounds: boolean;
 }
 
 function loadPrefs(): UserPrefs {
   try {
     const raw = localStorage.getItem(PREFS_KEY);
-    if (raw) return JSON.parse(raw) as UserPrefs;
+    if (raw) {
+      return {
+        darkMode: true,
+        notifications: true,
+        emailAlerts: true,
+        notificationSounds: true,
+        wallSounds: true,
+        bankSounds: true,
+        ...(JSON.parse(raw) as Partial<UserPrefs>),
+      };
+    }
   } catch { /* ignore */ }
-  return { darkMode: true, notifications: true, emailAlerts: true };
+  return {
+    darkMode: true,
+    notifications: true,
+    emailAlerts: true,
+    notificationSounds: true,
+    wallSounds: true,
+    bankSounds: true,
+  };
 }
 
 function savePrefs(prefs: UserPrefs) {
@@ -258,6 +279,29 @@ export function SettingsPage() {
               enabled={prefs.emailAlerts}
               onToggle={() => updatePref('emailAlerts', !prefs.emailAlerts)}
             />
+            <ToggleRow
+              icon={Volume2}
+              label="Sons de notification"
+              desc="Activer les sonneries dans l’ERP"
+              enabled={prefs.notificationSounds}
+              onToggle={() => updatePref('notificationSounds', !prefs.notificationSounds)}
+            />
+            <div className={`space-y-3 pl-4 border-l border-white/10 ${prefs.notificationSounds ? '' : 'opacity-40 pointer-events-none'}`}>
+              <SoundPreferenceRow
+                label="Messages du mur"
+                desc="Carillon doux à deux notes"
+                enabled={prefs.wallSounds}
+                onToggle={() => updatePref('wallSounds', !prefs.wallSounds)}
+                onPreview={() => void playNotificationSound('wall', true)}
+              />
+              <SoundPreferenceRow
+                label="Opérations bancaires"
+                desc="Carillon chaleureux à trois notes"
+                enabled={prefs.bankSounds}
+                onToggle={() => updatePref('bankSounds', !prefs.bankSounds)}
+                onPreview={() => void playNotificationSound('bank', true)}
+              />
+            </div>
             <p className="text-xs text-white/30 pt-2">Les préférences sont enregistrées sur cet appareil.</p>
           </div>
         )}
@@ -359,6 +403,29 @@ function ToggleRow({ icon: Icon, label, desc, enabled, onToggle }: {
         className={`w-12 h-6 rounded-full transition-colors relative ${enabled ? 'bg-red-500' : 'bg-white/10'}`}>
         <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${enabled ? 'left-7' : 'left-1'}`} />
       </button>
+    </div>
+  );
+}
+
+function SoundPreferenceRow({ label, desc, enabled, onToggle, onPreview }: {
+  label: string; desc: string; enabled: boolean; onToggle: () => void; onPreview: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-1">
+      <div>
+        <p className="text-sm font-medium text-white">{label}</p>
+        <p className="text-xs text-white/30">{desc}</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <button type="button" onClick={onPreview} title={`Écouter : ${label}`}
+          className="w-8 h-8 rounded-lg bg-white/5 text-white/50 hover:text-red-300 hover:bg-red-500/10 flex items-center justify-center">
+          <Play className="w-3.5 h-3.5" />
+        </button>
+        <button type="button" onClick={onToggle} aria-label={`Activer ${label}`}
+          className={`w-10 h-5 rounded-full transition-colors relative ${enabled ? 'bg-red-500' : 'bg-white/10'}`}>
+          <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-transform ${enabled ? 'left-6' : 'left-1'}`} />
+        </button>
+      </div>
     </div>
   );
 }
