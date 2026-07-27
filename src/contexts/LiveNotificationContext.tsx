@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import type { LiveNotification } from '../lib/liveOpsTypes';
 import { NOTIFICATION_POLL_MS } from '../services/notificationService';
-import { playSoundForNotification } from '../services/notificationSoundService';
+import { playNotificationSound, playSoundForNotification, primeNotificationAudio } from '../services/notificationSoundService';
 
 interface LiveNotificationContextValue {
   unreadCount: number;
@@ -30,6 +30,17 @@ export function LiveNotificationProvider({ children }: { children: ReactNode }) 
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const knownIdsRef = useRef<Set<string>>(new Set());
+  const notificationsReadyRef = useRef(false);
+
+  useEffect(() => {
+    const prime = () => primeNotificationAudio();
+    window.addEventListener('pointerdown', prime, { once: true });
+    window.addEventListener('keydown', prime, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', prime);
+      window.removeEventListener('keydown', prime);
+    };
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!user?.id) return;
@@ -56,6 +67,7 @@ export function LiveNotificationProvider({ children }: { children: ReactNode }) 
       knownIdsRef.current.add(n.id);
       if (n.read) continue;
 
+      if (notificationsReadyRef.current) playSoundForNotification(n.type);
       const toastId = `${n.id}-${Date.now()}`;
       setToasts(prev => [...prev.slice(-2), { ...n, toastId }]);
       setTimeout(() => {
@@ -63,12 +75,14 @@ export function LiveNotificationProvider({ children }: { children: ReactNode }) 
       }, 6000);
     }
 
+    notificationsReadyRef.current = true;
     await refresh();
   }, [user?.id, refresh]);
 
   useEffect(() => {
     if (!user?.id) {
       knownIdsRef.current.clear();
+      notificationsReadyRef.current = false;
       return;
     }
 
@@ -93,10 +107,22 @@ export function LiveNotificationProvider({ children }: { children: ReactNode }) 
       )
       .subscribe();
 
+    const bankChannel = supabase
+      .channel(`driver_bank_sound_rt_${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'driver_bank_transactions', filter: `profile_id=eq.${user.id}` },
+        () => {
+          void playNotificationSound('bank');
+        },
+      )
+      .subscribe();
+
     pollRef.current = setInterval(() => { void checkNewToasts(); }, NOTIFICATION_POLL_MS);
 
     return () => {
       ch.unsubscribe();
+      bankChannel.unsubscribe();
       if (pollRef.current) {
         clearInterval(pollRef.current);
         pollRef.current = null;

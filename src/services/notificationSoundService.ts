@@ -3,6 +3,7 @@ import type { NotificationType } from './notificationService';
 const PREFS_KEY = 'zd_erp_settings';
 
 export type NotificationSoundKind = 'wall' | 'bank';
+let sharedAudioContext: AudioContext | null = null;
 
 interface SoundPrefs {
   notifications?: boolean;
@@ -27,7 +28,6 @@ function readSoundPrefs(): Required<SoundPrefs> {
 }
 
 function kindForType(type: NotificationType | string): NotificationSoundKind | null {
-  if (type === 'bank' || type === 'salary') return 'bank';
   if (type.startsWith('wall_') || type === 'announcement') return 'wall';
   return null;
 }
@@ -62,8 +62,10 @@ export async function playNotificationSound(kind: NotificationSoundKind, force =
   if (typeof window === 'undefined' || !window.AudioContext) return;
 
   try {
-    const context = new AudioContext();
+    const context = sharedAudioContext ?? new AudioContext();
+    sharedAudioContext = context;
     if (context.state === 'suspended') await context.resume();
+    if (context.state !== 'running') return;
     const master = context.createGain();
     master.gain.value = 0.55;
     master.connect(context.destination);
@@ -78,9 +80,19 @@ export async function playNotificationSound(kind: NotificationSoundKind, force =
       tone(context, master, 783.99, now + 0.25, 0.48, 0.05);
     }
 
-    window.setTimeout(() => { void context.close(); }, 1100);
   } catch {
     // Le navigateur peut bloquer l’audio avant la première interaction.
+  }
+}
+
+/** Déverrouille Web Audio au premier clic/toucher pour les futures alertes automatiques. */
+export function primeNotificationAudio(): void {
+  if (typeof window === 'undefined' || !window.AudioContext) return;
+  try {
+    sharedAudioContext ??= new AudioContext();
+    if (sharedAudioContext.state === 'suspended') void sharedAudioContext.resume();
+  } catch {
+    // Les notifications visuelles continuent si l’audio n’est pas disponible.
   }
 }
 
