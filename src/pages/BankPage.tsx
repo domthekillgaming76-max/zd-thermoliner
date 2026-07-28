@@ -245,7 +245,17 @@ export function BankPage() {
         )}
 
         {tab === 'transactions' && (
-          <div className="bank-fade-in">
+          <div className="bank-fade-in space-y-4">
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => { setForm(EMPTY_MANUAL_FORM); setShowModal(true); }}
+                className="bank-lounge-btn-primary flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold"
+              >
+                <Plus className="w-4 h-4" />
+                Nouvelle opération
+              </button>
+            </div>
             <BankTransactionsEnterprise
               transactions={filteredTransactions}
               filters={filters}
@@ -262,16 +272,6 @@ export function BankPage() {
                 })
               }
             />
-            <div className="mt-4 flex justify-end">
-              <button
-                type="button"
-                onClick={() => { setForm(EMPTY_MANUAL_FORM); setShowModal(true); }}
-                className="bank-lounge-btn-primary flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold"
-              >
-                <Plus className="w-4 h-4" />
-                Nouvelle opération
-              </button>
-            </div>
           </div>
         )}
 
