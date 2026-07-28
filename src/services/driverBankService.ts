@@ -9,6 +9,7 @@ import type {
   DriverBankBundle,
   DriverBankTransaction,
   CompanyBankTransfer,
+  DriverPersonalDebitInput,
 } from '../lib/driverBankTypes';
 import { DRIVER_BANK_NAME } from '../lib/driverBankTypes';
 import { mapPayslipFromRow } from './driverHrService';
@@ -277,4 +278,16 @@ export async function resetDriverBankRpData(): Promise<Record<string, number>> {
   const { data, error } = await supabase.rpc('reset_driver_bank_rp_data');
   if (error) throw error;
   return (data as Record<string, number>) ?? {};
+}
+
+export async function createDriverPersonalDebit(input: DriverPersonalDebitInput): Promise<DriverBankTransaction> {
+  const { data, error } = await supabase.rpc('create_driver_personal_debit', {
+    p_amount: input.amount,
+    p_label: input.label,
+    p_category: input.category,
+  });
+  if (error) throw new Error(error.message);
+  const result = data as { ok?: boolean; transaction?: Record<string, unknown>; error?: string } | null;
+  if (!result?.ok || !result.transaction) throw new Error(result?.error ?? 'Décaissement impossible.');
+  return mapTransaction(result.transaction);
 }

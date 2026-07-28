@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { queryKeys } from '../lib/queryKeys';
 import { DRIVER_BANK_POLL_MS } from '../lib/driverBankTypes';
-import { fetchDriverBankBundle } from '../services/driverBankService';
+import { createDriverPersonalDebit, fetchDriverBankBundle } from '../services/driverBankService';
+import type { DriverPersonalDebitInput } from '../lib/driverBankTypes';
 
 export function useDriverBank(profileId: string | undefined) {
   const queryClient = useQueryClient();
@@ -36,5 +37,12 @@ export function useDriverBank(profileId: string | undefined) {
     return () => { void supabase.removeChannel(channel); };
   }, [profileId, queryClient]);
 
-  return query;
+  const createDebit = useMutation({
+    mutationFn: (input: DriverPersonalDebitInput) => createDriverPersonalDebit(input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.driverBank.bundle(profileId ?? '') });
+    },
+  });
+
+  return { ...query, createDebit };
 }

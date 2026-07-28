@@ -97,6 +97,12 @@ export interface AdminTransferResult {
   company_balance: number;
 }
 
+export interface DriverPersonalDebitInput {
+  amount: number;
+  label: string;
+  category: string;
+}
+
 export const DRIVER_BANK_NAME = 'Crédit Agricole Z&D Thermoliner';
 export const DRIVER_BANK_POLL_MS = PERF.driverBankPollMs;
 

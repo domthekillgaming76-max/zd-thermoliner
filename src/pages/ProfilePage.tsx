@@ -336,7 +336,7 @@ export function ProfilePage() {
 
   }, [targetUserId, profile?.updated_at, viewedProfile?.updated_at]);
 
-  const { data: bankBundle, isLoading: bankLoading } = useDriverBank(isViewingOther ? undefined : user?.id);
+  const { data: bankBundle, isLoading: bankLoading, createDebit } = useDriverBank(isViewingOther ? undefined : user?.id);
 
   function setField<K extends keyof ProfileCustomizationForm>(key: K, value: ProfileCustomizationForm[K]) {
 
@@ -696,7 +696,12 @@ export function ProfilePage() {
 
         ) : pageTab === 'bank_account' && showHrFolder ? (
 
-          <DriverBankPanel bundle={bankBundle} loading={bankLoading} />
+          <DriverBankPanel
+            bundle={bankBundle}
+            loading={bankLoading}
+            debitSaving={createDebit.isPending}
+            onCreateDebit={input => createDebit.mutateAsync(input)}
+          />
 
         ) : pageTab === 'meal_receipts' && !isViewingOther ? (
 

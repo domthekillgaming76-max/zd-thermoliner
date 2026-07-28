@@ -1,15 +1,19 @@
 import {
   CreditCard, Landmark, Receipt, Wallet, ArrowDownCircle, ArrowUpCircle,
-  Loader2, FileText, Download,
+  Loader2, FileText, Download, Plus,
 } from 'lucide-react';
+import { useState } from 'react';
 import { fmtEuro } from '../../lib/format';
 import { TRANSFER_TYPE_LABELS } from '../../lib/driverBankTypes';
-import type { DriverBankBundle } from '../../lib/driverBankTypes';
+import type { DriverBankBundle, DriverPersonalDebitInput } from '../../lib/driverBankTypes';
 import { exportDriverBankStatementPdf, exportEnhancedPayslipPdf } from '../../lib/driverBankPdf';
+import { DriverDebitModal, PERSONAL_DEBIT_CATEGORIES, type DriverDebitForm } from './DriverDebitModal';
 
 interface DriverBankPanelProps {
   bundle: DriverBankBundle | undefined;
   loading?: boolean;
+  debitSaving?: boolean;
+  onCreateDebit?: (input: DriverPersonalDebitInput) => Promise<unknown>;
 }
 
 const TX_ICONS = {
@@ -17,7 +21,15 @@ const TX_ICONS = {
   debit: ArrowUpCircle,
 };
 
-export function DriverBankPanel({ bundle, loading }: DriverBankPanelProps) {
+export function DriverBankPanel({ bundle, loading, debitSaving = false, onCreateDebit }: DriverBankPanelProps) {
+  const [debitOpen, setDebitOpen] = useState(false);
+  const [debitError, setDebitError] = useState<string | null>(null);
+  const [debitSuccess, setDebitSuccess] = useState<string | null>(null);
+  const [debitForm, setDebitForm] = useState<DriverDebitForm>({
+    amount: '',
+    label: '',
+    category: PERSONAL_DEBIT_CATEGORIES[0],
+  });
   if (loading) {
     return (
       <div className="erp-card rounded-2xl p-12 flex flex-col items-center gap-3">
@@ -38,6 +50,23 @@ export function DriverBankPanel({ bundle, loading }: DriverBankPanelProps) {
   }
 
   const { account, transactions, payslips, companyCard, openingBalance, closingBalance } = bundle;
+
+  async function submitDebit(event: React.FormEvent) {
+    event.preventDefault();
+    if (!onCreateDebit) return;
+    setDebitError(null);
+    const amount = Number(debitForm.amount);
+    if (!Number.isFinite(amount) || amount <= 0) return setDebitError('Montant invalide.');
+    if (amount > account.balance) return setDebitError('Solde insuffisant.');
+    try {
+      await onCreateDebit({ amount, label: debitForm.label.trim(), category: debitForm.category });
+      setDebitSuccess(`Opération enregistrée : -${fmtEuro(amount)}`);
+      setDebitOpen(false);
+      setDebitForm({ amount: '', label: '', category: PERSONAL_DEBIT_CATEGORIES[0] });
+    } catch (error) {
+      setDebitError(error instanceof Error ? error.message : 'Décaissement impossible.');
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -68,6 +97,17 @@ export function DriverBankPanel({ bundle, loading }: DriverBankPanelProps) {
           </div>
         </div>
 
+        {debitSuccess && <p className="mt-4 rounded-xl px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300">{debitSuccess}</p>}
+        {onCreateDebit && (
+          <button
+            type="button"
+            onClick={() => { setDebitError(null); setDebitSuccess(null); setDebitOpen(true); }}
+            className="mt-4 mr-2 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black bg-red-500/15 text-red-300 border border-red-500/25 hover:bg-red-500/25 transition-all"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Nouvelle opération
+          </button>
+        )}
         <button
           type="button"
           onClick={() => exportDriverBankStatementPdf(account, transactions, openingBalance, closingBalance)}
@@ -168,6 +208,16 @@ export function DriverBankPanel({ bundle, loading }: DriverBankPanelProps) {
           </div>
         </div>
       )}
+      <DriverDebitModal
+        open={debitOpen}
+        balance={account.balance}
+        form={debitForm}
+        saving={debitSaving}
+        error={debitError}
+        onChange={setDebitForm}
+        onClose={() => { if (!debitSaving) setDebitOpen(false); }}
+        onSubmit={submitDebit}
+      />
     </div>
   );
 }
